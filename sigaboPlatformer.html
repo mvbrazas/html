@@ -128,6 +128,7 @@
             var leftBtn = document.getElementById('leftBtn');
             var rightBtn = document.getElementById('rightBtn');
             var jumpBtn = document.getElementById('jumpBtn');
+            var controlsBar = document.getElementById('controls');
 
             // Keep touch controls above the native bottom tab bar inside the app WebView.
             if (window.ReactNativeWebView) {
@@ -193,17 +194,16 @@
             }
 
             function groundY() {
-                var playableHeight = Math.max(220, canvas.height - gameplayBottomInset());
-                return playableHeight * GROUND_RATIO;
+                var ratioY = canvas.height * GROUND_RATIO;
+                var safeY = controlsTopY() - 28;
+                return Math.max(140, Math.min(ratioY, safeY));
             }
 
-            function gameplayBottomInset() {
-                var landscape = window.innerWidth > window.innerHeight;
-                var baseInset = landscape ? 74 : 120;
-                if (window.ReactNativeWebView) {
-                    baseInset += 74;
-                }
-                return baseInset;
+            function controlsTopY() {
+                if (!controlsBar) return canvas.height;
+                var rect = controlsBar.getBoundingClientRect();
+                if (!rect || !isFinite(rect.top)) return canvas.height;
+                return Math.max(140, Math.min(canvas.height, rect.top));
             }
 
             function floorPlatformY() {
@@ -391,7 +391,7 @@
             });
 
             canvas.addEventListener('pointerdown', function (e) {
-                if (e.clientY < canvas.height - gameplayBottomInset() + 24) jump();
+                if (e.clientY < controlsTopY() + 10) jump();
             });
             window.addEventListener('keydown', function (e) {
                 if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
