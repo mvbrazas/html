@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Sigabo Platformer</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #11355E; overflow: hidden; }
+        #game { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+        #hud {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-family: sans-serif;
+            color: #FFFFFF;
+            font-weight: bold;
+            font-size: 18px;
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        }
+        #overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background: rgba(11,32,53,0.9);
+            font-family: sans-serif;
+            color: #FFFFFF;
+            text-align: center;
+            padding: 24px;
+        }
+        #overlay h1 { font-size: 28px; margin: 0 0 8px; color: #F4A935; }
+        #overlay p { font-size: 16px; margin: 4px 0 20px; }
+        .btn {
+            border: none;
+            border-radius: 24px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 6px;
+            min-width: 220px;
+            cursor: pointer;
+        }
+        .btn-primary { background: #F4A935; color: #11355E; }
+        .btn-secondary { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
+        #start { display: flex; flex-direction: column; align-items: center; }
+        #start p { max-width: 320px; margin: 4px auto 20px; text-align: center; }
+        .title-logo { width: min(82vw, 420px); height: auto; margin: 0 auto 10px; display: block; }
+        #controls {
+            position: fixed;
+            inset: auto 0 calc(10px + env(safe-area-inset-bottom, 0px)) 0;
+            height: 84px;
+            pointer-events: none;
+            z-index: 20;
+        }
+        .ctrl-btn {
+            position: absolute;
+            pointer-events: auto;
+            width: 82px;
+            height: 62px;
+            border-radius: 16px;
+            border: 2px solid rgba(255,255,255,0.35);
+            background: rgba(17,53,94,0.7);
+            color: #FFFFFF;
+            font-size: 24px;
+            font-weight: bold;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #leftBtn { left: 14px; bottom: 0; }
+        #rightBtn { left: 106px; bottom: 0; }
+        #jumpBtn {
+            right: 14px;
+            bottom: 0;
+            width: 98px;
+            height: 72px;
+            border-radius: 20px;
+            background: rgba(244,169,53,0.82);
+            color: #11355E;
+            border-color: rgba(255,255,255,0.45);
+        }
+
+        @media (orientation: landscape) {
+            #controls { height: 70px; }
+            .ctrl-btn { width: 68px; height: 48px; font-size: 20px; border-radius: 12px; }
+            #rightBtn { left: 90px; }
+            #jumpBtn { width: 84px; height: 56px; border-radius: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <div id="hud">
+        <span id="scoreLabel">Score: 0</span>
+        <span id="livesLabel">Revives left: 2</span>
+    </div>
+    <div id="overlay" style="display:flex;" data-screen="start">
+        <div id="start">
+            <img class="title-logo" src="https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/logo-sigabo-jump.png?raw=true" alt="Sigabo Dash" />
+            <p>True platformer mode: move left or right, jump across rooftops, avoid danger zones, and collect markers.</p>
+            <button class="btn btn-primary" id="startBtn">Start Game</button>
+        </div>
+    </div>
+
+    <div id="controls" aria-hidden="true">
+        <button class="ctrl-btn" id="leftBtn">◀</button>
+        <button class="ctrl-btn" id="jumpBtn">▲</button>
+        <button class="ctrl-btn" id="rightBtn">▶</button>
+    </div>
+
+    <script>
+        (function () {
+            var canvas = document.getElementById('game');
+            var ctx = canvas.getContext('2d');
+            var overlay = document.getElementById('overlay');
+            var scoreLabel = document.getElementById('scoreLabel');
+            var livesLabel = document.getElementById('livesLabel');
+            var startBtn = document.getElementById('startBtn');
+            var leftBtn = document.getElementById('leftBtn');
+            var rightBtn = document.getElementById('rightBtn');
+            var jumpBtn = document.getElementById('jumpBtn');
+
+            var MAX_REVIVES = 2;
+            var GROUND_RATIO = 0.84;
+            var GRAVITY = 1900;
+            var JUMP_VELOCITY = -720;
+            var MOVE_ACCEL = 2200;
+            var MAX_RUN_SPEED = 320;
+            var FRICTION = 1800;
+
+            var state = 'idle';
+            var score = 0;
+            var pickupsCount = 0;
+            var revivesLeft = MAX_REVIVES;
+
+            var platforms = [];
+            var hazards = [];
+            var pickups = [];
+
+            var player = {
+                x: 0,
+                y: 0,
+                vx: 0,
+                vy: 0,
+                w: 64,
+                h: 34,
+                jumping: false,
+                facing: 1,
+                invulnerableUntil: 0,
+            };
+
+            var cameraX = 0;
+            var segmentX = 0;
+            var lastTime = 0;
+            var furthestX = 0;
+            var controls = { left: false, right: false };
+
+            var assets = {
+                player: new Image(),
+                obstacle: new Image(),
+                skyline: new Image(),
+            };
+
+            assets.player.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/player-sigabo-runner.svg?raw=true';
+            assets.obstacle.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/obstacle-signal-spike.svg?raw=true';
+            assets.skyline.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/bg-sigabo-skyline.svg?raw=true';
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function post(message) {
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify(message));
+                }
+            }
+
+            function groundY() {
+                return canvas.height * GROUND_RATIO;
+            }
+
+            function floorPlatformY() {
+                return groundY() - 8;
+            }
+
+            function clamp(v, min, max) {
+                return Math.max(min, Math.min(max, v));
+            }
+
+            function intersects(a, b) {
+                return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+            }
+
+            function addSegment() {
+                var floorY = floorPlatformY();
+                var makeGap = Math.random() < 0.2;
+                var len;
+
+                if (makeGap) {
+                    len = 110 + Math.random() * 120;
+                    segmentX += len;
+                    return;
+                }
+
+                len = 180 + Math.random() * 200;
+                platforms.push({ x: segmentX, y: floorY, w: len, h: 24 });
+
+                if (Math.random() < 0.35) {
+                    var elevatedW = 110 + Math.random() * 90;
+                    var elevatedY = floorY - (80 + Math.random() * 70);
+                    var elevatedX = segmentX + 35 + Math.random() * Math.max(20, len - elevatedW - 45);
+                    platforms.push({ x: elevatedX, y: elevatedY, w: elevatedW, h: 18 });
+                    if (Math.random() < 0.7) {
+                        pickups.push({ x: elevatedX + elevatedW * 0.5 - 10, y: elevatedY - 34, w: 20, h: 20 });
+                    }
+                }
+
+                if (Math.random() < 0.45) {
+                    pickups.push({ x: segmentX + len * (0.25 + Math.random() * 0.5), y: floorY - 30, w: 18, h: 18 });
+                }
+
+                if (Math.random() < 0.40) {
+                    var hzW = 18 + Math.random() * 22;
+                    var hzH = 22 + Math.random() * 34;
+                    hazards.push({
+                        x: segmentX + 26 + Math.random() * Math.max(20, len - hzW - 52),
+                        y: floorY - hzH,
+                        w: hzW,
+                        h: hzH,
+                    });
+                }
+
+                segmentX += len;
+            }
+
+            function ensureWorldFilled() {
+                var targetX = cameraX + canvas.width * 2.2;
+                while (segmentX < targetX) {
+                    addSegment();
+                }
+            }
+
+            function pruneWorld() {
+                var minX = cameraX - 300;
+                platforms = platforms.filter(function (p) { return p.x + p.w > minX; });
+                hazards = hazards.filter(function (h) { return h.x + h.w > minX; });
+                pickups = pickups.filter(function (c) { return c.x + c.w > minX; });
+            }
+
+            function placePlayerOnNearestPlatform() {
+                var px = player.x + player.w * 0.5;
+                var best = null;
+                var bestDist = Infinity;
+                for (var i = 0; i < platforms.length; i++) {
+                    var p = platforms[i];
+                    if (px >= p.x - 80 && px <= p.x + p.w + 80) {
+                        var d = Math.abs((p.x + p.w * 0.5) - px);
+                        if (d < bestDist) {
+                            best = p;
+                            bestDist = d;
+                        }
+                    }
+                }
+                if (!best) {
+                    best = { x: player.x - 100, y: floorPlatformY(), w: 260, h: 22 };
+                    platforms.push(best);
+                }
+                player.y = best.y - player.h;
+                player.vx = 0;
+                player.vy = 0;
+                player.jumping = false;
+            }
+
+            function addRescuePlatform() {
+                var y = floorPlatformY();
+                var rescue = { x: player.x - 110, y: y, w: 260, h: 22 };
+                platforms.push(rescue);
+                placePlayerOnNearestPlatform();
+            }
+
+            function resetGame() {
+                score = 0;
+                pickupsCount = 0;
+                revivesLeft = MAX_REVIVES;
+                platforms = [];
+                hazards = [];
+                pickups = [];
+                cameraX = 0;
+                segmentX = -120;
+                furthestX = 0;
+
+                player.x = 40;
+                player.y = floorPlatformY() - player.h;
+                player.vx = 0;
+                player.vy = 0;
+                player.jumping = false;
+                player.facing = 1;
+                player.invulnerableUntil = 0;
+
+                platforms.push({ x: -180, y: floorPlatformY(), w: 460, h: 24 });
+                segmentX = 280;
+                ensureWorldFilled();
+
+                scoreLabel.textContent = 'Score: 0';
+                livesLabel.textContent = 'Revives left: ' + revivesLeft;
+            }
+
+            function jump() {
+                if (state !== 'playing') return;
+                if (!player.jumping) {
+                    player.vy = JUMP_VELOCITY;
+                    player.jumping = true;
+                }
+            }
+
+            function setControl(btn, key, isDown) {
+                function apply(e) {
+                    e.preventDefault();
+                    controls[key] = isDown;
+                }
+                btn.addEventListener('pointerdown', apply);
+                btn.addEventListener('pointerup', function (e) { e.preventDefault(); controls[key] = false; });
+                btn.addEventListener('pointercancel', function () { controls[key] = false; });
+                btn.addEventListener('pointerleave', function () { controls[key] = false; });
+            }
+
+            function showOverlay(screen, title, message, buttons) {
+                overlay.setAttribute('data-screen', screen);
+                overlay.style.display = 'flex';
+                overlay.innerHTML = '<div><h1>' + title + '</h1><p>' + message + '</p>' + buttons + '</div>';
+                var els = overlay.querySelectorAll('[data-action]');
+                for (var i = 0; i < els.length; i++) {
+                    els[i].addEventListener('click', onOverlayAction);
+                }
+            }
+
+            function hideOverlay() {
+                overlay.style.display = 'none';
+            }
+
+            function onOverlayAction(e) {
+                var action = e.currentTarget.getAttribute('data-action');
+                if (action === 'start') {
+                    resetGame();
+                    hideOverlay();
+                    state = 'playing';
+                    post({ type: 'ready' });
+                } else if (action === 'revive') {
+                    post({ type: 'requestRevive', score: score });
+                } else if (action === 'restart') {
+                    resetGame();
+                    hideOverlay();
+                    state = 'playing';
+                } else if (action === 'leaderboard') {
+                    post({ type: 'viewLeaderboard', score: score });
+                }
+            }
+
+            startBtn.addEventListener('click', function () {
+                resetGame();
+                hideOverlay();
+                state = 'playing';
+                post({ type: 'ready' });
+            });
+
+            canvas.addEventListener('pointerdown', function (e) {
+                if (e.clientY < canvas.height * 0.7) jump();
+            });
+            window.addEventListener('keydown', function (e) {
+                if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                    e.preventDefault();
+                    jump();
+                } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                    controls.left = true;
+                } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                    controls.right = true;
+                }
+            });
+            window.addEventListener('keyup', function (e) {
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                    controls.left = false;
+                } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                    controls.right = false;
+                }
+            });
+
+            setControl(leftBtn, 'left', true);
+            setControl(rightBtn, 'right', true);
+            jumpBtn.addEventListener('pointerdown', function (e) { e.preventDefault(); jump(); });
+
+            function onGameOver() {
+                state = 'gameover';
+                var canRevive = revivesLeft > 0;
+                var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
+                    '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                if (canRevive) {
+                    buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
+                }
+                showOverlay('gameover', 'GAME OVER', 'Score: ' + score, buttons);
+                post({ type: 'gameOver', score: score, final: !canRevive });
+            }
+
+            // Called by React Native after rewarded ad completes.
+            window.dispatchRevive = function (granted) {
+                if (state !== 'gameover') return;
+                if (granted) {
+                    revivesLeft -= 1;
+                    addRescuePlatform();
+                    hazards = hazards.filter(function (h) {
+                        return h.x < player.x - 120 || h.x > player.x + 240;
+                    });
+                    player.invulnerableUntil = Date.now() + 2000;
+                    livesLabel.textContent = 'Revives left: ' + revivesLeft;
+                    hideOverlay();
+                    state = 'playing';
+                } else {
+                    var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
+                        '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                    showOverlay('gameover', 'GAME OVER', 'Score: ' + score + ' (Ad unavailable)', buttons);
+                }
+            };
+
+            function update(dt) {
+                if (state !== 'playing') return;
+
+                if (controls.left && !controls.right) {
+                    player.vx -= MOVE_ACCEL * dt;
+                    player.facing = -1;
+                } else if (controls.right && !controls.left) {
+                    player.vx += MOVE_ACCEL * dt;
+                    player.facing = 1;
+                } else {
+                    if (player.vx > 0) player.vx = Math.max(0, player.vx - FRICTION * dt);
+                    if (player.vx < 0) player.vx = Math.min(0, player.vx + FRICTION * dt);
+                }
+
+                player.vx = clamp(player.vx, -MAX_RUN_SPEED, MAX_RUN_SPEED);
+
+                player.x += player.vx * dt;
+                if (player.x < -140) {
+                    player.x = -140;
+                    player.vx = 0;
+                }
+
+                player.vy += GRAVITY * dt;
+                var prevY = player.y;
+                player.y += player.vy * dt;
+                player.jumping = true;
+
+                var pWorld = {
+                    x: player.x + 8,
+                    y: player.y,
+                    w: player.w - 16,
+                    h: player.h,
+                };
+
+                for (var i = 0; i < platforms.length; i++) {
+                    var p = platforms[i];
+                    var crossingDown = prevY + player.h <= p.y && player.y + player.h >= p.y;
+                    var horizontalOverlap = pWorld.x < p.x + p.w && pWorld.x + pWorld.w > p.x;
+                    if (player.vy >= 0 && crossingDown && horizontalOverlap) {
+                        player.y = p.y - player.h;
+                        player.vy = 0;
+                        player.jumping = false;
+                        pWorld.y = player.y;
+                    }
+                }
+
+                if (player.y > canvas.height + 130) {
+                    onGameOver();
+                    return;
+                }
+
+                furthestX = Math.max(furthestX, player.x);
+                score = pickupsCount;
+                scoreLabel.textContent = 'Score: ' + score;
+
+                cameraX = clamp(player.x - canvas.width * 0.35, 0, Math.max(0, segmentX - canvas.width * 0.5));
+                var bgOffset = cameraX * 0.35;
+                window.__sigaboBgOffset = bgOffset;
+
+                ensureWorldFilled();
+                pruneWorld();
+
+                var invulnerable = Date.now() < player.invulnerableUntil;
+                for (var h = 0; h < hazards.length; h++) {
+                    if (!invulnerable && intersects(pWorld, hazards[h])) {
+                        onGameOver();
+                        return;
+                    }
+                }
+
+                for (var c = pickups.length - 1; c >= 0; c--) {
+                    if (intersects(pWorld, pickups[c])) {
+                        pickups.splice(c, 1);
+                        pickupsCount += 1;
+                    }
+                }
+            }
+
+            function draw() {
+                ctx.fillStyle = '#11355E';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (assets.skyline.complete && assets.skyline.naturalWidth > 0) {
+                    var skyHeight = groundY();
+                    var scaledWidth = assets.skyline.naturalWidth * (skyHeight / assets.skyline.naturalHeight);
+                    var bg = window.__sigaboBgOffset || 0;
+                    var startX = -(bg % scaledWidth);
+                    ctx.drawImage(assets.skyline, startX, 0, scaledWidth, skyHeight);
+                    ctx.drawImage(assets.skyline, startX + scaledWidth, 0, scaledWidth, skyHeight);
+                }
+
+                ctx.fillStyle = '#0b2035';
+                ctx.fillRect(0, groundY(), canvas.width, canvas.height - groundY());
+
+                for (var i = 0; i < platforms.length; i++) {
+                    var p = platforms[i];
+                    var sx = p.x - cameraX;
+                    if (sx + p.w < -40 || sx > canvas.width + 40) continue;
+                    ctx.fillStyle = '#1C2C42';
+                    ctx.fillRect(sx, p.y, p.w, p.h);
+                    ctx.fillStyle = '#2E4B6B';
+                    ctx.fillRect(sx, p.y, p.w, 6);
+                }
+
+                var invulnerable = Date.now() < player.invulnerableUntil;
+                var drawX = player.x - cameraX;
+                if (assets.player.complete && assets.player.naturalWidth > 0) {
+                    var playerPad = 4;
+                    ctx.globalAlpha = invulnerable ? 0.75 : 1;
+                    ctx.save();
+                    if (player.facing < 0) {
+                        ctx.translate(drawX + player.w / 2, 0);
+                        ctx.scale(-1, 1);
+                        ctx.translate(-(drawX + player.w / 2), 0);
+                    }
+                    ctx.drawImage(
+                        assets.player,
+                        drawX - playerPad,
+                        player.y - playerPad,
+                        player.w + playerPad * 2,
+                        player.h + playerPad * 2
+                    );
+                    ctx.restore();
+                    ctx.globalAlpha = 1;
+                } else {
+                    ctx.fillStyle = invulnerable ? '#58C9D4' : '#F4A935';
+                    ctx.fillRect(drawX, player.y, player.w, player.h);
+                }
+
+                for (var j = 0; j < hazards.length; j++) {
+                    var hz = hazards[j];
+                    var hx = hz.x - cameraX;
+                    if (hx + hz.w < -30 || hx > canvas.width + 30) continue;
+                    if (assets.obstacle.complete && assets.obstacle.naturalWidth > 0) {
+                        ctx.drawImage(assets.obstacle, hx, hz.y, hz.w, hz.h);
+                    } else {
+                        ctx.fillStyle = '#CDE4FF';
+                        ctx.fillRect(hx, hz.y, hz.w, hz.h);
+                    }
+                }
+
+                for (var k = 0; k < pickups.length; k++) {
+                    var coin = pickups[k];
+                    var cx = coin.x - cameraX;
+                    if (cx + coin.w < -20 || cx > canvas.width + 20) continue;
+                    ctx.fillStyle = '#F4A935';
+                    ctx.beginPath();
+                    ctx.arc(cx + coin.w / 2, coin.y + coin.h / 2, coin.w / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#11355E';
+                    ctx.fillRect(cx + coin.w * 0.43, coin.y + coin.h * 0.2, 2, coin.h * 0.6);
+                }
+
+                if (state === 'playing') {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.font = 'bold 14px sans-serif';
+                    ctx.fillText('Touch ◀ ▶ ▲', 14, 80);
+                }
+            }
+
+            function loop(time) {
+                var dt = lastTime ? Math.min(0.05, (time - lastTime) / 1000) : 0;
+                lastTime = time;
+                update(dt);
+                draw();
+                requestAnimationFrame(loop);
+            }
+
+            resetGame();
+            requestAnimationFrame(loop);
+        })();
+    </script>
+</body>
+</html>
