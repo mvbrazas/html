@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>BINI Trivia Rush</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: radial-gradient(circle at 20% 0%, #4fd1c5 0%, #1d9a96 48%, #0d5f6a 100%);
+            color: #FFFFFF;
+        }
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            gap: 12px;
+        }
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.45);
+        }
+        .pill {
+            background: rgba(8, 78, 92, 0.36);
+            border: 1px solid rgba(167, 244, 240, 0.32);
+            border-radius: 999px;
+            padding: 7px 12px;
+            white-space: nowrap;
+        }
+        #quizCard {
+            flex: 1;
+            background: rgba(7, 84, 97, 0.58);
+            border: 1px solid rgba(167, 244, 240, 0.26);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+        #progressTrack {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.24);
+        }
+        #progressFill {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #9bf6ef, #2dd4bf);
+            transform-origin: left center;
+        }
+        #questionMeta {
+            color: #d3fffb;
+            font-size: 13px;
+        }
+        #questionText {
+            font-size: 21px;
+            line-height: 1.3;
+            margin: 0;
+        }
+        #choices {
+            margin-top: 6px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .choiceBtn {
+            border: 1px solid rgba(167, 244, 240, 0.28);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.12);
+            color: #FFFFFF;
+            text-align: left;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 14px 12px;
+            cursor: pointer;
+        }
+        .choiceBtn:disabled { opacity: 0.7; cursor: default; }
+        .choiceBtn.correct { background: rgba(37,187,126,0.3); border-color: #25bb7e; }
+        .choiceBtn.wrong { background: rgba(234,74,64,0.3); border-color: #ea4a40; }
+        #feedback {
+            min-height: 22px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #b7fff8;
+        }
+        #footerActions {
+            display: flex;
+            justify-content: center;
+        }
+        #leaderboardBtn {
+            border: none;
+            border-radius: 20px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            background: rgba(8, 78, 92, 0.5);
+            color: #FFFFFF;
+            min-width: 210px;
+            cursor: pointer;
+        }
+        #overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background: rgba(11,32,53,0.92);
+            text-align: center;
+            padding: 24px;
+            z-index: 20;
+        }
+        #overlay h1 { font-size: 29px; margin: 0 0 8px; color: #81fff5; }
+        #overlay p { font-size: 16px; margin: 4px 0 20px; }
+        .btn {
+            border: none;
+            border-radius: 24px;
+            padding: 14px 26px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 6px;
+            min-width: 220px;
+            cursor: pointer;
+        }
+        .btn-primary { background: #2dd4bf; color: #0a4f59; }
+        .btn-secondary { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
+        @media (max-width: 420px) {
+            #questionText { font-size: 19px; }
+            .choiceBtn { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="hud">
+            <span class="pill" id="scoreLabel">Score: 0</span>
+            <span class="pill" id="livesLabel">Hearts: 3</span>
+            <span class="pill" id="reviveLabel">Revives: 1</span>
+        </div>
+
+        <div id="quizCard">
+            <div id="progressTrack"><div id="progressFill"></div></div>
+            <div id="questionMeta">Question 1 / 10</div>
+            <h2 id="questionText">Loading question...</h2>
+            <div id="choices"></div>
+            <div id="feedback"></div>
+        </div>
+
+        <div id="footerActions">
+            <button id="leaderboardBtn">View Leaderboard</button>
+        </div>
+    </div>
+
+    <div id="overlay" style="display:flex;" data-screen="start">
+        <div id="start">
+            <h1>BINI Trivia Rush</h1>
+            <p>Answer fast, keep your hearts, and get the highest score.</p>
+            <button class="btn btn-primary" id="startBtn">Start Game</button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var MAX_REVIVES = 1;
+            var START_HEARTS = 3;
+            var QUESTION_TIME = 15;
+
+            var QUESTIONS = [
+                { q: 'How many members are in BINI?', c: ['6', '7', '8', '9'], a: 2 },
+                { q: 'BINI is managed by which company?', c: ['Star Magic', 'Viva Artists', 'GMA Artist Center', 'Universal Music PH'], a: 0 },
+                { q: 'Which word best matches BINI fandom?', c: ['Blooms', 'Lights', 'Stars', 'Waves'], a: 0 },
+                { q: 'BINI is a group from which country?', c: ['Thailand', 'Japan', 'Philippines', 'South Korea'], a: 2 },
+                { q: 'What type of act is BINI?', c: ['Rock band', 'P-pop girl group', 'Dance crew only', 'Acoustic duo'], a: 1 },
+                { q: 'BINI songs are known for being:', c: ['Only ballads', 'High-energy pop', 'Instrumental only', 'Opera'], a: 1 },
+                { q: 'What does good teamwork in BINI performances usually show?', c: ['Strong synchronization', 'Random timing', 'Silent stage', 'No choreography'], a: 0 },
+                { q: 'A fan voting event for BINI usually rewards:', c: ['Engagement and support', 'Offline maps', 'Video codecs', 'Server RAM'], a: 0 },
+                { q: 'Which platform is common for BINI fan content?', c: ['Social media apps', 'Fax machine', 'Pager network', 'DVD menu'], a: 0 },
+                { q: 'In this game, what increases your score the most?', c: ['Fast correct answers', 'Wrong answers', 'Skipping all', 'Waiting timeout'], a: 0 },
+                { q: 'What should you do when time is low?', c: ['Answer confidently', 'Close the app', 'Restart device', 'Disable internet'], a: 0 },
+                { q: 'BINI fan community is often described as:', c: ['Supportive and active', 'Silent and hidden', 'Offline only', 'No interaction'], a: 0 }
+            ];
+
+            var state = 'idle';
+            var score = 0;
+            var hearts = START_HEARTS;
+            var revivesLeft = MAX_REVIVES;
+            var currentIndex = 0;
+            var questionPool = [];
+            var timerLeft = QUESTION_TIME;
+            var timerHandle = null;
+            var locked = false;
+            var streak = 0;
+
+            var overlay = document.getElementById('overlay');
+            var startBtn = document.getElementById('startBtn');
+            var scoreLabel = document.getElementById('scoreLabel');
+            var livesLabel = document.getElementById('livesLabel');
+            var reviveLabel = document.getElementById('reviveLabel');
+            var questionMeta = document.getElementById('questionMeta');
+            var questionText = document.getElementById('questionText');
+            var choices = document.getElementById('choices');
+            var feedback = document.getElementById('feedback');
+            var progressFill = document.getElementById('progressFill');
+            var leaderboardBtn = document.getElementById('leaderboardBtn');
+
+            var audioCtx = null;
+
+            function post(message) {
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify(message));
+                }
+            }
+
+            function ensureAudio() {
+                if (!audioCtx) {
+                    var Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return null;
+                    audioCtx = new Ctx();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(function () {});
+                }
+                return audioCtx;
+            }
+
+            function playTone(freq, duration, type, gain, delay) {
+                var ctxAudio = ensureAudio();
+                if (!ctxAudio) return;
+
+                var startAt = ctxAudio.currentTime + (delay || 0);
+                var osc = ctxAudio.createOscillator();
+                var amp = ctxAudio.createGain();
+
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, startAt);
+                amp.gain.setValueAtTime(0.0001, startAt);
+                amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain || 0.08), startAt + 0.01);
+                amp.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+                osc.connect(amp);
+                amp.connect(ctxAudio.destination);
+                osc.start(startAt);
+                osc.stop(startAt + duration + 0.02);
+            }
+
+            function playClick() { playTone(620, 0.05, 'square', 0.03, 0); }
+            function playCorrect() {
+                playTone(760, 0.06, 'triangle', 0.05, 0);
+                playTone(980, 0.07, 'triangle', 0.045, 0.04);
+                playTone(1180, 0.09, 'triangle', 0.04, 0.09);
+            }
+            function playWrong() {
+                playTone(280, 0.08, 'sawtooth', 0.05, 0);
+                playTone(210, 0.11, 'sawtooth', 0.04, 0.08);
+            }
+            function playGameOver() {
+                playTone(240, 0.1, 'sawtooth', 0.06, 0);
+                playTone(180, 0.12, 'sawtooth', 0.05, 0.1);
+                playTone(140, 0.16, 'triangle', 0.045, 0.22);
+            }
+            function playRevive() {
+                playTone(380, 0.08, 'triangle', 0.05, 0);
+                playTone(520, 0.1, 'triangle', 0.05, 0.08);
+                playTone(700, 0.12, 'triangle', 0.04, 0.17);
+            }
+
+            function shuffle(list) {
+                var arr = list.slice();
+                for (var i = arr.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var t = arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = t;
+                }
+                return arr;
+            }
+
+            function hideOverlay() {
+                overlay.style.display = 'none';
+            }
+
+            function showOverlay(screen, title, message, buttons) {
+                overlay.setAttribute('data-screen', screen);
+                overlay.style.display = 'flex';
+                overlay.innerHTML = '<div><h1>' + title + '</h1><p>' + message + '</p>' + buttons + '</div>';
+                var els = overlay.querySelectorAll('[data-action]');
+                for (var i = 0; i < els.length; i++) {
+                    els[i].addEventListener('click', onOverlayAction);
+                }
+            }
+
+            function updateHud() {
+                scoreLabel.textContent = 'Score: ' + score;
+                livesLabel.textContent = 'Hearts: ' + hearts;
+                reviveLabel.textContent = 'Revives: ' + revivesLeft;
+                var scaleX = Math.max(0, timerLeft / QUESTION_TIME);
+                progressFill.style.transform = 'scaleX(' + scaleX + ')';
+            }
+
+            function stopTimer() {
+                if (timerHandle) {
+                    clearInterval(timerHandle);
+                    timerHandle = null;
+                }
+            }
+
+            function startTimer() {
+                stopTimer();
+                timerLeft = QUESTION_TIME;
+                updateHud();
+                timerHandle = setInterval(function () {
+                    if (state !== 'playing' || locked) return;
+                    timerLeft -= 1;
+                    updateHud();
+                    if (timerLeft <= 0) {
+                        answerQuestion(-1);
+                    }
+                }, 1000);
+            }
+
+            function renderQuestion() {
+                if (currentIndex >= questionPool.length) {
+                    onQuizComplete();
+                    return;
+                }
+
+                locked = false;
+                feedback.textContent = '';
+
+                var item = questionPool[currentIndex];
+                questionMeta.textContent = 'Question ' + (currentIndex + 1) + ' / ' + questionPool.length;
+                questionText.textContent = item.q;
+                choices.innerHTML = '';
+
+                for (var i = 0; i < item.c.length; i++) {
+                    (function (idx) {
+                        var btn = document.createElement('button');
+                        btn.className = 'choiceBtn';
+                        btn.textContent = item.c[idx];
+                        btn.addEventListener('click', function () {
+                            ensureAudio();
+                            playClick();
+                            answerQuestion(idx);
+                        });
+                        choices.appendChild(btn);
+                    })(i);
+                }
+
+                startTimer();
+                updateHud();
+            }
+
+            function answerQuestion(choiceIndex) {
+                if (locked || state !== 'playing') return;
+                locked = true;
+                stopTimer();
+
+                var item = questionPool[currentIndex];
+                var allButtons = choices.querySelectorAll('.choiceBtn');
+                var isCorrect = choiceIndex === item.a;
+
+                for (var i = 0; i < allButtons.length; i++) {
+                    allButtons[i].disabled = true;
+                    if (i === item.a) allButtons[i].classList.add('correct');
+                    if (i === choiceIndex && !isCorrect) allButtons[i].classList.add('wrong');
+                }
+
+                if (isCorrect) {
+                    streak += 1;
+                    var gained = 100 + Math.max(0, timerLeft * 4) + Math.min(80, (streak - 1) * 10);
+                    score += gained;
+                    feedback.textContent = 'Correct! +' + gained;
+                    playCorrect();
+                } else {
+                    streak = 0;
+                    hearts -= 1;
+                    feedback.textContent = choiceIndex === -1 ? 'Time up! -1 heart' : 'Wrong answer! -1 heart';
+                    playWrong();
+                }
+
+                updateHud();
+
+                if (hearts <= 0) {
+                    setTimeout(function () {
+                        onGameOver();
+                    }, 500);
+                    return;
+                }
+
+                setTimeout(function () {
+                    currentIndex += 1;
+                    renderQuestion();
+                }, 650);
+            }
+
+            function onGameOver() {
+                state = 'gameover';
+                stopTimer();
+                playGameOver();
+                var canRevive = revivesLeft > 0;
+                var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
+                    '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                if (canRevive) {
+                    buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
+                }
+                showOverlay('gameover', 'GAME OVER', 'Score: ' + score, buttons);
+                post({ type: 'gameOver', score: score, final: !canRevive });
+            }
+
+            function onQuizComplete() {
+                state = 'complete';
+                stopTimer();
+                var buttons = '<button class="btn btn-primary" data-action="restart">Play Again</button>' +
+                    '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                showOverlay('complete', 'QUIZ COMPLETE', 'Final Score: ' + score, buttons);
+                post({ type: 'gameOver', score: score, final: true });
+            }
+
+            function onOverlayAction(e) {
+                ensureAudio();
+                playClick();
+                var action = e.currentTarget.getAttribute('data-action');
+                if (action === 'start') {
+                    startGame();
+                    post({ type: 'ready' });
+                } else if (action === 'revive') {
+                    post({ type: 'requestRevive', score: score });
+                } else if (action === 'restart') {
+                    startGame();
+                } else if (action === 'leaderboard') {
+                    post({ type: 'viewLeaderboard', score: score });
+                }
+            }
+
+            function startGame() {
+                state = 'playing';
+                score = 0;
+                hearts = START_HEARTS;
+                revivesLeft = MAX_REVIVES;
+                streak = 0;
+                currentIndex = 0;
+                questionPool = shuffle(QUESTIONS).slice(0, 10);
+                hideOverlay();
+                renderQuestion();
+            }
+
+            // Called by React Native after rewarded ad completes.
+            window.dispatchRevive = function (granted) {
+                if (state !== 'gameover') return;
+                if (granted) {
+                    playRevive();
+                    revivesLeft -= 1;
+                    hearts = 1;
+                    streak = 0;
+                    hideOverlay();
+                    state = 'playing';
+                    renderQuestion();
+                } else {
+                    playGameOver();
+                    var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
+                        '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                    showOverlay('gameover', 'GAME OVER', 'Score: ' + score + ' (Ad unavailable)', buttons);
+                }
+                updateHud();
+            };
+
+            startBtn.addEventListener('click', function () {
+                ensureAudio();
+                playClick();
+                startGame();
+                post({ type: 'ready' });
+            });
+
+            leaderboardBtn.addEventListener('click', function () {
+                ensureAudio();
+                playClick();
+                post({ type: 'viewLeaderboard', score: score });
+            });
+
+            document.body.addEventListener('pointerdown', function () {
+                ensureAudio();
+            }, { passive: true });
+
+            updateHud();
+        })();
+    </script>
+</body>
+</html>
