@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Sigabo Dash</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #11355E; overflow: hidden; }
+        #game { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+        #hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-family: sans-serif; color: #FFFFFF; font-weight: bold; font-size: 18px; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+        #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(11,32,53,0.9); font-family: sans-serif; color: #FFFFFF; text-align: center; padding: 24px; }
+        #overlay h1 { font-size: 28px; margin: 0 0 8px; color: #F4A935; }
+        #overlay p { font-size: 16px; margin: 4px 0 20px; }
+        .btn { border: none; border-radius: 24px; padding: 14px 28px; font-size: 16px; font-weight: bold; margin: 6px; min-width: 220px; cursor: pointer; }
+        .btn-primary { background: #F4A935; color: #11355E; }
+        .btn-secondary { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
+        #start p { max-width: 280px; }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <div id="hud">
+        <span id="scoreLabel">Score: 0</span>
+        <span id="livesLabel">Revives left: 1</span>
+    </div>
+    <div id="overlay" style="display:flex;" data-screen="start">
+        <div id="start">
+            <h1>SIGABO DASH</h1>
+            <p>Dodge the interference. Survive as long as you can. Tap or click to jump.</p>
+            <button class="btn btn-primary" id="startBtn">Start Game</button>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var canvas = document.getElementById('game');
+            var ctx = canvas.getContext('2d');
+            var overlay = document.getElementById('overlay');
+            var scoreLabel = document.getElementById('scoreLabel');
+            var livesLabel = document.getElementById('livesLabel');
+            var startBtn = document.getElementById('startBtn');
+
+            var MAX_REVIVES = 2;
+            var GROUND_RATIO = 0.78;
+            var state = 'idle';
+            var score = 0;
+            var revivesLeft = MAX_REVIVES;
+            var obstacles = [];
+            var player = { x: 60, y: 0, vy: 0, size: 32, jumping: false, invulnerableUntil: 0 };
+            var speed = 5;
+            var spawnTimer = 0;
+            var lastTime = 0;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function post(message) {
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify(message));
+                }
+            }
+
+            function groundY() {
+                return canvas.height * GROUND_RATIO;
+            }
+
+            function resetGame() {
+                score = 0;
+                revivesLeft = MAX_REVIVES;
+                obstacles = [];
+                speed = 5;
+                spawnTimer = 0;
+                player.y = groundY() - player.size;
+                player.vy = 0;
+                player.jumping = false;
+                player.invulnerableUntil = 0;
+                scoreLabel.textContent = 'Score: 0';
+                livesLabel.textContent = 'Revives left: ' + revivesLeft;
+            }
+
+            function spawnObstacle() {
+                var h = 28 + Math.random() * 30;
+                obstacles.push({ x: canvas.width + 20, y: groundY() - h, w: 22, h: h });
+            }
+
+            function jump() {
+                if (state !== 'playing') return;
+                if (!player.jumping) {
+                    player.vy = -13;
+                    player.jumping = true;
+                }
+            }
+
+            function showOverlay(screen, title, message, buttons) {
+                overlay.setAttribute('data-screen', screen);
+                overlay.style.display = 'flex';
+                var html = '<div><h1>' + title + '</h1><p>' + message + '</p>' + buttons + '</div>';
+                overlay.innerHTML = html;
+                var els = overlay.querySelectorAll('[data-action]');
+                for (var i = 0; i < els.length; i++) {
+                    els[i].addEventListener('click', onOverlayAction);
+                }
+            }
+
+            function hideOverlay() {
+                overlay.style.display = 'none';
+            }
+
+            function onOverlayAction(e) {
+                var action = e.currentTarget.getAttribute('data-action');
+                if (action === 'start') {
+                    resetGame();
+                    hideOverlay();
+                    state = 'playing';
+                    post({ type: 'ready' });
+                } else if (action === 'revive') {
+                    post({ type: 'requestRevive', score: score });
+                } else if (action === 'restart') {
+                    resetGame();
+                    hideOverlay();
+                    state = 'playing';
+                } else if (action === 'leaderboard') {
+                    post({ type: 'viewLeaderboard', score: score });
+                }
+            }
+
+            startBtn.addEventListener('click', function () {
+                resetGame();
+                hideOverlay();
+                state = 'playing';
+                post({ type: 'ready' });
+            });
+
+            canvas.addEventListener('pointerdown', jump);
+
+            function onGameOver() {
+                state = 'gameover';
+                var canRevive = revivesLeft > 0;
+                var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
+                    '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                if (canRevive) {
+                    buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
+                }
+                showOverlay('gameover', 'GAME OVER', 'Score: ' + score, buttons);
+                post({ type: 'gameOver', score: score, final: !canRevive });
+            }
+
+            // Called by React Native after a rewarded ad finishes.
+            window.dispatchRevive = function (granted) {
+                if (state !== 'gameover') return;
+                if (granted) {
+                    revivesLeft -= 1;
+                    obstacles = [];
+                    player.y = groundY() - player.size;
+                    player.vy = 0;
+                    player.jumping = false;
+                    player.invulnerableUntil = Date.now() + 2000;
+                    livesLabel.textContent = 'Revives left: ' + revivesLeft;
+                    hideOverlay();
+                    state = 'playing';
+                } else {
+                    var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
+                        '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                    showOverlay('gameover', 'GAME OVER', 'Score: ' + score + ' (Ad unavailable)', buttons);
+                }
+            };
+
+            function update(dt) {
+                if (state !== 'playing') return;
+                score += dt * 10;
+                scoreLabel.textContent = 'Score: ' + Math.floor(score);
+                speed = 5 + Math.floor(score / 200);
+
+                player.vy += 42 * dt;
+                player.y += player.vy;
+                var floor = groundY() - player.size;
+                if (player.y >= floor) {
+                    player.y = floor;
+                    player.vy = 0;
+                    player.jumping = false;
+                }
+
+                spawnTimer -= dt;
+                if (spawnTimer <= 0) {
+                    spawnObstacle();
+                    spawnTimer = Math.max(0.6, 1.4 - score / 4000);
+                }
+
+                var invulnerable = Date.now() < player.invulnerableUntil;
+                for (var i = obstacles.length - 1; i >= 0; i--) {
+                    var o = obstacles[i];
+                    o.x -= speed * (dt * 60);
+                    if (o.x + o.w < 0) {
+                        obstacles.splice(i, 1);
+                        continue;
+                    }
+                    if (!invulnerable &&
+                        player.x < o.x + o.w &&
+                        player.x + player.size > o.x &&
+                        player.y < o.y + o.h &&
+                        player.y + player.size > o.y) {
+                        onGameOver();
+                        return;
+                    }
+                }
+            }
+
+            function draw() {
+                ctx.fillStyle = '#11355E';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#0b2035';
+                ctx.fillRect(0, groundY(), canvas.width, canvas.height - groundY());
+
+                var invulnerable = Date.now() < player.invulnerableUntil;
+                ctx.fillStyle = invulnerable ? '#58C9D4' : '#F4A935';
+                ctx.fillRect(player.x, player.y, player.size, player.size);
+
+                ctx.fillStyle = '#FFFFFF';
+                for (var i = 0; i < obstacles.length; i++) {
+                    var o = obstacles[i];
+                    ctx.fillRect(o.x, o.y, o.w, o.h);
+                }
+            }
+
+            function loop(time) {
+                var dt = lastTime ? Math.min(0.05, (time - lastTime) / 1000) : 0;
+                lastTime = time;
+                update(dt);
+                draw();
+                requestAnimationFrame(loop);
+            }
+
+            resetGame();
+            requestAnimationFrame(loop);
+        })();
+    </script>
+</body>
+</html>
