@@ -15,7 +15,9 @@
         .btn { border: none; border-radius: 24px; padding: 14px 28px; font-size: 16px; font-weight: bold; margin: 6px; min-width: 220px; cursor: pointer; }
         .btn-primary { background: #F4A935; color: #11355E; }
         .btn-secondary { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
-        #start p { max-width: 280px; }
+        #start { display: flex; flex-direction: column; align-items: center; }
+        #start p { max-width: 280px; margin: 4px auto 20px; text-align: center; }
+        .title-logo { width: min(82vw, 420px); height: auto; margin: 0 auto 10px; display: block; }
     </style>
 </head>
 <body>
@@ -26,7 +28,7 @@
     </div>
     <div id="overlay" style="display:flex;" data-screen="start">
         <div id="start">
-            <h1>SIGABO DASH</h1>
+            <img class="title-logo" src="https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/logo-sigabo-dash.png?raw=true" alt="Sigabo Dash" />
             <p>Dodge the interference. Survive as long as you can. Tap or click to jump.</p>
             <button class="btn btn-primary" id="startBtn">Start Game</button>
         </div>
@@ -46,10 +48,20 @@
             var score = 0;
             var revivesLeft = MAX_REVIVES;
             var obstacles = [];
-            var player = { x: 60, y: 0, vy: 0, size: 32, jumping: false, invulnerableUntil: 0 };
+            var player = { x: 48, y: 0, vy: 0, w: 72, h: 36, jumping: false, invulnerableUntil: 0 };
             var speed = 5;
             var spawnTimer = 0;
             var lastTime = 0;
+            var bgOffset = 0;
+            var assets = {
+                player: new Image(),
+                obstacle: new Image(),
+                skyline: new Image(),
+            };
+
+            assets.player.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/player-sigabo-runner.svg?raw=true';
+            assets.obstacle.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/obstacle-signal-spike.svg?raw=true';
+            assets.skyline.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/bg-sigabo-skyline.svg?raw=true';
 
             function resize() {
                 canvas.width = window.innerWidth;
@@ -74,7 +86,7 @@
                 obstacles = [];
                 speed = 5;
                 spawnTimer = 0;
-                player.y = groundY() - player.size;
+                player.y = groundY() - player.h;
                 player.vy = 0;
                 player.jumping = false;
                 player.invulnerableUntil = 0;
@@ -84,7 +96,8 @@
 
             function spawnObstacle() {
                 var h = 28 + Math.random() * 30;
-                obstacles.push({ x: canvas.width + 20, y: groundY() - h, w: 22, h: h });
+                var w = Math.max(18, h * 0.58);
+                obstacles.push({ x: canvas.width + 20, y: groundY() - h, w: w, h: h });
             }
 
             function jump() {
@@ -155,7 +168,7 @@
                 if (granted) {
                     revivesLeft -= 1;
                     obstacles = [];
-                    player.y = groundY() - player.size;
+                    player.y = groundY() - player.h;
                     player.vy = 0;
                     player.jumping = false;
                     player.invulnerableUntil = Date.now() + 2000;
@@ -174,10 +187,11 @@
                 score += dt * 10;
                 scoreLabel.textContent = 'Score: ' + Math.floor(score);
                 speed = 5 + Math.floor(score / 200);
+                bgOffset += speed * (dt * 60) * 0.45;
 
                 player.vy += 42 * dt;
                 player.y += player.vy;
-                var floor = groundY() - player.size;
+                var floor = groundY() - player.h;
                 if (player.y >= floor) {
                     player.y = floor;
                     player.vy = 0;
@@ -200,9 +214,9 @@
                     }
                     if (!invulnerable &&
                         player.x < o.x + o.w &&
-                        player.x + player.size > o.x &&
+                        player.x + player.w > o.x &&
                         player.y < o.y + o.h &&
-                        player.y + player.size > o.y) {
+                        player.y + player.h > o.y) {
                         onGameOver();
                         return;
                     }
@@ -213,17 +227,42 @@
                 ctx.fillStyle = '#11355E';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+                if (assets.skyline.complete && assets.skyline.naturalWidth > 0) {
+                    var skyHeight = groundY();
+                    var scaledWidth = assets.skyline.naturalWidth * (skyHeight / assets.skyline.naturalHeight);
+                    var startX = -(bgOffset % scaledWidth);
+                    ctx.drawImage(assets.skyline, startX, 0, scaledWidth, skyHeight);
+                    ctx.drawImage(assets.skyline, startX + scaledWidth, 0, scaledWidth, skyHeight);
+                }
+
                 ctx.fillStyle = '#0b2035';
                 ctx.fillRect(0, groundY(), canvas.width, canvas.height - groundY());
 
                 var invulnerable = Date.now() < player.invulnerableUntil;
-                ctx.fillStyle = invulnerable ? '#58C9D4' : '#F4A935';
-                ctx.fillRect(player.x, player.y, player.size, player.size);
+                if (assets.player.complete && assets.player.naturalWidth > 0) {
+                    var playerPad = 4;
+                    ctx.globalAlpha = invulnerable ? 0.75 : 1;
+                    ctx.drawImage(
+                        assets.player,
+                        player.x - playerPad,
+                        player.y - playerPad,
+                        player.w + playerPad * 2,
+                        player.h + playerPad * 2
+                    );
+                    ctx.globalAlpha = 1;
+                } else {
+                    ctx.fillStyle = invulnerable ? '#58C9D4' : '#F4A935';
+                    ctx.fillRect(player.x, player.y, player.w, player.h);
+                }
 
-                ctx.fillStyle = '#FFFFFF';
                 for (var i = 0; i < obstacles.length; i++) {
                     var o = obstacles[i];
-                    ctx.fillRect(o.x, o.y, o.w, o.h);
+                    if (assets.obstacle.complete && assets.obstacle.naturalWidth > 0) {
+                        ctx.drawImage(assets.obstacle, o.x, o.y, o.w, o.h);
+                    } else {
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(o.x, o.y, o.w, o.h);
+                    }
                 }
             }
 
