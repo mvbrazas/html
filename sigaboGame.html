@@ -53,6 +53,7 @@
             var spawnTimer = 0;
             var lastTime = 0;
             var bgOffset = 0;
+            var audioCtx = null;
             var assets = {
                 player: new Image(),
                 obstacle: new Image(),
@@ -74,6 +75,61 @@
                 if (window.ReactNativeWebView) {
                     window.ReactNativeWebView.postMessage(JSON.stringify(message));
                 }
+            }
+
+            function ensureAudio() {
+                if (!audioCtx) {
+                    var Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return null;
+                    audioCtx = new Ctx();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(function () {});
+                }
+                return audioCtx;
+            }
+
+            function playTone(freq, duration, type, gain, delay) {
+                var ctxAudio = ensureAudio();
+                if (!ctxAudio) return;
+
+                var startAt = ctxAudio.currentTime + (delay || 0);
+                var osc = ctxAudio.createOscillator();
+                var amp = ctxAudio.createGain();
+
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, startAt);
+
+                amp.gain.setValueAtTime(0.0001, startAt);
+                amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain || 0.08), startAt + 0.01);
+                amp.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+                osc.connect(amp);
+                amp.connect(ctxAudio.destination);
+
+                osc.start(startAt);
+                osc.stop(startAt + duration + 0.02);
+            }
+
+            function playJumpSound() {
+                playTone(480, 0.07, 'square', 0.04, 0);
+                playTone(740, 0.08, 'square', 0.03, 0.03);
+            }
+
+            function playGameOverSound() {
+                playTone(280, 0.11, 'sawtooth', 0.06, 0);
+                playTone(210, 0.14, 'sawtooth', 0.05, 0.1);
+                playTone(160, 0.18, 'triangle', 0.04, 0.23);
+            }
+
+            function playReviveSound() {
+                playTone(380, 0.08, 'triangle', 0.05, 0);
+                playTone(520, 0.09, 'triangle', 0.05, 0.08);
+                playTone(700, 0.11, 'triangle', 0.04, 0.16);
+            }
+
+            function playClickSound() {
+                playTone(620, 0.05, 'square', 0.03, 0);
             }
 
             function groundY() {
@@ -105,6 +161,7 @@
                 if (!player.jumping) {
                     player.vy = -13;
                     player.jumping = true;
+                    playJumpSound();
                 }
             }
 
@@ -123,7 +180,13 @@
                 overlay.style.display = 'none';
             }
 
+            function currentScore() {
+                return Math.floor(score);
+            }
+
             function onOverlayAction(e) {
+                ensureAudio();
+                playClickSound();
                 var action = e.currentTarget.getAttribute('data-action');
                 if (action === 'start') {
                     resetGame();
@@ -131,41 +194,48 @@
                     state = 'playing';
                     post({ type: 'ready' });
                 } else if (action === 'revive') {
-                    post({ type: 'requestRevive', score: score });
+                    post({ type: 'requestRevive', score: currentScore() });
                 } else if (action === 'restart') {
                     resetGame();
                     hideOverlay();
                     state = 'playing';
                 } else if (action === 'leaderboard') {
-                    post({ type: 'viewLeaderboard', score: score });
+                    post({ type: 'viewLeaderboard', score: currentScore() });
                 }
             }
 
             startBtn.addEventListener('click', function () {
+                ensureAudio();
+                playClickSound();
                 resetGame();
                 hideOverlay();
                 state = 'playing';
                 post({ type: 'ready' });
             });
 
-            canvas.addEventListener('pointerdown', jump);
+            canvas.addEventListener('pointerdown', function () {
+                ensureAudio();
+                jump();
+            });
 
             function onGameOver() {
                 state = 'gameover';
+                playGameOverSound();
                 var canRevive = revivesLeft > 0;
                 var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
                     '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
                 if (canRevive) {
                     buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
                 }
-                showOverlay('gameover', 'GAME OVER', 'Score: ' + score, buttons);
-                post({ type: 'gameOver', score: score, final: !canRevive });
+                showOverlay('gameover', 'GAME OVER', 'Score: ' + currentScore(), buttons);
+                post({ type: 'gameOver', score: currentScore(), final: !canRevive });
             }
 
             // Called by React Native after a rewarded ad finishes.
             window.dispatchRevive = function (granted) {
                 if (state !== 'gameover') return;
                 if (granted) {
+                    playReviveSound();
                     revivesLeft -= 1;
                     obstacles = [];
                     player.y = groundY() - player.h;
@@ -176,9 +246,10 @@
                     hideOverlay();
                     state = 'playing';
                 } else {
+                    playGameOverSound();
                     var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
                         '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
-                    showOverlay('gameover', 'GAME OVER', 'Score: ' + score + ' (Ad unavailable)', buttons);
+                    showOverlay('gameover', 'GAME OVER', 'Score: ' + currentScore() + ' (Ad unavailable)', buttons);
                 }
             };
 

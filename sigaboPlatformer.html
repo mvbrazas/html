@@ -112,9 +112,9 @@
     </div>
 
     <div id="controls" aria-hidden="true">
-        <button class="ctrl-btn" id="leftBtn">◀</button>
-        <button class="ctrl-btn" id="jumpBtn">▲</button>
-        <button class="ctrl-btn" id="rightBtn">▶</button>
+        <button class="ctrl-btn" id="leftBtn">L</button>
+        <button class="ctrl-btn" id="jumpBtn">JUMP</button>
+        <button class="ctrl-btn" id="rightBtn">R</button>
     </div>
 
     <script>
@@ -137,6 +137,7 @@
 
             var MAX_REVIVES = 2;
             var GROUND_RATIO = 0.84;
+            var SCORE_PER_PICKUP = 10;
             var GRAVITY = 1900;
             var JUMP_VELOCITY = -720;
             var MOVE_ACCEL = 2200;
@@ -169,6 +170,7 @@
             var lastTime = 0;
             var furthestX = 0;
             var controls = { left: false, right: false };
+            var audioCtx = null;
 
             var assets = {
                 player: new Image(),
@@ -191,6 +193,67 @@
                 if (window.ReactNativeWebView) {
                     window.ReactNativeWebView.postMessage(JSON.stringify(message));
                 }
+            }
+
+            function ensureAudio() {
+                if (!audioCtx) {
+                    var Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return null;
+                    audioCtx = new Ctx();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(function () {});
+                }
+                return audioCtx;
+            }
+
+            function playTone(freq, duration, type, gain, delay) {
+                var ctxAudio = ensureAudio();
+                if (!ctxAudio) return;
+
+                var startAt = ctxAudio.currentTime + (delay || 0);
+                var osc = ctxAudio.createOscillator();
+                var amp = ctxAudio.createGain();
+
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, startAt);
+
+                amp.gain.setValueAtTime(0.0001, startAt);
+                amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain || 0.08), startAt + 0.01);
+                amp.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+
+                osc.connect(amp);
+                amp.connect(ctxAudio.destination);
+
+                osc.start(startAt);
+                osc.stop(startAt + duration + 0.02);
+            }
+
+            function playJumpSound() {
+                playTone(440, 0.07, 'square', 0.035, 0);
+                playTone(700, 0.08, 'square', 0.03, 0.03);
+            }
+
+            function playPickupSound() {
+                playTone(920, 0.06, 'square', 0.06, 0);
+                playTone(1180, 0.07, 'square', 0.055, 0.04);
+                playTone(1460, 0.08, 'triangle', 0.05, 0.09);
+            }
+
+            function playGameOverSound() {
+                playTone(260, 0.11, 'sawtooth', 0.06, 0);
+                playTone(190, 0.14, 'sawtooth', 0.05, 0.1);
+                playTone(150, 0.18, 'triangle', 0.04, 0.23);
+            }
+
+            function playReviveSound() {
+                playTone(360, 0.08, 'triangle', 0.05, 0);
+                playTone(500, 0.09, 'triangle', 0.05, 0.08);
+                playTone(680, 0.11, 'triangle', 0.04, 0.16);
+            }
+
+            function playClickSound() {
+                playTone(620, 0.05, 'square', 0.03, 0);
             }
 
             function groundY() {
@@ -344,6 +407,7 @@
                 if (!player.jumping) {
                     player.vy = JUMP_VELOCITY;
                     player.jumping = true;
+                    playJumpSound();
                 }
             }
 
@@ -373,6 +437,8 @@
             }
 
             function onOverlayAction(e) {
+                ensureAudio();
+                playClickSound();
                 var action = e.currentTarget.getAttribute('data-action');
                 if (action === 'start') {
                     resetGame();
@@ -391,6 +457,8 @@
             }
 
             startBtn.addEventListener('click', function () {
+                ensureAudio();
+                playClickSound();
                 resetGame();
                 hideOverlay();
                 state = 'playing';
@@ -398,10 +466,12 @@
             });
 
             canvas.addEventListener('pointerdown', function (e) {
+                ensureAudio();
                 var jumpLimit = canvas.height - controlsReservedHeight() + 14;
                 if (e.clientY < jumpLimit) jump();
             });
             window.addEventListener('keydown', function (e) {
+                ensureAudio();
                 if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
                     e.preventDefault();
                     jump();
@@ -421,10 +491,15 @@
 
             setControl(leftBtn, 'left', true);
             setControl(rightBtn, 'right', true);
-            jumpBtn.addEventListener('pointerdown', function (e) { e.preventDefault(); jump(); });
+            jumpBtn.addEventListener('pointerdown', function (e) {
+                e.preventDefault();
+                ensureAudio();
+                jump();
+            });
 
             function onGameOver() {
                 state = 'gameover';
+                playGameOverSound();
                 var canRevive = revivesLeft > 0;
                 var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
                     '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
@@ -439,6 +514,7 @@
             window.dispatchRevive = function (granted) {
                 if (state !== 'gameover') return;
                 if (granted) {
+                    playReviveSound();
                     revivesLeft -= 1;
                     addRescuePlatform();
                     hazards = hazards.filter(function (h) {
@@ -449,6 +525,7 @@
                     hideOverlay();
                     state = 'playing';
                 } else {
+                    playGameOverSound();
                     var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
                         '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
                     showOverlay('gameover', 'GAME OVER', 'Score: ' + score + ' (Ad unavailable)', buttons);
@@ -507,7 +584,8 @@
                 }
 
                 furthestX = Math.max(furthestX, player.x);
-                score = pickupsCount;
+                // Keep score coin-based, but scale it to be closer to runner scoring pace.
+                score = pickupsCount * SCORE_PER_PICKUP;
                 scoreLabel.textContent = 'Score: ' + score;
 
                 cameraX = clamp(player.x - canvas.width * 0.35, 0, Math.max(0, segmentX - canvas.width * 0.5));
@@ -529,6 +607,7 @@
                     if (intersects(pWorld, pickups[c])) {
                         pickups.splice(c, 1);
                         pickupsCount += 1;
+                        playPickupSound();
                     }
                 }
             }
@@ -611,7 +690,7 @@
                 if (state === 'playing') {
                     ctx.fillStyle = '#FFFFFF';
                     ctx.font = 'bold 14px sans-serif';
-                    ctx.fillText('Touch ◀ ▶ ▲', 14, 80);
+                    ctx.fillText('Touch L R JUMP', 14, 80);
                 }
             }
 
