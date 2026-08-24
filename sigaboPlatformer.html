@@ -195,15 +195,22 @@
 
             function groundY() {
                 var ratioY = canvas.height * GROUND_RATIO;
-                var safeY = controlsTopY() - 28;
+                var safeY = canvas.height - controlsReservedHeight();
                 return Math.max(140, Math.min(ratioY, safeY));
             }
 
-            function controlsTopY() {
-                if (!controlsBar) return canvas.height;
+            function controlsReservedHeight() {
+                if (!controlsBar) return 0;
+
                 var rect = controlsBar.getBoundingClientRect();
-                if (!rect || !isFinite(rect.top)) return canvas.height;
-                return Math.max(140, Math.min(canvas.height, rect.top));
+                var style = window.getComputedStyle(controlsBar);
+                var bottomOffset = parseFloat(style.bottom || '0');
+                var height = rect && isFinite(rect.height) ? rect.height : 0;
+
+                if (!isFinite(bottomOffset)) bottomOffset = 0;
+
+                // Reserve controls height + vertical offset + small safety gap.
+                return Math.max(90, height + bottomOffset + 20);
             }
 
             function floorPlatformY() {
@@ -391,7 +398,8 @@
             });
 
             canvas.addEventListener('pointerdown', function (e) {
-                if (e.clientY < controlsTopY() + 10) jump();
+                var jumpLimit = canvas.height - controlsReservedHeight() + 14;
+                if (e.clientY < jumpLimit) jump();
             });
             window.addEventListener('keydown', function (e) {
                 if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
