@@ -59,9 +59,6 @@
             pointer-events: none;
             z-index: 20;
         }
-        body.in-app #controls {
-            inset: auto 0 calc(86px + env(safe-area-inset-bottom, 0px)) 0;
-        }
         .ctrl-btn {
             position: absolute;
             pointer-events: auto;
@@ -128,12 +125,6 @@
             var leftBtn = document.getElementById('leftBtn');
             var rightBtn = document.getElementById('rightBtn');
             var jumpBtn = document.getElementById('jumpBtn');
-            var controlsBar = document.getElementById('controls');
-
-            // Keep touch controls above the native bottom tab bar inside the app WebView.
-            if (window.ReactNativeWebView) {
-                document.body.classList.add('in-app');
-            }
 
             var MAX_REVIVES = 2;
             var GROUND_RATIO = 0.84;
@@ -257,23 +248,7 @@
             }
 
             function groundY() {
-                var ratioY = canvas.height * GROUND_RATIO;
-                var safeY = canvas.height - controlsReservedHeight();
-                return Math.max(140, Math.min(ratioY, safeY));
-            }
-
-            function controlsReservedHeight() {
-                if (!controlsBar) return 0;
-
-                var rect = controlsBar.getBoundingClientRect();
-                var style = window.getComputedStyle(controlsBar);
-                var bottomOffset = parseFloat(style.bottom || '0');
-                var height = rect && isFinite(rect.height) ? rect.height : 0;
-
-                if (!isFinite(bottomOffset)) bottomOffset = 0;
-
-                // Reserve controls height + vertical offset + small safety gap.
-                return Math.max(90, height + bottomOffset + 20);
+                return canvas.height * GROUND_RATIO;
             }
 
             function floorPlatformY() {
@@ -467,8 +442,7 @@
 
             canvas.addEventListener('pointerdown', function (e) {
                 ensureAudio();
-                var jumpLimit = canvas.height - controlsReservedHeight() + 14;
-                if (e.clientY < jumpLimit) jump();
+                jump();
             });
             window.addEventListener('keydown', function (e) {
                 ensureAudio();
