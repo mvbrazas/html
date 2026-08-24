@@ -193,7 +193,17 @@
             }
 
             function groundY() {
-                return canvas.height * GROUND_RATIO;
+                var playableHeight = Math.max(220, canvas.height - gameplayBottomInset());
+                return playableHeight * GROUND_RATIO;
+            }
+
+            function gameplayBottomInset() {
+                var landscape = window.innerWidth > window.innerHeight;
+                var baseInset = landscape ? 74 : 120;
+                if (window.ReactNativeWebView) {
+                    baseInset += 74;
+                }
+                return baseInset;
             }
 
             function floorPlatformY() {
@@ -381,7 +391,7 @@
             });
 
             canvas.addEventListener('pointerdown', function (e) {
-                if (e.clientY < canvas.height * 0.7) jump();
+                if (e.clientY < canvas.height - gameplayBottomInset() + 24) jump();
             });
             window.addEventListener('keydown', function (e) {
                 if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
