@@ -64,6 +64,70 @@
             assets.obstacle.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/obstacle-signal-spike.svg?raw=true';
             assets.skyline.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/bg-sigabo-skyline.svg?raw=true';
 
+            // House ad billboard rendered onto the scrolling skyline buildings.
+            var HOUSEADS_API = 'http://54.254.84.189:3000/config/houseads';
+            var HOUSEAD_ROTATE_MS = 8000;
+            var houseAd = { image: new Image(), ready: false, url: null };
+            var houseAdPool = [];
+            var houseAdIndex = -1;
+
+            function applyHouseAd(ad) {
+                if (!ad || !ad.image) return;
+                // Preload off-screen; the visible billboard only swaps once this finishes loading.
+                var nextImage = new Image();
+                nextImage.onload = function () {
+                    houseAd.image = nextImage;
+                    houseAd.url = ad.url || null;
+                    houseAd.ready = true;
+                };
+                nextImage.src = ad.image;
+            }
+
+            function nextHouseAd() {
+                if (!houseAdPool.length) return;
+                houseAdIndex = (houseAdIndex + 1) % houseAdPool.length;
+                applyHouseAd(houseAdPool[houseAdIndex]);
+            }
+
+            function loadHouseAd() {
+                fetch(HOUSEADS_API)
+                    .then(function (res) { return res.json(); })
+                    .then(function (json) {
+                        var ads = (json && json.data) || [];
+                        var billboardAds = ads.filter(function (ad) { return ad && (ad.type === 'mrec' || ad.type === 'banner'); });
+                        houseAdPool = billboardAds.length ? billboardAds : ads;
+                        if (!houseAdPool.length) return;
+                        houseAdIndex = Math.floor(Math.random() * houseAdPool.length) - 1;
+                        nextHouseAd();
+                        if (houseAdPool.length > 1) {
+                            setInterval(nextHouseAd, HOUSEAD_ROTATE_MS);
+                        }
+                    })
+                    .catch(function () {});
+            }
+            loadHouseAd();
+
+            function drawBillboard(baseX, skyHeight, tileWidth) {
+                if (!houseAd.ready) return;
+                var panelW = Math.min(160, tileWidth * 0.22);
+                var panelH = panelW * 0.62;
+                var panelX = baseX + tileWidth * 0.62;
+                var panelY = skyHeight * 0.3;
+
+                var img = houseAd.image;
+                var imgRatio = img.naturalWidth / img.naturalHeight;
+                var panelRatio = panelW / panelH;
+                var drawW, drawH;
+                if (imgRatio > panelRatio) {
+                    drawW = panelW;
+                    drawH = drawW / imgRatio;
+                } else {
+                    drawH = panelH;
+                    drawW = drawH * imgRatio;
+                }
+                ctx.drawImage(img, panelX + (panelW - drawW) / 2, panelY + (panelH - drawH) / 2, drawW, drawH);
+            }
+
             function resize() {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
@@ -304,6 +368,8 @@
                     var startX = -(bgOffset % scaledWidth);
                     ctx.drawImage(assets.skyline, startX, 0, scaledWidth, skyHeight);
                     ctx.drawImage(assets.skyline, startX + scaledWidth, 0, scaledWidth, skyHeight);
+                    drawBillboard(startX, skyHeight, scaledWidth);
+                    drawBillboard(startX + scaledWidth, skyHeight, scaledWidth);
                 }
 
                 ctx.fillStyle = '#0b2035';
