@@ -94,6 +94,7 @@
                         var ads = (json && json.data) || [];
                         var billboardAds = ads.filter(function (ad) { return ad && (ad.type === 'mrec' || ad.type === 'banner'); });
                         houseAdPool = billboardAds.length ? billboardAds : ads;
+                        post({ type: 'houseAdsDebug', count: houseAdPool.length });
                         if (!houseAdPool.length) return;
                         houseAdIndex = Math.floor(Math.random() * houseAdPool.length) - 1;
                         nextHouseAd();
@@ -101,7 +102,9 @@
                             setInterval(nextHouseAd, HOUSEAD_ROTATE_MS);
                         }
                     })
-                    .catch(function () {});
+                    .catch(function (err) {
+                        post({ type: 'houseAdsDebug', error: String(err) });
+                    });
             }
             loadHouseAd();
 
