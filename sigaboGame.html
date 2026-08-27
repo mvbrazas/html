@@ -57,12 +57,10 @@
             var assets = {
                 player: new Image(),
                 obstacle: new Image(),
-                skyline: new Image(),
             };
 
             assets.player.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/player-sigabo-runner.svg?raw=true';
             assets.obstacle.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/obstacle-signal-spike.svg?raw=true';
-            assets.skyline.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/bg-sigabo-skyline.svg?raw=true';
 
             // House ad billboard rendered onto the scrolling skyline buildings.
             var HOUSEADS_API = 'http://54.254.84.189:3000/config/houseads';
@@ -107,12 +105,16 @@
             }
             loadHouseAd();
 
-            function drawBillboard(baseX, skyHeight, tileWidth) {
+            function drawBillboardOnBuilding(buildingX, buildingY, buildingWidth, buildingHeight) {
                 if (!houseAd.ready) return;
-                var panelW = Math.min(160, tileWidth * 0.22);
+                var panelW = Math.min(buildingWidth - 12, 130);
                 var panelH = panelW * 0.62;
-                var panelX = baseX + tileWidth * 0.62;
-                var panelY = skyHeight * 0.3;
+                if (panelH > buildingHeight * 0.5) {
+                    panelH = buildingHeight * 0.5;
+                    panelW = panelH / 0.62;
+                }
+                var panelX = buildingX + (buildingWidth - panelW) / 2;
+                var panelY = buildingY + buildingHeight * 0.18;
 
                 var img = houseAd.image;
                 var imgRatio = img.naturalWidth / img.naturalHeight;
@@ -126,6 +128,115 @@
                     drawW = drawH * imgRatio;
                 }
                 ctx.drawImage(img, panelX + (panelW - drawW) / 2, panelY + (panelH - drawH) / 2, drawW, drawH);
+            }
+
+            // Deterministic per-building-index pseudo-random so the skyline never reshuffles as it scrolls.
+            function seededRandom(seed) {
+                var x = Math.sin(seed * 12.9898) * 43758.5453;
+                return x - Math.floor(x);
+            }
+
+            var BUILDING_SLOT_WIDTH = 140;
+            var BUILDING_GAP = 16;
+            var AD_EVERY_N_BUILDINGS = 6;
+            var BUILDING_COLORS = ['#132A46', '#16324F', '#0f2338', '#1A3A5C', '#0c1c30', '#20456b'];
+
+            function drawBuildingWindows(x, y, width, height, litRatio, rand) {
+                var padding = 8;
+                var cols = Math.max(1, Math.floor((width - padding) / 14));
+                var rows = Math.max(1, Math.floor((height - padding * 2) / 16));
+                var cellW = (width - padding) / cols;
+                var cellH = (height - padding * 2) / rows;
+                for (var row = 0; row < rows; row++) {
+                    for (var col = 0; col < cols; col++) {
+                        var seed = rand * 1000 + row * 31 + col * 7;
+                        if (seededRandom(seed) > litRatio) continue;
+                        ctx.fillStyle = 'rgba(244,215,140,0.55)';
+                        ctx.fillRect(
+                            x + padding / 2 + col * cellW + 2,
+                            y + padding + row * cellH + 2,
+                            Math.max(2, cellW - 5),
+                            Math.max(2, cellH - 5)
+                        );
+                    }
+                }
+            }
+
+            function drawRooftop(x, width, y, rand) {
+                if (rand < 0.35) {
+                    // Antenna spire.
+                    var poleX = x + width * (0.3 + rand);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(poleX, y);
+                    ctx.lineTo(poleX, y - 22 - rand * 20);
+                    ctx.stroke();
+                } else if (rand < 0.7) {
+                    // Rooftop utility block.
+                    var blockW = width * 0.32;
+                    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                    ctx.fillRect(x + width * 0.5 - blockW / 2, y - 14, blockW, 14);
+                }
+            }
+
+            function drawSkylineWithAds(offset, skyHeight) {
+                var firstIndex = Math.floor(offset / BUILDING_SLOT_WIDTH) - 1;
+                var lastIndex = Math.ceil((offset + canvas.width) / BUILDING_SLOT_WIDTH) + 1;
+                for (var index = firstIndex; index <= lastIndex; index++) {
+                    var heightRand = seededRandom(index);
+                    var widthRand = seededRandom(index * 3.7 + 11);
+                    var colorRand = seededRandom(index * 5.9 + 23);
+                    var rooftopRand = seededRandom(index * 7.3 + 41);
+                    var litRatio = 0.15 + seededRandom(index * 2.1 + 5) * 0.35;
+
+                    var slotWidth = BUILDING_SLOT_WIDTH - BUILDING_GAP;
+                    var width = slotWidth * (0.6 + widthRand * 0.4);
+                    var height = skyHeight * (0.32 + heightRand * 0.5);
+                    var x = index * BUILDING_SLOT_WIDTH - offset + (slotWidth - width) / 2;
+                    var y = skyHeight - height;
+
+                    ctx.fillStyle = BUILDING_COLORS[Math.floor(colorRand * BUILDING_COLORS.length)];
+                    ctx.fillRect(x, y, width, height);
+                    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                    ctx.fillRect(x, y, width, 5);
+
+                    drawRooftop(x, width, y, rooftopRand);
+                    drawBuildingWindows(x, y, width, height, litRatio, heightRand);
+
+                    var buildingNumber = ((index % AD_EVERY_N_BUILDINGS) + AD_EVERY_N_BUILDINGS) % AD_EVERY_N_BUILDINGS;
+                    if (buildingNumber === 0) {
+                        drawBillboardOnBuilding(x, y, width, height);
+                    }
+                }
+            }
+
+            // Stars use their own slower parallax offset so they drift behind the buildings, not with them.
+            function drawNightSky(offset, skyHeight) {
+                var gradient = ctx.createLinearGradient(0, 0, 0, skyHeight);
+                gradient.addColorStop(0, '#040814');
+                gradient.addColorStop(0.6, '#0b1a33');
+                gradient.addColorStop(1, '#11355E');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                var parallaxOffset = offset * 0.15;
+                var starSpacing = 60;
+                var firstStar = Math.floor(parallaxOffset / starSpacing) - 1;
+                var lastStar = Math.ceil((parallaxOffset + canvas.width) / starSpacing) + 1;
+                var time = Date.now() * 0.002;
+                for (var i = firstStar; i <= lastStar; i++) {
+                    var starX = seededRandom(i * 13.7);
+                    var starY = seededRandom(i * 29.3 + 4);
+                    var x = i * starSpacing - parallaxOffset + starX * starSpacing;
+                    var y = starY * skyHeight * 0.75;
+                    var twinkle = 0.4 + Math.abs(Math.sin(time + i)) * 0.6;
+                    var size = 1 + seededRandom(i * 41.1) * 1.6;
+                    ctx.fillStyle = 'rgba(255,255,255,' + twinkle.toFixed(2) + ')';
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
 
             function resize() {
@@ -359,18 +470,9 @@
             }
 
             function draw() {
-                ctx.fillStyle = '#11355E';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                drawNightSky(bgOffset, groundY());
 
-                if (assets.skyline.complete && assets.skyline.naturalWidth > 0) {
-                    var skyHeight = groundY();
-                    var scaledWidth = assets.skyline.naturalWidth * (skyHeight / assets.skyline.naturalHeight);
-                    var startX = -(bgOffset % scaledWidth);
-                    ctx.drawImage(assets.skyline, startX, 0, scaledWidth, skyHeight);
-                    ctx.drawImage(assets.skyline, startX + scaledWidth, 0, scaledWidth, skyHeight);
-                    drawBillboard(startX, skyHeight, scaledWidth);
-                    drawBillboard(startX + scaledWidth, skyHeight, scaledWidth);
-                }
+                drawSkylineWithAds(bgOffset, groundY());
 
                 ctx.fillStyle = '#0b2035';
                 ctx.fillRect(0, groundY(), canvas.width, canvas.height - groundY());
