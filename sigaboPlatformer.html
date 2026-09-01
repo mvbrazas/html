@@ -137,6 +137,7 @@
 
             var state = 'idle';
             var score = 0;
+            var scoreFinalized = false;
             var pickupsCount = 0;
             var revivesLeft = MAX_REVIVES;
 
@@ -530,6 +531,7 @@
 
             function resetGame() {
                 score = 0;
+                scoreFinalized = false;
                 pickupsCount = 0;
                 revivesLeft = MAX_REVIVES;
                 platforms = [];
@@ -589,6 +591,12 @@
                 overlay.style.display = 'none';
             }
 
+            function finalizeScore() {
+                if (scoreFinalized) return;
+                scoreFinalized = true;
+                post({ type: 'gameOver', score: score, final: true });
+            }
+
             function onOverlayAction(e) {
                 ensureAudio();
                 playClickSound();
@@ -601,10 +609,12 @@
                 } else if (action === 'revive') {
                     post({ type: 'requestRevive', score: score });
                 } else if (action === 'restart') {
+                    if (state === 'gameover') finalizeScore();
                     resetGame();
                     hideOverlay();
                     state = 'playing';
                 } else if (action === 'leaderboard') {
+                    if (state === 'gameover') finalizeScore();
                     post({ type: 'viewLeaderboard', score: score });
                 }
             }
@@ -659,7 +669,8 @@
                     buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
                 }
                 showOverlay('gameover', 'GAME OVER', 'Score: ' + score, buttons);
-                post({ type: 'gameOver', score: score, final: !canRevive });
+                if (canRevive) post({ type: 'gameOver', score: score, final: false });
+                else finalizeScore();
             }
 
             // Called by React Native after rewarded ad completes.
@@ -681,6 +692,7 @@
                     var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
                         '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
                     showOverlay('gameover', 'GAME OVER', 'Score: ' + score + ' (Ad unavailable)', buttons);
+                    finalizeScore();
                 }
             };
 

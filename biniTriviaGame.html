@@ -198,6 +198,7 @@
 
             var state = 'idle';
             var score = 0;
+            var scoreFinalized = false;
             var hearts = START_HEARTS;
             var revivesLeft = MAX_REVIVES;
             var currentIndex = 0;
@@ -420,7 +421,14 @@
                     buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
                 }
                 showOverlay('gameover', 'GAME OVER', 'Score: ' + score, buttons);
-                post({ type: 'gameOver', score: score, final: !canRevive });
+                if (canRevive) post({ type: 'gameOver', score: score, final: false });
+                else finalizeScore();
+            }
+
+            function finalizeScore() {
+                if (scoreFinalized) return;
+                scoreFinalized = true;
+                post({ type: 'gameOver', score: score, final: true });
             }
 
             function onQuizComplete() {
@@ -429,7 +437,7 @@
                 var buttons = '<button class="btn btn-primary" data-action="restart">Play Again</button>' +
                     '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
                 showOverlay('complete', 'QUIZ COMPLETE', 'Final Score: ' + score, buttons);
-                post({ type: 'gameOver', score: score, final: true });
+                finalizeScore();
             }
 
             function onOverlayAction(e) {
@@ -442,8 +450,10 @@
                 } else if (action === 'revive') {
                     post({ type: 'requestRevive', score: score });
                 } else if (action === 'restart') {
+                    if (state === 'gameover') finalizeScore();
                     startGame();
                 } else if (action === 'leaderboard') {
+                    if (state === 'gameover') finalizeScore();
                     post({ type: 'viewLeaderboard', score: score });
                 }
             }
@@ -451,6 +461,7 @@
             function startGame() {
                 state = 'playing';
                 score = 0;
+                scoreFinalized = false;
                 hearts = START_HEARTS;
                 revivesLeft = MAX_REVIVES;
                 streak = 0;
@@ -476,6 +487,7 @@
                     var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
                         '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
                     showOverlay('gameover', 'GAME OVER', 'Score: ' + score + ' (Ad unavailable)', buttons);
+                    finalizeScore();
                 }
                 updateHud();
             };

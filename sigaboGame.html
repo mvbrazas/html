@@ -46,6 +46,7 @@
             var GROUND_RATIO = 0.78;
             var state = 'idle';
             var score = 0;
+            var scoreFinalized = false;
             var revivesLeft = MAX_REVIVES;
             var obstacles = [];
             var player = { x: 48, y: 0, vy: 0, w: 72, h: 36, jumping: false, invulnerableUntil: 0 };
@@ -316,6 +317,7 @@
 
             function resetGame() {
                 score = 0;
+                scoreFinalized = false;
                 revivesLeft = MAX_REVIVES;
                 obstacles = [];
                 speed = 5;
@@ -362,6 +364,12 @@
                 return Math.floor(score);
             }
 
+            function finalizeScore() {
+                if (scoreFinalized) return;
+                scoreFinalized = true;
+                post({ type: 'gameOver', score: currentScore(), final: true });
+            }
+
             function onOverlayAction(e) {
                 ensureAudio();
                 playClickSound();
@@ -374,10 +382,12 @@
                 } else if (action === 'revive') {
                     post({ type: 'requestRevive', score: currentScore() });
                 } else if (action === 'restart') {
+                    if (state === 'gameover') finalizeScore();
                     resetGame();
                     hideOverlay();
                     state = 'playing';
                 } else if (action === 'leaderboard') {
+                    if (state === 'gameover') finalizeScore();
                     post({ type: 'viewLeaderboard', score: currentScore() });
                 }
             }
@@ -406,7 +416,8 @@
                     buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
                 }
                 showOverlay('gameover', 'GAME OVER', 'Score: ' + currentScore(), buttons);
-                post({ type: 'gameOver', score: currentScore(), final: !canRevive });
+                if (canRevive) post({ type: 'gameOver', score: currentScore(), final: false });
+                else finalizeScore();
             }
 
             // Called by React Native after a rewarded ad finishes.
@@ -428,6 +439,7 @@
                     var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
                         '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
                     showOverlay('gameover', 'GAME OVER', 'Score: ' + currentScore() + ' (Ad unavailable)', buttons);
+                    finalizeScore();
                 }
             };
 

@@ -74,8 +74,11 @@
         #screenText { max-width: 510px; margin: 24px auto 18px; font: 700 clamp(14px, 3vw, 18px)/1.4 "Arial Narrow", sans-serif; }
         .briefing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 500px; margin: 0 auto 22px; }
         .briefing div { padding: 10px 4px; border-top: 2px solid var(--signal); background: rgba(244,237,218,.08); font: 800 11px/1.2 "Arial Narrow", sans-serif; }
-        #actionBtn { min-width: 210px; min-height: 52px; padding: 12px 24px; border: 2px solid var(--cream); border-radius: 4px; background: var(--signal); color: var(--ink); font-size: 21px; cursor: pointer; box-shadow: 5px 5px 0 var(--danger); }
-        #actionBtn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--danger); }
+        #screenActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .screen-action { min-width: 180px; min-height: 52px; padding: 12px 20px; border: 2px solid var(--cream); border-radius: 4px; background: transparent; color: var(--cream); font-size: 18px; cursor: pointer; }
+        .screen-action.primary { background: var(--signal); color: var(--ink); box-shadow: 5px 5px 0 var(--danger); }
+        .screen-action:active { transform: translate(3px, 3px); }
+        .screen-action.primary:active { box-shadow: 2px 2px 0 var(--danger); }
         #controls { position: fixed; z-index: 10; inset: 0; pointer-events: none; }
         .control { position: absolute; pointer-events: auto; display: grid; place-items: center; width: 64px; height: 58px; padding: 0; border: 2px solid var(--line); border-radius: 6px; color: var(--cream); background: rgba(7,16,20,.62); user-select: none; -webkit-user-select: none; touch-action: none; }
         .control.active { background: rgba(243,189,49,.78); color: var(--ink); border-color: var(--cream); }
@@ -115,7 +118,7 @@
             <h1 id="screenTitle">SIGABO<span>Breakpoint</span></h1>
             <p id="screenText">Eight years inside. One chance at freedom. Break through the prison yard, neutralize the armored warden, and reach extraction.</p>
             <div class="briefing" id="briefing"><div>MOVE<br />A / D</div><div>JUMP<br />W / SPACE</div><div>FIRE<br />J / K</div></div>
-            <button id="actionBtn">BEGIN MISSION</button>
+            <div id="screenActions"><button class="screen-action primary" data-action="start">BEGIN MISSION</button></div>
         </div>
     </div>
 
@@ -144,16 +147,23 @@
         var screenTitle = document.getElementById('screenTitle');
         var screenText = document.getElementById('screenText');
         var briefing = document.getElementById('briefing');
-        var actionBtn = document.getElementById('actionBtn');
+        var screenActions = document.getElementById('screenActions');
 
         var WORLD_WIDTH = 6200;
         var GROUND_Y = 540;
         var GRAVITY = 1900;
+        var MAX_AD_REVIVES = 2;
+        var GUARD_SCORE = 10;
+        var HEAVY_SCORE = 20;
+        var PICKUP_SCORE = 10;
+        var BOSS_SCORE = 100;
         var state = 'title';
         var lastTime = 0;
         var cameraX = 0;
         var score = 0;
+        var scoreFinalized = false;
         var lives = 3;
+        var adRevivesLeft = MAX_AD_REVIVES;
         var shake = 0;
         var flash = 0;
         var audio = null;
@@ -211,8 +221,8 @@
 
         function addEnemy(x, type) {
             var stats = type === 'heavy'
-                ? { width: 50, height: 72, health: 6, speed: 55, points: 600 }
-                : { width: 34, height: 60, health: 2, speed: 85, points: 200 };
+                ? { width: 50, height: 72, health: 6, speed: 55, points: HEAVY_SCORE }
+                : { width: 34, height: 60, health: 2, speed: 85, points: GUARD_SCORE };
             enemies.push({
                 x: x, y: GROUND_Y - stats.height, width: stats.width, height: stats.height,
                 health: stats.health, maxHealth: stats.health, speed: stats.speed, points: stats.points,
@@ -222,7 +232,7 @@
         }
 
         function resetGame() {
-            score = 0; lives = 3; cameraX = 0; shake = 0; flash = 0; extractionTimer = 0;
+            score = 0; scoreFinalized = false; lives = 3; adRevivesLeft = MAX_AD_REVIVES; cameraX = 0; shake = 0; flash = 0; extractionTimer = 0;
             bullets = []; enemyBullets = []; enemies = []; particles = []; pickups = [];
             platforms = [
                 { x: 680, y: 435, width: 260, height: 22 },
@@ -264,6 +274,18 @@
             post({ type: 'gameStart', game: 'sigabo-breakpoint' });
         }
 
+        function setScreenActions(actions) {
+            screenActions.innerHTML = actions.map(function (action) {
+                return '<button class="screen-action' + (action.primary ? ' primary' : '') + '" data-action="' + action.name + '">' + action.label + '</button>';
+            }).join('');
+        }
+
+        function finalizeScore() {
+            if (scoreFinalized) return;
+            scoreFinalized = true;
+            post({ type: 'gameOver', score: score, final: true });
+        }
+
         function showEnd(victory) {
             state = victory ? 'victory' : 'gameover';
             screen.hidden = false;
@@ -273,9 +295,67 @@
                 ? 'The yard is clear and extraction is secured. Final score: ' + String(score).padStart(6, '0') + '.'
                 : 'Gabo was overwhelmed before reaching extraction. Final score: ' + String(score).padStart(6, '0') + '.';
             briefing.hidden = true;
-            actionBtn.textContent = 'RUN IT AGAIN';
+            var actions = [];
+            if (!victory && adRevivesLeft > 0) {
+                actions.push({ name: 'revive', label: 'WATCH AD TO REVIVE', primary: true });
+            }
+            actions.push({ name: 'restart', label: 'RUN IT AGAIN', primary: victory });
+            actions.push({ name: 'leaderboard', label: 'VIEW LEADERBOARD' });
+            setScreenActions(actions);
             bossHud.classList.remove('visible');
             post({ type: 'gameEnd', game: 'sigabo-breakpoint', score: score, victory: victory });
+            if (victory || adRevivesLeft <= 0) finalizeScore();
+            else post({ type: 'gameOver', score: score, final: false });
+        }
+
+        function revivePlayer() {
+            adRevivesLeft--;
+            lives = 1;
+            player.health = 100;
+            player.x = Math.max(100, Math.min(WORLD_WIDTH - 300, cameraX + 120));
+            player.y = GROUND_Y - player.height;
+            player.previousY = player.y;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.invulnerable = 2.5;
+            bullets = [];
+            enemyBullets = [];
+            screen.hidden = true;
+            state = 'playing';
+            lastTime = performance.now();
+            updateHud();
+            beep(540, .18, 'square', .05);
+        }
+
+        window.dispatchRevive = function (granted) {
+            if (state !== 'gameover') return;
+            if (granted) {
+                revivePlayer();
+                return;
+            }
+
+            screenText.textContent = 'Ad unavailable. Final score: ' + String(score).padStart(6, '0') + '.';
+            setScreenActions([
+                { name: 'restart', label: 'RUN IT AGAIN', primary: true },
+                { name: 'leaderboard', label: 'VIEW LEADERBOARD' }
+            ]);
+            finalizeScore();
+        };
+
+        function onScreenAction(event) {
+            var button = event.target.closest('[data-action]');
+            if (!button) return;
+            var action = button.getAttribute('data-action');
+            if (action === 'start' || action === 'restart') {
+                if (state === 'gameover') finalizeScore();
+                briefing.hidden = false;
+                startGame();
+            } else if (action === 'revive') {
+                post({ type: 'requestRevive', score: score });
+            } else if (action === 'leaderboard') {
+                if (state === 'gameover') finalizeScore();
+                post({ type: 'viewLeaderboard', score: score });
+            }
         }
 
         function updateHud() {
@@ -458,7 +538,7 @@
                     bullet.life = 0; boss.health--; boss.hitFlash = .08; shake = 2;
                     burst(bullet.x, bullet.y, '#f3bd31', 5);
                     if (boss.health <= 0) {
-                        boss.dead = true; score += 5000; shake = 18; flash = .28;
+                        boss.dead = true; score += BOSS_SCORE; shake = 18; flash = .28;
                         burst(boss.x + boss.width / 2, boss.y + boss.height / 2, '#dc4c36', 55);
                         bossHud.classList.remove('visible');
                         missionEl.textContent = 'OBJECTIVE · REACH EXTRACTION';
@@ -480,7 +560,7 @@
                 pickup.bob += dt * 3;
                 var hitbox = { x: pickup.x, y: pickup.y + Math.sin(pickup.bob) * 6, width: pickup.width, height: pickup.height };
                 if (rectsOverlap(player, hitbox)) {
-                    pickup.taken = true; score += 300;
+                    pickup.taken = true; score += PICKUP_SCORE;
                     if (pickup.type === 'health') player.health = Math.min(100, player.health + 55);
                     else { player.weapon = 'SPREAD'; player.spreadAmmo = 42; }
                     burst(pickup.x + 15, pickup.y + 15, '#55d6a7', 16);
@@ -681,7 +761,7 @@
         });
         addEventListener('blur', function () { keys.left = keys.right = keys.fire = false; });
         addEventListener('resize', resize);
-        actionBtn.addEventListener('click', startGame);
+        screenActions.addEventListener('click', onScreenAction);
 
         resize(); resetGame(); requestAnimationFrame(frame);
     }());
