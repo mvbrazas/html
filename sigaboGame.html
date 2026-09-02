@@ -2,13 +2,13 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Sigabo Dash</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #11355E; overflow: hidden; }
+        html, body { --game-header-clearance: 56px; margin: 0; padding: 0; width: 100%; height: 100%; background: #11355E; overflow: hidden; }
         #game { display: block; width: 100%; height: 100%; touch-action: manipulation; }
-        #hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: sans-serif; color: #FFFFFF; font-weight: bold; font-size: 18px; pointer-events: auto; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+        #hud { position: fixed; top: max(12px, calc(var(--game-header-clearance) + env(safe-area-inset-top, 0px))); left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: sans-serif; color: #FFFFFF; font-weight: bold; font-size: 18px; pointer-events: auto; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
         #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(11,32,53,0.9); font-family: sans-serif; color: #FFFFFF; text-align: center; padding: 24px; }
         #overlay h1 { font-size: 28px; margin: 0 0 8px; color: #F4A935; }
         #overlay p { font-size: 16px; margin: 4px 0 20px; }

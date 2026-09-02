@@ -16,14 +16,14 @@
             --line: rgba(244, 237, 218, 0.28);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--ink); }
+        html, body { --game-header-clearance: 56px; width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--ink); }
         body { font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; color: var(--cream); }
         button { font: inherit; letter-spacing: 0; }
         #game { display: block; width: 100%; height: 100%; touch-action: none; }
         #hud {
             position: fixed;
             z-index: 5;
-            top: max(10px, env(safe-area-inset-top));
+            top: max(10px, calc(var(--game-header-clearance) + env(safe-area-inset-top, 0px)));
             left: 12px;
             right: 12px;
             display: grid;
@@ -43,7 +43,7 @@
         #bossHud {
             position: fixed;
             z-index: 5;
-            top: max(72px, calc(env(safe-area-inset-top) + 64px));
+            top: max(72px, calc(var(--game-header-clearance) + env(safe-area-inset-top, 0px) + 54px));
             left: 50%;
             width: min(76vw, 520px);
             transform: translateX(-50%);
@@ -86,10 +86,10 @@
         .native-action { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 4px; color: var(--cream); background: rgba(7,16,20,.62); font-size: 18px; font-weight: 900; cursor: pointer; text-shadow: none; }
         .native-action svg { width: 20px; height: 20px; fill: currentColor; }
         .native-action:active { transform: scale(.94); }
-        #leftBtn { left: 14px; bottom: max(16px, env(safe-area-inset-bottom)); }
-        #rightBtn { left: 86px; bottom: max(16px, env(safe-area-inset-bottom)); }
-        #jumpBtn { right: 94px; bottom: max(16px, env(safe-area-inset-bottom)); }
-        #fireBtn { right: 14px; bottom: max(16px, env(safe-area-inset-bottom)); width: 72px; height: 72px; border-color: rgba(220,76,54,.8); background: rgba(142,40,30,.78); }
+        #leftBtn { left: 14px; bottom: calc(32px + env(safe-area-inset-bottom, 0px)); }
+        #rightBtn { left: 86px; bottom: calc(32px + env(safe-area-inset-bottom, 0px)); }
+        #jumpBtn { right: 94px; bottom: calc(32px + env(safe-area-inset-bottom, 0px)); }
+        #fireBtn { right: 14px; bottom: calc(32px + env(safe-area-inset-bottom, 0px)); width: 72px; height: 72px; border-color: rgba(220,76,54,.8); background: rgba(142,40,30,.78); }
         #jumpBtn::after, #fireBtn::after { content: attr(aria-label); position: absolute; bottom: -13px; font: 900 9px "Arial Narrow", sans-serif; color: var(--cream); text-shadow: 1px 1px #071014; }
         #rotate { display: none; position: fixed; z-index: 30; inset: 0; align-items: center; justify-content: center; padding: 28px; background: var(--ink); text-align: center; font: 900 22px/1.3 "Arial Narrow", sans-serif; }
         @media (orientation: portrait) and (max-width: 700px) { #rotate { display: flex; } }
