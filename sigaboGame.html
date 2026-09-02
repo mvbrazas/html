@@ -18,14 +18,14 @@
         #start { display: flex; flex-direction: column; align-items: center; }
         #start p { max-width: 280px; margin: 4px auto 20px; text-align: center; }
         .title-logo { width: min(82vw, 420px); height: auto; margin: 0 auto 10px; display: block; }
-        .native-action { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.32); border-radius: 17px; color: #FFFFFF; background: rgba(17,53,94,0.5); font-size: 18px; font-weight: bold; cursor: pointer; text-shadow: none; }
+        .native-action { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.32); border-radius: 17px; color: #FFFFFF; background: rgba(17,53,94,0.5); cursor: pointer; text-shadow: none; }
         .native-action svg { width: 20px; height: 20px; fill: currentColor; }
         .native-action:active { transform: scale(0.94); }
     </style>
 </head>
 <body>
     <canvas id="game"></canvas>
-    <div id="hud" class="native-actions" aria-label="Game actions">
+    <div id="hud">
         <button class="native-action" data-native-action="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
         <span id="scoreLabel">Score: 0</span>
         <span id="livesLabel">Revives left: 1</span>
@@ -36,6 +36,8 @@
             <img class="title-logo" src="https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/logo-sigabo-dash.png?raw=true" alt="Sigabo Dash" />
             <p>Dodge the interference. Survive as long as you can. Tap or click to jump.</p>
             <button class="btn btn-primary" id="startBtn">Start Game</button>
+            <button class="btn btn-secondary" data-action="back">Back</button>
+            <button class="btn btn-secondary" data-action="leaderboard">Trophies</button>
         </div>
     </div>
     <script>
@@ -46,7 +48,6 @@
             var scoreLabel = document.getElementById('scoreLabel');
             var livesLabel = document.getElementById('livesLabel');
             var startBtn = document.getElementById('startBtn');
-            var nativeActions = document.querySelector('.native-actions');
 
             var MAX_REVIVES = 2;
             var GROUND_RATIO = 0.78;
@@ -387,6 +388,9 @@
                     post({ type: 'ready' });
                 } else if (action === 'revive') {
                     post({ type: 'requestRevive', score: currentScore() });
+                } else if (action === 'back') {
+                    if (state === 'gameover') finalizeScore();
+                    post({ type: 'goBack', score: currentScore() });
                 } else if (action === 'restart') {
                     if (state === 'gameover') finalizeScore();
                     resetGame();
@@ -407,7 +411,12 @@
                 post({ type: 'ready' });
             });
 
-            nativeActions.addEventListener('click', function (event) {
+            var initialActions = overlay.querySelectorAll('[data-action]');
+            for (var i = 0; i < initialActions.length; i++) {
+                initialActions[i].addEventListener('click', onOverlayAction);
+            }
+
+            document.addEventListener('click', function (event) {
                 var button = event.target.closest('[data-native-action]');
                 if (!button) return;
                 ensureAudio();
@@ -426,7 +435,8 @@
                 playGameOverSound();
                 var canRevive = revivesLeft > 0;
                 var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
-                    '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                    '<button class="btn btn-secondary" data-action="back">Back</button>' +
+                    '<button class="btn btn-secondary" data-action="leaderboard">Trophies</button>';
                 if (canRevive) {
                     buttons = '<button class="btn btn-primary" data-action="revive">Watch Ad to Revive</button>' + buttons;
                 }
@@ -452,7 +462,8 @@
                 } else {
                     playGameOverSound();
                     var buttons = '<button class="btn btn-secondary" data-action="restart">Restart</button>' +
-                        '<button class="btn btn-secondary" data-action="leaderboard">View Leaderboard</button>';
+                        '<button class="btn btn-secondary" data-action="back">Back</button>' +
+                        '<button class="btn btn-secondary" data-action="leaderboard">Trophies</button>';
                     showOverlay('gameover', 'GAME OVER', 'Score: ' + currentScore() + ' (Ad unavailable)', buttons);
                     finalizeScore();
                 }
