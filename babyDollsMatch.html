@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#e94372" />
+    <title>Baby Dolls: Spotlight Match</title>
+    <style>
+        :root {
+            --night: #21142f;
+            --plum: #43214f;
+            --pink: #e94372;
+            --coral: #ff755f;
+            --gold: #ffd166;
+            --mint: #50d6b1;
+            --paper: #fff7f1;
+            --ink: #321a3a;
+            --line: rgba(255,255,255,.4);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--night); }
+        body { color: var(--paper); font-family: "Avenir Next Condensed", "Arial Narrow", sans-serif; letter-spacing: 0; user-select: none; -webkit-user-select: none; }
+        button { font: inherit; letter-spacing: 0; }
+        #app { position: relative; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(circle at 50% -12%, #ffbcce 0 13%, transparent 38%), linear-gradient(155deg, #5b245c 0%, #251631 52%, #171322 100%); }
+        #app::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .16; background-image: linear-gradient(30deg, transparent 46%, #fff 47% 48%, transparent 49%), linear-gradient(-30deg, transparent 46%, #fff 47% 48%, transparent 49%); background-size: 54px 54px; }
+        #stageLights { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+        .beam { position: absolute; top: -15%; width: 19%; height: 85%; opacity: .12; background: linear-gradient(180deg, #fff, transparent); clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%); transform-origin: top; animation: sweep 7s ease-in-out infinite alternate; }
+        .beam:nth-child(1) { left: 2%; transform: rotate(-14deg); }
+        .beam:nth-child(2) { right: 3%; transform: rotate(13deg); animation-delay: -3s; }
+        @keyframes sweep { to { transform: rotate(8deg); opacity: .22; } }
+        #gameShell { position: relative; z-index: 2; width: min(100%, 560px); height: 100%; margin: 0 auto; display: grid; grid-template-rows: auto auto 1fr auto; padding: max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom)); }
+        #topbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; min-height: 54px; }
+        .stat:last-child { text-align: right; }
+        .label { display: block; color: #ffc7d7; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .value { display: block; font-size: clamp(18px, 5vw, 27px); font-weight: 1000; line-height: 1; text-shadow: 2px 2px 0 rgba(0,0,0,.3); }
+        #brand { text-align: center; line-height: .8; color: var(--paper); font-weight: 1000; font-size: clamp(19px, 5vw, 27px); text-transform: uppercase; }
+        #brand span { display: block; margin-top: 7px; color: var(--gold); font-size: .48em; }
+        #mission { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 8px 10px 10px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+        #objectiveText { min-width: 0; font-weight: 900; font-size: 13px; }
+        #progressTrack { height: 7px; margin-top: 4px; border-radius: 2px; overflow: hidden; background: rgba(0,0,0,.28); }
+        #progressBar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--mint), var(--gold)); transition: width 250ms ease; }
+        #targetIcon { width: 36px; height: 36px; display: grid; place-items: center; border: 2px solid var(--paper); border-radius: 6px; overflow: hidden; background: var(--pink); box-shadow: 3px 3px 0 var(--night); }
+        #targetIcon img { width: 100%; height: 100%; object-fit: cover; }
+        #boardWrap { display: grid; place-items: center; min-height: 0; padding: 10px 0; }
+        #board { --cell: min(calc((100vw - 72px) / 8), calc((100vh - 210px) / 8), 62px); position: relative; display: grid; grid-template-columns: repeat(8, var(--cell)); grid-template-rows: repeat(8, var(--cell)); gap: 3px; padding: 7px; border: 2px solid rgba(255,255,255,.58); border-radius: 8px; background: rgba(24,12,35,.72); box-shadow: 0 15px 35px rgba(0,0,0,.38), inset 0 0 24px rgba(255,255,255,.08); touch-action: none; }
+        .tile { position: relative; width: var(--cell); height: var(--cell); padding: 0; border: 0; border-radius: 7px; background: rgba(255,255,255,.08); cursor: pointer; transform: translateZ(0); transition: transform 120ms ease, opacity 120ms ease, filter 120ms ease; }
+        .tile::before { content: ""; position: absolute; inset: 8%; border-radius: inherit; background: var(--tile-color); box-shadow: inset 0 4px 0 rgba(255,255,255,.32), inset 0 -5px 0 rgba(0,0,0,.15), 0 3px 0 rgba(0,0,0,.18); }
+        .tile img { position: absolute; inset: 13%; width: 74%; height: 74%; object-fit: cover; border-radius: 50%; filter: drop-shadow(1px 2px 0 rgba(0,0,0,.28)); }
+        .tile[data-type="0"] { --tile-color: #ed4778; }
+        .tile[data-type="1"] { --tile-color: #ff8a55; }
+        .tile[data-type="2"] { --tile-color: #f6c84c; }
+        .tile[data-type="3"] { --tile-color: #42c7a2; }
+        .tile[data-type="4"] { --tile-color: #48a9db; }
+        .tile[data-type="5"] { --tile-color: #8b67d7; }
+        .tile[data-type="6"] { --tile-color: #e76bd8; }
+        .tile.selected { transform: scale(.87); filter: brightness(1.25); z-index: 2; }
+        .tile.matched { transform: scale(.18) rotate(14deg); opacity: 0; }
+        .tile.hint { animation: hint 650ms ease-in-out 2; }
+        @keyframes hint { 50% { transform: scale(.84); filter: brightness(1.4); } }
+        .tile[data-special="row"]::before { background: repeating-linear-gradient(0deg, var(--tile-color) 0 7px, #fff 8px 10px); }
+        .tile[data-special="column"]::before { background: repeating-linear-gradient(90deg, var(--tile-color) 0 7px, #fff 8px 10px); }
+        .tile[data-special="burst"]::before { border-radius: 50%; background: radial-gradient(circle, #fff 0 11%, var(--tile-color) 13% 45%, #fff 47% 52%, var(--tile-color) 54%); }
+        #footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+        #status { min-width: 0; color: #ffd5df; font-size: 12px; font-weight: 800; }
+        #hintBtn { width: 42px; height: 38px; border: 1px solid var(--line); border-radius: 5px; color: var(--paper); background: rgba(255,255,255,.1); font-size: 21px; cursor: pointer; }
+        #overlay { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(25,11,34,.9); }
+        #overlay[hidden] { display: none; }
+        .overlay-inner { width: min(92vw, 480px); text-align: center; }
+        .kicker { margin: 0 0 6px; color: var(--gold); font-weight: 1000; font-size: 12px; text-transform: uppercase; }
+        h1 { margin: 0; font-size: clamp(44px, 13vw, 76px); line-height: .82; text-transform: uppercase; color: var(--paper); text-shadow: 5px 5px 0 #bd315b; }
+        h1 span { display: block; margin-top: 14px; color: var(--gold); font-size: .42em; text-shadow: 2px 2px 0 var(--night); }
+        #overlayText { margin: 24px auto 18px; max-width: 410px; color: #f9dce5; font-size: 16px; line-height: 1.4; }
+        #overlayActions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .action { min-width: 190px; min-height: 50px; padding: 10px 18px; border: 2px solid var(--paper); border-radius: 5px; color: var(--paper); background: transparent; font-size: 17px; font-weight: 1000; cursor: pointer; }
+        .action.primary { color: var(--ink); background: var(--gold); box-shadow: 5px 5px 0 var(--pink); }
+        .action:active { transform: translate(3px, 3px); box-shadow: none; }
+        #toast { position: fixed; z-index: 15; left: 50%; top: 46%; transform: translate(-50%, -50%) scale(.7); padding: 8px 15px; border: 2px solid #fff; border-radius: 5px; opacity: 0; color: #fff; background: var(--pink); font-size: 24px; font-weight: 1000; pointer-events: none; transition: opacity 140ms, transform 140ms; }
+        #toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        @media (orientation: landscape) and (max-height: 620px) {
+            #gameShell { width: min(100%, 940px); grid-template-columns: 230px 1fr; grid-template-rows: auto 1fr auto; column-gap: 18px; }
+            #topbar { grid-column: 1; grid-row: 1; grid-template-columns: 1fr 1fr; align-content: center; }
+            #brand { grid-column: 1 / -1; grid-row: 1; margin-bottom: 36px; }
+            #mission { grid-column: 1; grid-row: 2; display: flex; flex-direction: column; justify-content: center; border: 0; }
+            #targetIcon { width: 52px; height: 52px; font-size: 30px; }
+            #boardWrap { grid-column: 2; grid-row: 1 / 4; }
+            #footer { grid-column: 1; grid-row: 3; }
+            #board { --cell: min(calc((100vh - 88px) / 8), calc((100vw - 290px) / 8), 62px); }
+        }
+        @media (max-height: 590px) and (orientation: portrait) { #board { --cell: min(calc((100vw - 34px) / 8), 43px); } #mission { padding-block: 5px; } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="stageLights"><i class="beam"></i><i class="beam"></i></div>
+    <main id="gameShell">
+        <header id="topbar">
+            <div class="stat"><span class="label">Score</span><span class="value" id="score">0</span></div>
+            <div id="brand">Baby Dolls<span>Spotlight Match</span></div>
+            <div class="stat"><span class="label">Moves</span><span class="value" id="moves">20</span></div>
+        </header>
+        <section id="mission">
+            <div><div id="objectiveText">Collect 20 hearts</div><div id="progressTrack"><div id="progressBar"></div></div></div>
+            <div id="targetIcon">♥</div>
+        </section>
+        <section id="boardWrap"><div id="board" role="grid" aria-label="Match three board"></div></section>
+        <footer id="footer"><span id="status">Swap adjacent symbols to make a match.</span><button id="hintBtn" aria-label="Show hint" title="Show hint">✦</button></footer>
+    </main>
+    <div id="toast"></div>
+    <section id="overlay">
+        <div class="overlay-inner">
+            <p class="kicker" id="overlayKicker">StarPop rehearsal call</p>
+            <h1 id="overlayTitle">Baby Dolls<span>Spotlight Match</span></h1>
+            <p id="overlayText">Build matching sets, trigger stage effects, and clear all three rehearsal goals before the moves run out.</p>
+            <div id="overlayActions"><button class="action primary" data-action="start">START REHEARSAL</button></div>
+        </div>
+    </section>
+</div>
+<script>
+(function () {
+    'use strict';
+
+    var ROWS = 8;
+    var COLS = 8;
+    var TYPES = 7;
+    var MAX_REVIVES = 1;
+    var SYMBOLS = [
+        { name: 'Arianne', image: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Arianne.png', color: '#ed4778' },
+        { name: 'Chole', image: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Chole.png', color: '#42c76f' },
+        { name: 'Eriel', image: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Eriel.png', color: '#48a9db' },
+        { name: 'Ina', image: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Ina.png', color: '#ff8a55' },
+        { name: 'Jelai', image: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Jelai.png', color: '#8b67d7' },
+        { name: 'Johaira', image: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Johaira.png', color: '#f6c84c' },
+        { name: 'Juby', image: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Juby.png', color: '#e34d52' }
+    ];
+    var LEVELS = [
+        { moves: 20, targetType: 0, target: 20, label: 'Collect 20 Arianne tiles' },
+        { moves: 18, targetType: 1, target: 24, label: 'Collect 24 Chole tiles' },
+        { moves: 16, targetType: 4, target: 28, label: 'Collect 28 Jelai tiles' }
+    ];
+
+    var boardEl = document.getElementById('board');
+    var scoreEl = document.getElementById('score');
+    var movesEl = document.getElementById('moves');
+    var objectiveText = document.getElementById('objectiveText');
+    var progressBar = document.getElementById('progressBar');
+    var targetIcon = document.getElementById('targetIcon');
+    var statusEl = document.getElementById('status');
+    var hintBtn = document.getElementById('hintBtn');
+    var overlay = document.getElementById('overlay');
+    var overlayKicker = document.getElementById('overlayKicker');
+    var overlayTitle = document.getElementById('overlayTitle');
+    var overlayText = document.getElementById('overlayText');
+    var overlayActions = document.getElementById('overlayActions');
+    var toast = document.getElementById('toast');
+
+    var board = [];
+    var selected = null;
+    var busy = false;
+    var state = 'title';
+    var levelIndex = 0;
+    var moves = LEVELS[0].moves;
+    var collected = 0;
+    var score = 0;
+    var combo = 0;
+    var revivesLeft = MAX_REVIVES;
+    var scoreFinalized = false;
+    var touchStart = null;
+    var audio = null;
+    var musicStarted = false;
+    var musicTracks = [
+        'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Ikembot_Mo.mp3',
+        'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/babydolls/Oooh_Lala_Baby.mp3'
+    ];
+    var musicTrackIndex = 0;
+    var backgroundMusic = new Audio(musicTracks[musicTrackIndex]);
+    backgroundMusic.loop = false;
+    backgroundMusic.preload = 'auto';
+    backgroundMusic.volume = .32;
+
+    function post(message) {
+        if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage(JSON.stringify(message));
+        }
+    }
+
+    function tone(frequency, duration, delay) {
+        try {
+            if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+            var oscillator = audio.createOscillator();
+            var gain = audio.createGain();
+            oscillator.type = 'triangle';
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(.035, audio.currentTime + (delay || 0));
+            gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + (delay || 0) + duration);
+            oscillator.connect(gain); gain.connect(audio.destination);
+            oscillator.start(audio.currentTime + (delay || 0));
+            oscillator.stop(audio.currentTime + (delay || 0) + duration);
+        } catch (error) { /* Audio is optional. */ }
+    }
+
+    function playBackgroundMusic() {
+        musicStarted = true;
+        var playPromise = backgroundMusic.play();
+        if (playPromise && playPromise.catch) playPromise.catch(function () { /* A later interaction retries playback. */ });
+    }
+
+    function playNextMusicTrack() {
+        musicTrackIndex = (musicTrackIndex + 1) % musicTracks.length;
+        backgroundMusic.src = musicTracks[musicTrackIndex];
+        backgroundMusic.currentTime = 0;
+        playBackgroundMusic();
+    }
+
+    function tile(type) { return { type: type, special: null }; }
+    function randomType() { return Math.floor(Math.random() * TYPES); }
+    function at(row, col) { return row >= 0 && row < ROWS && col >= 0 && col < COLS ? board[row][col] : null; }
+
+    function buildBoard() {
+        board = [];
+        for (var row = 0; row < ROWS; row++) {
+            board[row] = [];
+            for (var col = 0; col < COLS; col++) {
+                var type;
+                do {
+                    type = randomType();
+                } while ((col >= 2 && board[row][col - 1].type === type && board[row][col - 2].type === type) ||
+                    (row >= 2 && board[row - 1][col].type === type && board[row - 2][col].type === type));
+                board[row][col] = tile(type);
+            }
+        }
+        if (!findValidSwap()) buildBoard();
+    }
+
+    function renderBoard(matched) {
+        boardEl.innerHTML = '';
+        for (var row = 0; row < ROWS; row++) {
+            for (var col = 0; col < COLS; col++) {
+                var item = board[row][col];
+                var button = document.createElement('button');
+                button.className = 'tile';
+                button.dataset.row = row;
+                button.dataset.col = col;
+                if (item) {
+                    var symbol = SYMBOLS[item.type];
+                    button.dataset.type = item.type;
+                    button.dataset.symbol = symbol.name;
+                    button.style.setProperty('--tile-color', symbol.color);
+                    var image = document.createElement('img');
+                    image.src = symbol.image;
+                    image.alt = '';
+                    button.appendChild(image);
+                    if (item.special) button.dataset.special = item.special;
+                }
+                if (selected && selected.row === row && selected.col === col) button.classList.add('selected');
+                if (matched && matched.has(row + ':' + col)) button.classList.add('matched');
+                button.setAttribute('role', 'gridcell');
+                button.setAttribute('aria-label', item ? SYMBOLS[item.type].name + (item.special ? ' ' + item.special : '') : 'empty');
+                boardEl.appendChild(button);
+            }
+        }
+    }
+
+    function updateHud() {
+        var level = LEVELS[levelIndex];
+        scoreEl.textContent = score;
+        movesEl.textContent = moves;
+        objectiveText.textContent = 'Stage ' + (levelIndex + 1) + ' · ' + level.label + ' (' + Math.min(collected, level.target) + '/' + level.target + ')';
+        progressBar.style.width = Math.min(100, collected / level.target * 100) + '%';
+        targetIcon.style.background = SYMBOLS[level.targetType].color;
+        targetIcon.innerHTML = '<img src="' + SYMBOLS[level.targetType].image + '" alt="' + SYMBOLS[level.targetType].name + '">';
+    }
+
+    function swap(a, b) {
+        var temp = board[a.row][a.col];
+        board[a.row][a.col] = board[b.row][b.col];
+        board[b.row][b.col] = temp;
+    }
+
+    function adjacent(a, b) { return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1; }
+
+    function findMatches() {
+        var found = new Set();
+        var groups = [];
+        var row, col, end;
+        for (row = 0; row < ROWS; row++) {
+            col = 0;
+            while (col < COLS) {
+                end = col + 1;
+                while (end < COLS && at(row, col) && at(row, end) && at(row, col).type === at(row, end).type) end++;
+                if (end - col >= 3) {
+                    var horizontal = [];
+                    for (var x = col; x < end; x++) { found.add(row + ':' + x); horizontal.push({ row: row, col: x }); }
+                    groups.push({ cells: horizontal, direction: 'row' });
+                }
+                col = end;
+            }
+        }
+        for (col = 0; col < COLS; col++) {
+            row = 0;
+            while (row < ROWS) {
+                end = row + 1;
+                while (end < ROWS && at(row, col) && at(end, col) && at(row, col).type === at(end, col).type) end++;
+                if (end - row >= 3) {
+                    var vertical = [];
+                    for (var y = row; y < end; y++) { found.add(y + ':' + col); vertical.push({ row: y, col: col }); }
+                    groups.push({ cells: vertical, direction: 'column' });
+                }
+                row = end;
+            }
+        }
+        return { cells: found, groups: groups };
+    }
+
+    function expandSpecials(matches) {
+        var expanded = new Set(matches.cells);
+        var pending = Array.from(expanded);
+        while (pending.length) {
+            var parts = pending.pop().split(':');
+            var row = Number(parts[0]);
+            var col = Number(parts[1]);
+            var item = at(row, col);
+            if (!item || !item.special) continue;
+            var add = [];
+            if (item.special === 'row') for (var x = 0; x < COLS; x++) add.push(row + ':' + x);
+            if (item.special === 'column') for (var y = 0; y < ROWS; y++) add.push(y + ':' + col);
+            if (item.special === 'burst') for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) if (at(row + dy, col + dx)) add.push((row + dy) + ':' + (col + dx));
+            add.forEach(function (key) { if (!expanded.has(key)) { expanded.add(key); pending.push(key); } });
+        }
+        matches.cells = expanded;
+    }
+
+    function chooseSpecial(matches, preferred) {
+        var creation = null;
+        matches.groups.forEach(function (group) {
+            if (group.cells.length < 4) return;
+            var candidate = group.cells.find(function (cell) { return preferred && cell.row === preferred.row && cell.col === preferred.col; }) || group.cells[Math.floor(group.cells.length / 2)];
+            var special = group.cells.length >= 5 ? 'burst' : (group.direction === 'row' ? 'row' : 'column');
+            if (!creation || special === 'burst') creation = { row: candidate.row, col: candidate.col, special: special, type: at(candidate.row, candidate.col).type };
+        });
+        return creation;
+    }
+
+    function wait(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
+    async function clearMatches(matches, preferred) {
+        expandSpecials(matches);
+        var creation = chooseSpecial(matches, preferred);
+        if (creation) matches.cells.delete(creation.row + ':' + creation.col);
+        renderBoard(matches.cells);
+        await wait(170);
+        var level = LEVELS[levelIndex];
+        matches.cells.forEach(function (key) {
+            var parts = key.split(':');
+            var row = Number(parts[0]);
+            var col = Number(parts[1]);
+            var item = at(row, col);
+            if (!item) return;
+            if (item.type === level.targetType) collected++;
+            board[row][col] = null;
+            score += 2 * Math.max(1, combo);
+        });
+        if (creation) board[creation.row][creation.col] = { type: creation.type, special: creation.special };
+        combo++;
+        if (combo > 1) showToast('COMBO ×' + combo);
+        tone(360 + combo * 70, .09, 0);
+        collapse();
+        renderBoard();
+        updateHud();
+        await wait(180);
+    }
+
+    function collapse() {
+        for (var col = 0; col < COLS; col++) {
+            var write = ROWS - 1;
+            for (var row = ROWS - 1; row >= 0; row--) {
+                if (board[row][col]) { board[write][col] = board[row][col]; if (write !== row) board[row][col] = null; write--; }
+            }
+            while (write >= 0) { board[write][col] = tile(randomType()); write--; }
+        }
+    }
+
+    async function resolveBoard(preferred) {
+        combo = 1;
+        var matches = findMatches();
+        while (matches.cells.size) {
+            await clearMatches(matches, preferred);
+            preferred = null;
+            matches = findMatches();
+        }
+        if (!findValidSwap()) { statusEl.textContent = 'Shuffling the formation…'; buildBoard(); renderBoard(); }
+        updateHud();
+        await evaluateStage();
+    }
+
+    async function attemptSwap(a, b) {
+        if (busy || state !== 'playing' || !adjacent(a, b)) return;
+        busy = true;
+        selected = null;
+        swap(a, b);
+        renderBoard();
+        await wait(120);
+        var matches = findMatches();
+        if (!matches.cells.size) {
+            swap(a, b);
+            renderBoard();
+            statusEl.textContent = 'That swap needs a matching set.';
+            tone(120, .1, 0);
+            busy = false;
+            return;
+        }
+        moves--;
+        statusEl.textContent = 'Formation locked. Keep the chain going!';
+        await resolveBoard(b);
+        busy = false;
+    }
+
+    function findValidSwap() {
+        for (var row = 0; row < ROWS; row++) for (var col = 0; col < COLS; col++) {
+            var from = { row: row, col: col };
+            var neighbors = [{ row: row, col: col + 1 }, { row: row + 1, col: col }];
+            for (var index = 0; index < neighbors.length; index++) {
+                var to = neighbors[index];
+                if (!at(to.row, to.col)) continue;
+                swap(from, to);
+                var valid = findMatches().cells.size > 0;
+                swap(from, to);
+                if (valid) return [from, to];
+            }
+        }
+        return null;
+    }
+
+    function showHint() {
+        if (busy || state !== 'playing') return;
+        var hint = findValidSwap();
+        if (!hint) return;
+        hint.forEach(function (cell) {
+            var element = boardEl.querySelector('[data-row="' + cell.row + '"][data-col="' + cell.col + '"]');
+            if (element) { element.classList.remove('hint'); void element.offsetWidth; element.classList.add('hint'); }
+        });
+    }
+
+    function showToast(text) {
+        toast.textContent = text;
+        toast.classList.add('show');
+        setTimeout(function () { toast.classList.remove('show'); }, 700);
+    }
+
+    function setOverlay(kicker, title, subtitle, text, actions) {
+        overlayKicker.textContent = kicker;
+        overlayTitle.innerHTML = title + '<span>' + subtitle + '</span>';
+        overlayText.textContent = text;
+        overlayActions.innerHTML = actions.map(function (action) {
+            return '<button class="action' + (action.primary ? ' primary' : '') + '" data-action="' + action.name + '">' + action.label + '</button>';
+        }).join('');
+        overlay.hidden = false;
+    }
+
+    function beginLevel(index) {
+        levelIndex = index;
+        moves = LEVELS[index].moves;
+        collected = 0;
+        selected = null;
+        busy = false;
+        buildBoard();
+        renderBoard();
+        updateHud();
+        overlay.hidden = true;
+        state = 'playing';
+        statusEl.textContent = 'Stage ' + (index + 1) + ': the formation is live.';
+        post({ type: 'ready', level: index + 1 });
+    }
+
+    function startRun() {
+        score = 0;
+        scoreFinalized = false;
+        revivesLeft = MAX_REVIVES;
+        beginLevel(0);
+        post({ type: 'gameStart', game: 'baby-dolls-spotlight-match' });
+    }
+
+    function finalizeScore() {
+        if (scoreFinalized) return;
+        scoreFinalized = true;
+        post({ type: 'gameOver', score: score, final: true });
+    }
+
+    async function evaluateStage() {
+        var level = LEVELS[levelIndex];
+        if (collected >= level.target) {
+            state = 'stageclear';
+            score += 20 + moves;
+            updateHud();
+            tone(520, .12, 0); tone(660, .12, .12); tone(820, .18, .24);
+            if (levelIndex < LEVELS.length - 1) {
+                setOverlay('Rehearsal cleared', 'STAGE ' + (levelIndex + 1), 'Spotlight secured', 'Score ' + score + '. The next formation is ready.', [{ name: 'next', label: 'NEXT STAGE', primary: true }]);
+            } else {
+                state = 'complete';
+                finalizeScore();
+                setOverlay('Show complete', 'ENCORE!', 'All three stages cleared', 'Final score: ' + score + '. The Baby Dolls formation is stage-ready.', [
+                    { name: 'restart', label: 'PLAY AGAIN', primary: true },
+                    { name: 'leaderboard', label: 'VIEW LEADERBOARD' }
+                ]);
+            }
+            return;
+        }
+        if (moves <= 0) {
+            state = 'gameover';
+            var canRevive = revivesLeft > 0;
+            var actions = [];
+            if (canRevive) actions.push({ name: 'revive', label: 'WATCH AD · +5 MOVES', primary: true });
+            actions.push({ name: 'restart', label: 'START OVER' });
+            actions.push({ name: 'leaderboard', label: 'VIEW LEADERBOARD' });
+            setOverlay('Moves exhausted', 'HOLD!', 'The formation needs work', 'Score: ' + score + '. You collected ' + collected + ' of ' + level.target + ' targets.', actions);
+            if (canRevive) post({ type: 'gameOver', score: score, final: false });
+            else finalizeScore();
+        }
+    }
+
+    window.dispatchRevive = function (granted) {
+        if (state !== 'gameover') return;
+        playBackgroundMusic();
+        if (granted) {
+            revivesLeft--;
+            moves += 5;
+            state = 'playing';
+            overlay.hidden = true;
+            updateHud();
+            statusEl.textContent = 'Five encore moves added.';
+            showToast('+5 MOVES');
+            tone(620, .12, 0); tone(820, .16, .12);
+        } else {
+            finalizeScore();
+            setOverlay('Ad unavailable', 'HOLD!', 'Score saved', 'Your final score is ' + score + '.', [
+                { name: 'restart', label: 'START OVER', primary: true },
+                { name: 'leaderboard', label: 'VIEW LEADERBOARD' }
+            ]);
+        }
+    };
+
+    function onAction(event) {
+        var button = event.target.closest('[data-action]');
+        if (!button) return;
+        var action = button.dataset.action;
+        if (action === 'start') startRun();
+        else if (action === 'next') beginLevel(levelIndex + 1);
+        else if (action === 'revive') { backgroundMusic.pause(); post({ type: 'requestRevive', score: score }); }
+        else if (action === 'restart') { if (state === 'gameover') finalizeScore(); startRun(); }
+        else if (action === 'leaderboard') { if (state === 'gameover') finalizeScore(); post({ type: 'viewLeaderboard', score: score }); }
+    }
+
+    function tileFromEvent(event) {
+        var element = event.target.closest('.tile');
+        return element ? { row: Number(element.dataset.row), col: Number(element.dataset.col) } : null;
+    }
+
+    boardEl.addEventListener('click', function (event) {
+        var cell = tileFromEvent(event);
+        if (!cell || busy || state !== 'playing') return;
+        if (!selected) { selected = cell; renderBoard(); return; }
+        if (selected.row === cell.row && selected.col === cell.col) { selected = null; renderBoard(); return; }
+        if (adjacent(selected, cell)) attemptSwap(selected, cell);
+        else { selected = cell; renderBoard(); }
+    });
+    boardEl.addEventListener('pointerdown', function (event) { touchStart = tileFromEvent(event); });
+    boardEl.addEventListener('pointerup', function (event) {
+        var end = tileFromEvent(event);
+        if (touchStart && end && (touchStart.row !== end.row || touchStart.col !== end.col)) attemptSwap(touchStart, end);
+        touchStart = null;
+    });
+    overlayActions.addEventListener('click', function (event) {
+        playBackgroundMusic();
+        onAction(event);
+    });
+    hintBtn.addEventListener('click', showHint);
+    backgroundMusic.addEventListener('ended', playNextMusicTrack);
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) backgroundMusic.pause();
+        else if (musicStarted) playBackgroundMusic();
+    });
+
+    buildBoard();
+    renderBoard();
+    updateHud();
+}());
+</script>
+</body>
+</html>
