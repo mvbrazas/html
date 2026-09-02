@@ -141,6 +141,7 @@
         .btn-primary { background: #2dd4bf; color: #0a4f59; }
         .btn-secondary { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
         .native-action { flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(167, 244, 240, 0.32); border-radius: 999px; color: #FFFFFF; background: rgba(8, 78, 92, 0.36); font-size: 18px; font-weight: bold; cursor: pointer; }
+        .native-action svg { width: 20px; height: 20px; fill: currentColor; }
         .native-action:active { transform: scale(0.94); }
         @media (max-width: 420px) {
             #questionText { font-size: 19px; }
@@ -153,11 +154,11 @@
 <body>
     <div id="app">
         <div id="hud" class="native-actions" aria-label="Game actions">
-            <button class="native-action" data-native-action="back" aria-label="Back">‹</button>
+            <button class="native-action" data-native-action="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
             <span class="pill" id="scoreLabel">Score: 0</span>
             <span class="pill" id="livesLabel">Hearts: 3</span>
             <span class="pill" id="reviveLabel">Revives: 1</span>
-            <button class="native-action" data-native-action="trophy" aria-label="Trophy">🏆</button>
+            <button class="native-action" data-native-action="trophy" aria-label="Trophy"><svg viewBox="0 0 24 24"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
         </div>
 
         <div id="quizCard">
