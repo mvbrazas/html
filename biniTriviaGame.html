@@ -140,18 +140,24 @@
         }
         .btn-primary { background: #2dd4bf; color: #0a4f59; }
         .btn-secondary { background: transparent; color: #FFFFFF; border: 2px solid #FFFFFF; }
+        .native-action { flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(167, 244, 240, 0.32); border-radius: 999px; color: #FFFFFF; background: rgba(8, 78, 92, 0.36); font-size: 18px; font-weight: bold; cursor: pointer; }
+        .native-action:active { transform: scale(0.94); }
         @media (max-width: 420px) {
             #questionText { font-size: 19px; }
+            #hud { gap: 6px; font-size: 12px; }
+            .pill { padding: 7px 9px; }
             .choiceBtn { font-size: 15px; }
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <div id="hud">
+        <div id="hud" class="native-actions" aria-label="Game actions">
+            <button class="native-action" data-native-action="back" aria-label="Back">‹</button>
             <span class="pill" id="scoreLabel">Score: 0</span>
             <span class="pill" id="livesLabel">Hearts: 3</span>
             <span class="pill" id="reviveLabel">Revives: 1</span>
+            <button class="native-action" data-native-action="trophy" aria-label="Trophy">🏆</button>
         </div>
 
         <div id="quizCard">
@@ -219,6 +225,7 @@
             var feedback = document.getElementById('feedback');
             var progressFill = document.getElementById('progressFill');
             var leaderboardBtn = document.getElementById('leaderboardBtn');
+            var nativeActions = document.querySelector('.native-actions');
 
             var audioCtx = null;
 
@@ -503,6 +510,15 @@
                 ensureAudio();
                 playClick();
                 post({ type: 'viewLeaderboard', score: score });
+            });
+
+            nativeActions.addEventListener('click', function (event) {
+                var button = event.target.closest('[data-native-action]');
+                if (!button) return;
+                ensureAudio();
+                playClick();
+                if (button.dataset.nativeAction === 'back') post({ type: 'goBack', score: score });
+                else if (button.dataset.nativeAction === 'trophy') post({ type: 'viewLeaderboard', score: score });
             });
 
             document.body.addEventListener('pointerdown', function () {

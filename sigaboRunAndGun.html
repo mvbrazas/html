@@ -27,10 +27,10 @@
             left: 12px;
             right: 12px;
             display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            grid-template-columns: auto 1fr auto 1fr auto;
             align-items: start;
             gap: 12px;
-            pointer-events: none;
+            pointer-events: auto;
             text-shadow: 2px 2px 0 #071014;
         }
         .hud-block { min-width: 0; }
@@ -83,6 +83,8 @@
         .control { position: absolute; pointer-events: auto; display: grid; place-items: center; width: 64px; height: 58px; padding: 0; border: 2px solid var(--line); border-radius: 6px; color: var(--cream); background: rgba(7,16,20,.62); user-select: none; -webkit-user-select: none; touch-action: none; }
         .control.active { background: rgba(243,189,49,.78); color: var(--ink); border-color: var(--cream); }
         .control svg { width: 29px; height: 29px; fill: currentColor; }
+        .native-action { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 4px; color: var(--cream); background: rgba(7,16,20,.62); font-size: 18px; font-weight: 900; cursor: pointer; text-shadow: none; }
+        .native-action:active { transform: scale(.94); }
         #leftBtn { left: 14px; bottom: max(16px, env(safe-area-inset-bottom)); }
         #rightBtn { left: 86px; bottom: max(16px, env(safe-area-inset-bottom)); }
         #jumpBtn { right: 94px; bottom: max(16px, env(safe-area-inset-bottom)); }
@@ -105,10 +107,12 @@
 </head>
 <body>
     <canvas id="game" aria-label="Sigabo Breakpoint run and gun game"></canvas>
-    <div id="hud">
+    <div id="hud" class="native-actions" aria-label="Game actions">
+        <button class="native-action" data-native-action="back" aria-label="Back">‹</button>
         <div class="hud-block"><span class="hud-label">SCORE</span><span class="hud-value" id="score">000000</span></div>
         <div id="mission">MISSION 01 · THE YARD</div>
         <div class="hud-block"><span class="hud-label">GABO</span><span class="hud-value" id="lives">● ● ●</span><div id="healthTrack"><div id="healthBar"></div></div></div>
+        <button class="native-action" data-native-action="trophy" aria-label="Trophy">🏆</button>
     </div>
     <div id="bossHud"><div id="bossName">ARMORED WARDEN</div><div id="bossTrack"><div id="bossBar"></div></div></div>
 
@@ -148,6 +152,7 @@
         var screenText = document.getElementById('screenText');
         var briefing = document.getElementById('briefing');
         var screenActions = document.getElementById('screenActions');
+        var nativeActions = document.querySelector('.native-actions');
 
         var WORLD_WIDTH = 6200;
         var GROUND_Y = 540;
@@ -762,6 +767,12 @@
         addEventListener('blur', function () { keys.left = keys.right = keys.fire = false; });
         addEventListener('resize', resize);
         screenActions.addEventListener('click', onScreenAction);
+        nativeActions.addEventListener('click', function (event) {
+            var button = event.target.closest('[data-native-action]');
+            if (!button) return;
+            if (button.dataset.nativeAction === 'back') post({ type: 'goBack', score: score });
+            else if (button.dataset.nativeAction === 'trophy') post({ type: 'viewLeaderboard', score: score });
+        });
 
         resize(); resetGame(); requestAnimationFrame(frame);
     }());

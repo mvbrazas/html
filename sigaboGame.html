@@ -8,7 +8,7 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #11355E; overflow: hidden; }
         #game { display: block; width: 100%; height: 100%; touch-action: manipulation; }
-        #hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; font-family: sans-serif; color: #FFFFFF; font-weight: bold; font-size: 18px; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+        #hud { position: fixed; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: sans-serif; color: #FFFFFF; font-weight: bold; font-size: 18px; pointer-events: auto; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
         #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(11,32,53,0.9); font-family: sans-serif; color: #FFFFFF; text-align: center; padding: 24px; }
         #overlay h1 { font-size: 28px; margin: 0 0 8px; color: #F4A935; }
         #overlay p { font-size: 16px; margin: 4px 0 20px; }
@@ -18,13 +18,17 @@
         #start { display: flex; flex-direction: column; align-items: center; }
         #start p { max-width: 280px; margin: 4px auto 20px; text-align: center; }
         .title-logo { width: min(82vw, 420px); height: auto; margin: 0 auto 10px; display: block; }
+        .native-action { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.32); border-radius: 17px; color: #FFFFFF; background: rgba(17,53,94,0.5); font-size: 18px; font-weight: bold; cursor: pointer; text-shadow: none; }
+        .native-action:active { transform: scale(0.94); }
     </style>
 </head>
 <body>
     <canvas id="game"></canvas>
-    <div id="hud">
+    <div id="hud" class="native-actions" aria-label="Game actions">
+        <button class="native-action" data-native-action="back" aria-label="Back">‹</button>
         <span id="scoreLabel">Score: 0</span>
         <span id="livesLabel">Revives left: 1</span>
+        <button class="native-action" data-native-action="trophy" aria-label="Trophy">🏆</button>
     </div>
     <div id="overlay" style="display:flex;" data-screen="start">
         <div id="start">
@@ -41,6 +45,7 @@
             var scoreLabel = document.getElementById('scoreLabel');
             var livesLabel = document.getElementById('livesLabel');
             var startBtn = document.getElementById('startBtn');
+            var nativeActions = document.querySelector('.native-actions');
 
             var MAX_REVIVES = 2;
             var GROUND_RATIO = 0.78;
@@ -399,6 +404,15 @@
                 hideOverlay();
                 state = 'playing';
                 post({ type: 'ready' });
+            });
+
+            nativeActions.addEventListener('click', function (event) {
+                var button = event.target.closest('[data-native-action]');
+                if (!button) return;
+                ensureAudio();
+                playClickSound();
+                if (button.dataset.nativeAction === 'back') post({ type: 'goBack', score: currentScore() });
+                else if (button.dataset.nativeAction === 'trophy') post({ type: 'viewLeaderboard', score: currentScore() });
             });
 
             canvas.addEventListener('pointerdown', function () {
