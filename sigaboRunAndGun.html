@@ -204,6 +204,8 @@
             }
         }
 
+        post({ type: 'orientation', orientation: 'landscape' });
+
         function beep(frequency, duration, type, volume) {
             try {
                 if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();

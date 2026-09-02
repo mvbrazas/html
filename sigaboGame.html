@@ -263,6 +263,8 @@
                 }
             }
 
+            post({ type: 'orientation', orientation: 'portrait' });
+
             function ensureAudio() {
                 if (!audioCtx) {
                     var Ctx = window.AudioContext || window.webkitAudioContext;

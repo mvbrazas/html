@@ -189,6 +189,8 @@
         }
     }
 
+    post({ type: 'orientation', orientation: 'portrait' });
+
     function tone(frequency, duration, delay) {
         try {
             if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
