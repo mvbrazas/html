@@ -33,7 +33,7 @@
     </div>
     <div id="overlay" style="display:flex;" data-screen="start">
         <div id="start">
-            <img class="title-logo" src="https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/logo-sigabo-dash.png?raw=true" alt="Sigabo Dash" />
+            <img class="title-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/logo-sigabo-dash.png" alt="Sigabo Dash" />
             <p>Dodge the interference. Survive as long as you can. Tap or click to jump.</p>
             <button class="btn btn-primary" id="startBtn">Start Game</button>
             <button class="btn btn-secondary" data-action="back">Back</button>
@@ -56,7 +56,7 @@
             var scoreFinalized = false;
             var revivesLeft = MAX_REVIVES;
             var obstacles = [];
-            var player = { x: 48, y: 0, vy: 0, w: 72, h: 36, jumping: false, invulnerableUntil: 0 };
+            var player = { x: 48, y: 0, vy: 0, w: 68, h: 52, jumping: false, invulnerableUntil: 0, rideTime: 0, landTimer: 0 };
             var speed = 5;
             var spawnTimer = 0;
             var lastTime = 0;
@@ -67,8 +67,24 @@
                 obstacle: new Image(),
             };
 
-            assets.player.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/player-sigabo-runner.svg?raw=true';
-            assets.obstacle.src = 'https://github.com/mvbrazas/images/blob/main/joinnow-app/sigabo/assets/obstacle-signal-spike.svg?raw=true';
+            assets.player.src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/player-sigabo-moto.png';
+            assets.obstacle.src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/obstacles-sigabo.png';
+
+            // Rider sheet: 7 cells of 272x268, tyre contact line 263px down each cell.
+            var MOTO_CELL_W = 272;
+            var MOTO_CELL_H = 268;
+            var MOTO_BASELINE = 263;
+            var MOTO_SCALE = 0.34;
+            var MOTO_FRAMES = { ride: [0, 1], launch: 2, air: 3, descend: 4, land: 5, crash: 6 };
+            // Obstacle atlas is packed tight, so each hazard carries its own source rect.
+            var OBSTACLE_FRAMES = [
+                { x: 5, y: 31, w: 105, h: 224 },
+                { x: 120, y: 57, w: 98, h: 198 },
+                { x: 228, y: 31, w: 123, h: 224 },
+                { x: 361, y: 8, w: 119, h: 247 },
+                { x: 490, y: 81, w: 120, h: 174 },
+                { x: 620, y: 166, w: 170, h: 89 }
+            ];
 
             // House ad billboard rendered onto the scrolling skyline buildings.
             var HOUSEADS_API = 'http://54.254.84.189:3000/config/houseads';
@@ -335,20 +351,31 @@
                 player.vy = 0;
                 player.jumping = false;
                 player.invulnerableUntil = 0;
+                player.rideTime = 0;
+                player.landTimer = 0;
                 scoreLabel.textContent = 'Score: 0';
                 livesLabel.textContent = 'Revives left: ' + revivesLeft;
             }
 
+            var MAX_OBSTACLE_WIDTH = 60;
+
             function spawnObstacle() {
-                var h = 28 + Math.random() * 30;
-                var w = Math.max(18, h * 0.58);
-                obstacles.push({ x: canvas.width + 20, y: groundY() - h, w: w, h: h });
+                var index = Math.floor(Math.random() * OBSTACLE_FRAMES.length);
+                var frame = OBSTACLE_FRAMES[index];
+                var h = 34 + Math.random() * 28;
+                var w = frame.w * (h / frame.h);
+                // Wide hazards get shrunk instead of clipped, so a jump can always clear them.
+                if (w > MAX_OBSTACLE_WIDTH) {
+                    h *= MAX_OBSTACLE_WIDTH / w;
+                    w = MAX_OBSTACLE_WIDTH;
+                }
+                obstacles.push({ x: canvas.width + 20, y: groundY() - h, w: w, h: h, frame: index });
             }
 
             function jump() {
                 if (state !== 'playing') return;
                 if (!player.jumping) {
-                    player.vy = -13;
+                    player.vy = -15;
                     player.jumping = true;
                     playJumpSound();
                 }
@@ -457,6 +484,7 @@
                     player.y = groundY() - player.h;
                     player.vy = 0;
                     player.jumping = false;
+                    player.landTimer = 0;
                     player.invulnerableUntil = Date.now() + 2000;
                     livesLabel.textContent = 'Revives left: ' + revivesLeft;
                     hideOverlay();
@@ -480,8 +508,11 @@
 
                 player.vy += 42 * dt;
                 player.y += player.vy;
+                player.rideTime += dt * speed;
+                player.landTimer -= dt;
                 var floor = groundY() - player.h;
                 if (player.y >= floor) {
+                    if (player.jumping) player.landTimer = 0.14;
                     player.y = floor;
                     player.vy = 0;
                     player.jumping = false;
@@ -512,6 +543,17 @@
                 }
             }
 
+            function riderFrameIndex() {
+                if (state === 'gameover') return MOTO_FRAMES.crash;
+                if (player.jumping) {
+                    if (player.vy < -4) return MOTO_FRAMES.launch;
+                    if (player.vy < 2) return MOTO_FRAMES.air;
+                    return MOTO_FRAMES.descend;
+                }
+                if (player.landTimer > 0) return MOTO_FRAMES.land;
+                return MOTO_FRAMES.ride[Math.floor(player.rideTime * 3) % MOTO_FRAMES.ride.length];
+            }
+
             function draw() {
                 drawNightSky(bgOffset, groundY());
 
@@ -522,14 +564,15 @@
 
                 var invulnerable = Date.now() < player.invulnerableUntil;
                 if (assets.player.complete && assets.player.naturalWidth > 0) {
-                    var playerPad = 4;
+                    var drawW = MOTO_CELL_W * MOTO_SCALE;
+                    var drawH = MOTO_CELL_H * MOTO_SCALE;
                     ctx.globalAlpha = invulnerable ? 0.75 : 1;
                     ctx.drawImage(
                         assets.player,
-                        player.x - playerPad,
-                        player.y - playerPad,
-                        player.w + playerPad * 2,
-                        player.h + playerPad * 2
+                        riderFrameIndex() * MOTO_CELL_W, 0, MOTO_CELL_W, MOTO_CELL_H,
+                        player.x + player.w / 2 - drawW / 2,
+                        player.y + player.h - MOTO_BASELINE * MOTO_SCALE,
+                        drawW, drawH
                     );
                     ctx.globalAlpha = 1;
                 } else {
@@ -539,8 +582,9 @@
 
                 for (var i = 0; i < obstacles.length; i++) {
                     var o = obstacles[i];
-                    if (assets.obstacle.complete && assets.obstacle.naturalWidth > 0) {
-                        ctx.drawImage(assets.obstacle, o.x, o.y, o.w, o.h);
+                    var frame = OBSTACLE_FRAMES[o.frame];
+                    if (frame && assets.obstacle.complete && assets.obstacle.naturalWidth > 0) {
+                        ctx.drawImage(assets.obstacle, frame.x, frame.y, frame.w, frame.h, o.x, o.y, o.w, o.h);
                     } else {
                         ctx.fillStyle = '#FFFFFF';
                         ctx.fillRect(o.x, o.y, o.w, o.h);

@@ -123,7 +123,7 @@
         <div class="screen-inner">
             <p class="eyebrow" id="screenEyebrow">Covert Operations File 08</p>
             <h1 id="screenTitle">SIGABO<span>Breakpoint</span></h1>
-            <p id="screenText">Eight years inside. One chance at freedom. Break through the prison yard, neutralize the armored warden, and reach extraction.</p>
+            <p id="screenText">Eight years inside. One chance at freedom. Fight sector after sector, break the warden sealing each gate, and see how far Gabo can push.</p>
             <div class="briefing" id="briefing"><div>MOVE<br />A / D</div><div>JUMP<br />W / SPACE</div><div>FIRE<br />J / K</div></div>
             <div id="screenActions"><button class="screen-action primary" data-action="start">BEGIN MISSION</button><button class="screen-action" data-action="back">BACK</button><button class="screen-action" data-action="leaderboard">TROPHIES</button></div>
         </div>
@@ -157,7 +157,9 @@
         var screenActions = document.getElementById('screenActions');
         var rotateActions = document.getElementById('rotateActions');
 
-        var WORLD_WIDTH = 6200;
+        var CHUNK_WIDTH = 760;
+        var SECTOR_LENGTH = 4560;
+        var SECTOR_NAMES = ['THE YARD', 'CELL BLOCK', 'MOTOR POOL', 'THE PERIMETER', 'RIVER ROAD', 'THE QUARRY', 'DEAD DROP'];
         var GROUND_Y = 540;
         var GRAVITY = 1900;
         var MAX_AD_REVIVES = 2;
@@ -183,19 +185,96 @@
         var pickups = [];
         var platforms = [];
         var boss = null;
-        var extractionTimer = 0;
+        var sector = 1;
+        var bossesDefeated = 0;
+        var generatedTo = 0;
+        var furthestX = 0;
+        var distanceCarry = 0;
 
         var player = {
             x: 120, y: 430, previousY: 430, width: 34, height: 68,
             velocityX: 0, velocityY: 0, facing: 1, grounded: false,
             health: 100, fireCooldown: 0, invulnerable: 0, weapon: 'RIFLE',
-            spreadAmmo: 0, runTime: 0
+            spreadAmmo: 0, runTime: 0, shootTimer: 0, hitTimer: 0, muzzleTimer: 0
         };
 
+        // Sprite sheet: 10 cells of 192x176, feet baseline 170px down each cell.
+        var SPRITE_CELL_W = 192;
+        var SPRITE_CELL_H = 176;
+        var SPRITE_FEET_Y = 170;
+        var SPRITE_SCALE = 0.52;
+        var SPRITE_FRAMES = { run: [0, 1, 2, 3], idle: 4, jump: 5, fall: 6, shootStand: 7, shootRun: 8, hit: 9 };
+        // Barrel tip per pose, measured in sprite-cell coordinates.
+        var MUZZLES = {
+            7: { x: 148, y: 54 },
+            8: { x: 185, y: 63 },
+            'default': { x: 148, y: 58 }
+        };
         var playerImage = new Image();
         var playerImageReady = false;
         playerImage.onload = function () { playerImageReady = true; };
-        playerImage.src = '../images/joinnow-app/sigabo/assets/player-sigabo-runner.svg';
+        playerImage.src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/player-sigabo-runner.png';
+
+        // FX sheet: 12 cells of 96x96. Flash cells emit from the left edge at mid height;
+        // every other cell is centred in its cell.
+        var FX_CELL = 96;
+        var FX_FRAMES = {
+            flash: [0, 1, 2], bullet: 4, spread: 6,
+            impact: [7, 8, 9], shell: 10, enemyBullet: 11
+        };
+        var FX_FLASH_SIZE = 34;
+        var FX_BULLET_SIZE = 46;
+        var FX_IMPACT_SIZE = 42;
+        var FX_SHELL_SIZE = 13;
+        var FX_ENEMY_BULLET_SIZE = 40;
+        var MUZZLE_FLASH_TIME = 0.09;
+        var fxImage = new Image();
+        var fxImageReady = false;
+        fxImage.onload = function () { fxImageReady = true; };
+        fxImage.src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/fx-sigabo-bullets.png';
+
+        var impacts = [];
+        var shells = [];
+
+        // Sector gate: 2 cells of 384x530 (sealed, open), passage centred in each cell.
+        var GATE_CELL_W = 384;
+        var GATE_CELL_H = 530;
+        var GATE_W = 246;
+        var GATE_H = 340;
+        var GATE_PASSAGE_HALF = 53;
+        var gateImage = new Image();
+        var gateImageReady = false;
+        gateImage.onload = function () { gateImageReady = true; };
+        gateImage.src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/gate-sector.png';
+
+        // Enemy sheets. `flip` is -1 when the source art faces left instead of right.
+        var ENEMY_SHEETS = {
+            guard: {
+                src: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/enemy-guard.png',
+                cellW: 136, cellH: 152, baseline: 146, flip: 1,
+                muzzle: { x: 128, y: 43 },
+                frames: { walk: [0, 1, 2, 3], idle: 4, aim: 5, fire: 5, hit: 6, die: [7, 8] }
+            },
+            heavy: {
+                src: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/enemy-heavy.png',
+                cellW: 212, cellH: 176, baseline: 170, flip: 1,
+                muzzle: { x: 183, y: 52 },
+                frames: { walk: [0, 1, 2, 3], idle: 4, aim: 5, fire: 6, hit: 7, die: [8, 9] }
+            },
+            warden: {
+                src: 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/enemy-warden.png',
+                cellW: 356, cellH: 264, baseline: 258, flip: -1,
+                muzzle: { x: 40, y: 42 },
+                frames: { walk: [0, 1, 2, 3], idle: 0, aim: 4, fire: 4, hit: 5, die: [6, 7] }
+            }
+        };
+        Object.keys(ENEMY_SHEETS).forEach(function (key) {
+            var sheet = ENEMY_SHEETS[key];
+            sheet.image = new Image();
+            sheet.ready = false;
+            sheet.image.onload = function () { sheet.ready = true; };
+            sheet.image.src = sheet.src;
+        });
 
         function post(message) {
             var payload = JSON.stringify(message);
@@ -205,6 +284,86 @@
         }
 
         post({ type: 'orientation', orientation: 'landscape' });
+
+        var BUILDING_SLOT_WIDTH = 150;
+        var BUILDING_GAP = 18;
+        var AD_EVERY_N_BUILDINGS = 5;
+        var BUILDING_LAYERS = [
+            { speed: .16, baseRatio: .58, color: '#243d39', windowColor: 'rgba(244,237,218,.10)', seed: 0, billboard: false },
+            { speed: .32, baseRatio: .67, color: '#172b2d', windowColor: 'rgba(243,189,49,.20)', seed: 517, billboard: true }
+        ];
+
+        // House ad billboard rendered onto the scrolling skyline buildings.
+        var HOUSEADS_API = 'http://54.254.84.189:3000/config/houseads';
+        var HOUSEAD_ROTATE_MS = 8000;
+        var houseAd = { image: new Image(), ready: false, url: null };
+        var houseAdPool = [];
+        var houseAdIndex = -1;
+
+        function applyHouseAd(ad) {
+            if (!ad || !ad.image) return;
+            // Preload off-screen; the visible billboard only swaps once this finishes loading.
+            var nextImage = new Image();
+            nextImage.onload = function () {
+                houseAd.image = nextImage;
+                houseAd.url = ad.url || null;
+                houseAd.ready = true;
+            };
+            nextImage.src = ad.image;
+        }
+
+        function nextHouseAd() {
+            if (!houseAdPool.length) return;
+            houseAdIndex = (houseAdIndex + 1) % houseAdPool.length;
+            applyHouseAd(houseAdPool[houseAdIndex]);
+        }
+
+        function loadHouseAd() {
+            fetch(HOUSEADS_API)
+                .then(function (res) { return res.json(); })
+                .then(function (json) {
+                    var ads = (json && json.data) || [];
+                    var billboardAds = ads.filter(function (ad) { return ad && (ad.type === 'mrec' || ad.type === 'banner'); });
+                    houseAdPool = billboardAds.length ? billboardAds : ads;
+                    post({ type: 'houseAdsDebug', count: houseAdPool.length });
+                    if (!houseAdPool.length) return;
+                    houseAdIndex = Math.floor(Math.random() * houseAdPool.length) - 1;
+                    nextHouseAd();
+                    if (houseAdPool.length > 1) {
+                        setInterval(nextHouseAd, HOUSEAD_ROTATE_MS);
+                    }
+                })
+                .catch(function (err) {
+                    post({ type: 'houseAdsDebug', error: String(err) });
+                });
+        }
+        loadHouseAd();
+
+        function drawBillboardOnBuilding(buildingX, buildingY, buildingWidth, buildingHeight) {
+            if (!houseAd.ready) return;
+            var panelW = Math.min(buildingWidth - 12, 130);
+            var panelH = panelW * 0.62;
+            if (panelH > buildingHeight * 0.5) {
+                panelH = buildingHeight * 0.5;
+                panelW = panelH / 0.62;
+            }
+            var panelX = buildingX + (buildingWidth - panelW) / 2;
+            var panelY = buildingY + buildingHeight * 0.18;
+
+            var img = houseAd.image;
+            var imgRatio = img.naturalWidth / img.naturalHeight;
+            if (!imgRatio) return;
+            var panelRatio = panelW / panelH;
+            var drawW, drawH;
+            if (imgRatio > panelRatio) {
+                drawW = panelW;
+                drawH = drawW / imgRatio;
+            } else {
+                drawH = panelH;
+                drawW = drawH * imgRatio;
+            }
+            ctx.drawImage(img, panelX + (panelW - drawW) / 2, panelY + (panelH - drawH) / 2, drawW, drawH);
+        }
 
         function beep(frequency, duration, type, volume) {
             try {
@@ -237,42 +396,105 @@
                 x: x, y: GROUND_Y - stats.height, width: stats.width, height: stats.height,
                 health: stats.health, maxHealth: stats.health, speed: stats.speed, points: stats.points,
                 type: type, facing: -1, fireCooldown: Math.random() * 1.2 + .5,
-                leftBound: x - 150, rightBound: x + 150, hitFlash: 0, dead: false
+                leftBound: x - 150, rightBound: x + 150, hitFlash: 0, dead: false,
+                animTime: Math.random() * 4, aimTimer: 0, fireTimer: 0, deathTimer: 0
             });
         }
 
-        function resetGame() {
-            score = 0; scoreFinalized = false; lives = 3; adRevivesLeft = MAX_AD_REVIVES; cameraX = 0; shake = 0; flash = 0; extractionTimer = 0;
-            bullets = []; enemyBullets = []; enemies = []; particles = []; pickups = [];
-            platforms = [
-                { x: 680, y: 435, width: 260, height: 22 },
-                { x: 1430, y: 390, width: 210, height: 22 },
-                { x: 2070, y: 455, width: 250, height: 22 },
-                { x: 2890, y: 405, width: 260, height: 22 },
-                { x: 3720, y: 445, width: 230, height: 22 },
-                { x: 4360, y: 370, width: 300, height: 22 }
-            ];
-            [520, 900, 1220, 1610, 1940, 2300, 2680, 3070, 3450, 3870, 4210, 4610, 4930].forEach(function (x, index) {
-                addEnemy(x, index % 4 === 3 ? 'heavy' : 'guard');
-            });
-            pickups.push(
-                { x: 1520, y: 335, width: 30, height: 30, type: 'spread', taken: false, bob: 0 },
-                { x: 2990, y: 350, width: 30, height: 30, type: 'health', taken: false, bob: 2 },
-                { x: 4450, y: 315, width: 30, height: 30, type: 'spread', taken: false, bob: 4 }
-            );
+        function sectorStart() { return (sector - 1) * SECTOR_LENGTH; }
+        function bossX() { return sectorStart() + SECTOR_LENGTH - 210; }
+        function gateX() { return sectorStart() + SECTOR_LENGTH; }
+
+        function sectorLabel() {
+            return 'SECTOR ' + String(sector).padStart(2, '0') + ' · ' + SECTOR_NAMES[(sector - 1) % SECTOR_NAMES.length];
+        }
+
+        function difficulty() {
+            return Math.min(1, (sector - 1) / 6);
+        }
+
+        // Content is built one chunk at a time so the run can continue indefinitely.
+        function generateChunk(startX) {
+            var endX = startX + CHUNK_WIDTH;
+            var guard = gateX();
+            if (startX > guard - 620 && startX < guard + 240) return;
+
+            if (Math.random() < .62) {
+                platforms.push({
+                    x: startX + 60 + Math.random() * 240,
+                    y: 355 + Math.random() * 115,
+                    width: 190 + Math.random() * 130,
+                    height: 22
+                });
+            }
+
+            var count = 2 + Math.round(difficulty() * 2 + Math.random());
+            var heavyChance = .18 + difficulty() * .3;
+            for (var i = 0; i < count; i++) {
+                var x = startX + 90 + (CHUNK_WIDTH - 180) * (i + Math.random() * .6) / count;
+                if (x > guard - 260 && x < guard + 200) continue;
+                addEnemy(x, Math.random() < heavyChance ? 'heavy' : 'guard');
+            }
+
+            var roll = Math.random();
+            if (roll < .22) {
+                pickups.push({ x: startX + 200 + Math.random() * 300, y: 320 + Math.random() * 60, width: 30, height: 30, type: 'health', taken: false, bob: Math.random() * 6 });
+            } else if (roll < .38) {
+                pickups.push({ x: startX + 200 + Math.random() * 300, y: 300 + Math.random() * 70, width: 30, height: 30, type: 'spread', taken: false, bob: Math.random() * 6 });
+            }
+        }
+
+        function ensureWorld() {
+            var target = player.x + innerWidth + CHUNK_WIDTH;
+            while (generatedTo < target) {
+                generateChunk(generatedTo);
+                generatedTo += CHUNK_WIDTH;
+            }
+        }
+
+        function cullWorld() {
+            var limit = cameraX - 900;
+            platforms = platforms.filter(function (platform) { return platform.x + platform.width > limit; });
+            pickups = pickups.filter(function (pickup) { return !pickup.taken && pickup.x > limit; });
+            enemies = enemies.filter(function (enemy) { return enemy.x > limit; });
+        }
+
+        function spawnBoss() {
+            var health = 40 + bossesDefeated * 18;
             boss = {
-                x: 5580, y: GROUND_Y - 112, width: 104, height: 112,
-                health: 50, maxHealth: 50, facing: -1, fireCooldown: 1,
-                active: false, hitFlash: 0, velocityY: 0, phase: 0, dead: false
+                x: bossX(), y: GROUND_Y - 112, width: 104, height: 112,
+                health: health, maxHealth: health, facing: -1, fireCooldown: 1,
+                active: false, hitFlash: 0, velocityY: 0, phase: 0, dead: false,
+                type: 'warden', animTime: 0, aimTimer: 0, fireTimer: 0, deathTimer: 0
             };
+        }
+
+        function advanceSector() {
+            sector++;
+            bossesDefeated++;
+            boss = null;
+            missionEl.textContent = sectorLabel();
+            ensureWorld();
+            beep(660, .22, 'square', .05);
+        }
+
+        function resetGame() {
+            score = 0; scoreFinalized = false; lives = 3; adRevivesLeft = MAX_AD_REVIVES; cameraX = 0; shake = 0; flash = 0;
+            bullets = []; enemyBullets = []; enemies = []; particles = []; pickups = []; impacts = []; shells = [];
+            platforms = [];
+            boss = null;
+            sector = 1; bossesDefeated = 0;
+            generatedTo = 620; furthestX = 120; distanceCarry = 0;
             Object.assign(player, {
                 x: 120, y: GROUND_Y - 68, previousY: GROUND_Y - 68,
                 velocityX: 0, velocityY: 0, facing: 1, grounded: true,
-                health: 100, fireCooldown: 0, invulnerable: 0, weapon: 'RIFLE', spreadAmmo: 0
+                health: 100, fireCooldown: 0, invulnerable: 0, weapon: 'RIFLE', spreadAmmo: 0,
+                runTime: 0, shootTimer: 0, hitTimer: 0, muzzleTimer: 0
             });
+            ensureWorld();
             updateHud();
             bossHud.classList.remove('visible');
-            missionEl.textContent = 'MISSION 01 · THE YARD';
+            missionEl.textContent = sectorLabel();
         }
 
         function startGame() {
@@ -296,26 +518,25 @@
             post({ type: 'gameOver', score: score, final: true });
         }
 
-        function showEnd(victory) {
-            state = victory ? 'victory' : 'gameover';
+        function showEnd() {
+            state = 'gameover';
             screen.hidden = false;
-            screenEyebrow.textContent = victory ? 'Mission Complete' : 'Operation Failed';
-            screenTitle.innerHTML = victory ? 'EXTRACTED<span>Freedom has a price</span>' : 'DOWN<span>Get back in the fight</span>';
-            screenText.textContent = victory
-                ? 'The yard is clear and extraction is secured. Final score: ' + String(score).padStart(6, '0') + '.'
-                : 'Gabo was overwhelmed before reaching extraction. Final score: ' + String(score).padStart(6, '0') + '.';
+            screenEyebrow.textContent = 'Operation Failed';
+            screenTitle.innerHTML = 'DOWN<span>Get back in the fight</span>';
+            screenText.textContent = 'Gabo went down in ' + sectorLabel() + '. Wardens broken: ' + bossesDefeated +
+                '. Final score: ' + String(score).padStart(6, '0') + '.';
             briefing.hidden = true;
             var actions = [];
-            if (!victory && adRevivesLeft > 0) {
+            if (adRevivesLeft > 0) {
                 actions.push({ name: 'revive', label: 'WATCH AD TO REVIVE', primary: true });
             }
-            actions.push({ name: 'restart', label: 'RUN IT AGAIN', primary: victory });
+            actions.push({ name: 'restart', label: 'RUN IT AGAIN', primary: false });
             actions.push({ name: 'back', label: 'BACK' });
             actions.push({ name: 'leaderboard', label: 'TROPHIES' });
             setScreenActions(actions);
             bossHud.classList.remove('visible');
-            post({ type: 'gameEnd', game: 'sigabo-breakpoint', score: score, victory: victory });
-            if (victory || adRevivesLeft <= 0) finalizeScore();
+            post({ type: 'gameEnd', game: 'sigabo-breakpoint', score: score, sector: sector });
+            if (adRevivesLeft <= 0) finalizeScore();
             else post({ type: 'gameOver', score: score, final: false });
         }
 
@@ -323,12 +544,15 @@
             adRevivesLeft--;
             lives = 1;
             player.health = 100;
-            player.x = Math.max(100, Math.min(WORLD_WIDTH - 300, cameraX + 120));
+            player.x = Math.max(100, cameraX + 120);
             player.y = GROUND_Y - player.height;
             player.previousY = player.y;
             player.velocityX = 0;
             player.velocityY = 0;
             player.invulnerable = 2.5;
+            player.hitTimer = 0;
+            player.shootTimer = 0;
+            player.muzzleTimer = 0;
             bullets = [];
             enemyBullets = [];
             screen.hidden = true;
@@ -391,16 +615,24 @@
             beep(260, .07, 'square', .025);
         }
 
+        function muzzlePoint() {
+            var muzzle = MUZZLES[playerFrameIndex()] || MUZZLES['default'];
+            return {
+                x: player.x + player.width / 2 + (muzzle.x - SPRITE_CELL_W / 2) * SPRITE_SCALE * player.facing,
+                y: player.y + player.height + (muzzle.y - SPRITE_FEET_Y) * SPRITE_SCALE
+            };
+        }
+
         function fire() {
             if (state !== 'playing' || player.fireCooldown > 0) return;
-            var originX = player.x + (player.facing > 0 ? player.width : 0);
-            var originY = player.y + 26;
+            var origin = muzzlePoint();
             var angles = player.weapon === 'SPREAD' ? [-.24, 0, .24] : [0];
             angles.forEach(function (angle) {
                 bullets.push({
-                    x: originX, y: originY, width: 15, height: 5,
+                    x: origin.x - 7.5, y: origin.y - 2.5, width: 15, height: 5,
                     velocityX: Math.cos(angle) * 760 * player.facing,
-                    velocityY: Math.sin(angle) * 760, life: 1.2
+                    velocityY: Math.sin(angle) * 760, life: 1.2,
+                    spread: player.weapon === 'SPREAD'
                 });
             });
             if (player.weapon === 'SPREAD') {
@@ -408,16 +640,47 @@
                 if (player.spreadAmmo <= 0) player.weapon = 'RIFLE';
             }
             player.fireCooldown = player.weapon === 'SPREAD' ? .21 : .16;
+            player.shootTimer = .22;
+            player.muzzleTimer = MUZZLE_FLASH_TIME;
+            shells.push({
+                x: origin.x - 18 * player.facing, y: origin.y + 4,
+                velocityX: -player.facing * (40 + Math.random() * 50),
+                velocityY: -(120 + Math.random() * 70),
+                spin: (Math.random() - .5) * 18, angle: Math.random() * Math.PI,
+                life: .7, maxLife: .7
+            });
             beep(player.weapon === 'SPREAD' ? 105 : 145, .045, 'square', .028);
         }
 
+        function addImpact(x, y) {
+            impacts.push({ x: x, y: y, life: .18, maxLife: .18 });
+        }
+
+        function enemySheet(unit) {
+            return ENEMY_SHEETS[unit.type === 'heavy' ? 'heavy' : (unit.type === 'warden' ? 'warden' : 'guard')];
+        }
+
+        function enemyMuzzle(unit) {
+            var sheet = enemySheet(unit);
+            var direction = unit.facing * sheet.flip;
+            return {
+                x: unit.x + unit.width / 2 + (sheet.muzzle.x - sheet.cellW / 2) * SPRITE_SCALE * direction,
+                y: unit.y + unit.height + (sheet.muzzle.y - sheet.baseline) * SPRITE_SCALE
+            };
+        }
+
         function enemyFire(enemy, aimed) {
-            var deltaX = player.x - enemy.x;
-            var deltaY = (player.y + 26) - (enemy.y + enemy.height * .36);
+            var origin = enemySheet(enemy).ready
+                ? enemyMuzzle(enemy)
+                : { x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height * .36 };
+            var deltaX = (player.x + player.width / 2) - origin.x;
+            var deltaY = (player.y + 26) - origin.y;
             var length = Math.sqrt(deltaX * deltaX + deltaY * deltaY) || 1;
             var speed = aimed ? 310 : 260;
+            enemy.aimTimer = .55;
+            enemy.fireTimer = .18;
             enemyBullets.push({
-                x: enemy.x + enemy.width / 2, y: enemy.y + enemy.height * .36,
+                x: origin.x - 5.5, y: origin.y - 3,
                 width: 11, height: 6, velocityX: deltaX / length * speed,
                 velocityY: deltaY / length * speed, life: 4
             });
@@ -440,6 +703,7 @@
             if (player.invulnerable > 0 || state !== 'playing') return;
             player.health -= amount;
             player.invulnerable = 1.25;
+            player.hitTimer = .4;
             player.velocityX = -player.facing * 260;
             player.velocityY = -260;
             shake = 9; flash = .12;
@@ -449,7 +713,7 @@
                 lives--;
                 if (lives <= 0) {
                     updateHud();
-                    showEnd(false);
+                    showEnd();
                     return;
                 }
                 player.health = 100;
@@ -463,7 +727,7 @@
 
         function resolvePlatforms() {
             player.grounded = false;
-            var surfaces = platforms.concat([{ x: 0, y: GROUND_Y, width: WORLD_WIDTH, height: 200 }]);
+            var surfaces = platforms.concat([{ x: -1e6, y: GROUND_Y, width: 2e6, height: 200 }]);
             surfaces.forEach(function (platform) {
                 var previousBottom = player.previousY + player.height;
                 var currentBottom = player.y + player.height;
@@ -486,22 +750,33 @@
             player.velocityY += GRAVITY * dt;
             player.x += player.velocityX * dt;
             player.y += player.velocityY * dt;
-            player.x = Math.max(20, Math.min(WORLD_WIDTH - player.width, player.x));
+            // A live warden seals the sector gate until it is destroyed.
+            var ceiling = boss && !boss.dead ? gateX() - GATE_PASSAGE_HALF - player.width : Infinity;
+            player.x = Math.max(Math.max(20, cameraX - 40), Math.min(ceiling, player.x));
             resolvePlatforms();
             if (player.y > 700) damagePlayer(100);
             if (keys.fire) fire();
             player.fireCooldown -= dt;
             player.invulnerable -= dt;
+            player.shootTimer -= dt;
+            player.hitTimer -= dt;
+            player.muzzleTimer -= dt;
             player.runTime += Math.abs(player.velocityX) * dt * .035;
         }
 
         function updateEnemies(dt) {
             enemies.forEach(function (enemy) {
-                if (enemy.dead || Math.abs(enemy.x - player.x) > 950) return;
+                if (enemy.dead) { enemy.deathTimer += dt; return; }
+                if (Math.abs(enemy.x - player.x) > 950) return;
                 enemy.hitFlash -= dt;
+                enemy.aimTimer -= dt;
+                enemy.fireTimer -= dt;
                 var distance = player.x - enemy.x;
                 enemy.facing = distance >= 0 ? 1 : -1;
-                if (Math.abs(distance) > 230) enemy.x += enemy.facing * enemy.speed * dt;
+                var walking = Math.abs(distance) > 230;
+                if (walking) enemy.x += enemy.facing * enemy.speed * dt;
+                enemy.walking = walking;
+                enemy.animTime += dt;
                 enemy.x = Math.max(enemy.leftBound, Math.min(enemy.rightBound, enemy.x));
                 enemy.fireCooldown -= dt;
                 if (Math.abs(distance) < 620 && enemy.fireCooldown <= 0) {
@@ -513,8 +788,10 @@
         }
 
         function updateBoss(dt) {
-            if (!boss || boss.dead) return;
-            if (!boss.active && player.x > 5200) {
+            if (!boss && player.x > bossX() - 1500) spawnBoss();
+            if (!boss) return;
+            if (boss.dead) { boss.deathTimer += dt; return; }
+            if (!boss.active && player.x > boss.x - 520) {
                 boss.active = true;
                 bossHud.classList.add('visible');
                 missionEl.textContent = 'OBJECTIVE · BREAK THE WARDEN';
@@ -522,6 +799,9 @@
             }
             if (!boss.active) return;
             boss.hitFlash -= dt;
+            boss.aimTimer -= dt;
+            boss.fireTimer -= dt;
+            boss.animTime += dt;
             boss.phase += dt;
             boss.facing = player.x > boss.x ? 1 : -1;
             boss.x += Math.sin(boss.phase * 1.4) * 45 * dt;
@@ -540,30 +820,34 @@
                 bullet.x += bullet.velocityX * dt; bullet.y += bullet.velocityY * dt; bullet.life -= dt;
                 enemies.forEach(function (enemy) {
                     if (!enemy.dead && bullet.life > 0 && rectsOverlap(bullet, enemy)) {
-                        bullet.life = 0; enemy.health--; enemy.hitFlash = .08;
-                        burst(bullet.x, bullet.y, '#f3bd31', 5);
+                        bullet.life = 0; enemy.health--; enemy.hitFlash = .12;
+                        addImpact(bullet.x + bullet.width / 2, bullet.y + bullet.height / 2);
                         if (enemy.health <= 0) {
-                            enemy.dead = true; score += enemy.points;
+                            enemy.dead = true; enemy.deathTimer = 0; score += enemy.points;
                             burst(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, '#dc4c36', 18);
                             beep(62, .17, 'sawtooth', .045);
                         }
                     }
                 });
                 if (boss && boss.active && !boss.dead && bullet.life > 0 && rectsOverlap(bullet, boss)) {
-                    bullet.life = 0; boss.health--; boss.hitFlash = .08; shake = 2;
-                    burst(bullet.x, bullet.y, '#f3bd31', 5);
+                    bullet.life = 0; boss.health--; boss.hitFlash = .12; shake = 2;
+                    addImpact(bullet.x + bullet.width / 2, bullet.y + bullet.height / 2);
                     if (boss.health <= 0) {
-                        boss.dead = true; score += BOSS_SCORE; shake = 18; flash = .28;
+                        boss.dead = true; boss.deathTimer = 0; score += BOSS_SCORE; shake = 18; flash = .28;
                         burst(boss.x + boss.width / 2, boss.y + boss.height / 2, '#dc4c36', 55);
                         bossHud.classList.remove('visible');
-                        missionEl.textContent = 'OBJECTIVE · REACH EXTRACTION';
+                        missionEl.textContent = 'GATE OPEN · PUSH FORWARD';
                         beep(42, .6, 'sawtooth', .08);
                     }
                 }
             });
             enemyBullets.forEach(function (bullet) {
                 bullet.x += bullet.velocityX * dt; bullet.y += bullet.velocityY * dt; bullet.life -= dt;
-                if (bullet.life > 0 && rectsOverlap(bullet, player)) { bullet.life = 0; damagePlayer(20); }
+                if (bullet.life > 0 && rectsOverlap(bullet, player)) {
+                    bullet.life = 0;
+                    addImpact(bullet.x + bullet.width / 2, bullet.y + bullet.height / 2);
+                    damagePlayer(20);
+                }
             });
             bullets = bullets.filter(function (bullet) { return bullet.life > 0; });
             enemyBullets = enemyBullets.filter(function (bullet) { return bullet.life > 0; });
@@ -584,6 +868,19 @@
             });
         }
 
+        function updateEffects(dt) {
+            impacts.forEach(function (impact) { impact.life -= dt; });
+            impacts = impacts.filter(function (impact) { return impact.life > 0; });
+            shells.forEach(function (shell) {
+                shell.x += shell.velocityX * dt;
+                shell.y += shell.velocityY * dt;
+                shell.velocityY += 900 * dt;
+                shell.angle += shell.spin * dt;
+                shell.life -= dt;
+            });
+            shells = shells.filter(function (shell) { return shell.life > 0; });
+        }
+
         function updateParticles(dt) {
             particles.forEach(function (particle) {
                 particle.x += particle.velocityX * dt; particle.y += particle.velocityY * dt;
@@ -594,14 +891,18 @@
 
         function update(dt) {
             if (state !== 'playing') return;
-            updatePlayer(dt); updateEnemies(dt); updateBoss(dt); updateProjectiles(dt); updatePickups(dt); updateParticles(dt);
-            cameraX += ((player.x - innerWidth * .34) - cameraX) * Math.min(1, dt * 4.5);
-            cameraX = Math.max(0, Math.min(WORLD_WIDTH - innerWidth, cameraX));
-            shake *= Math.pow(.01, dt); flash -= dt;
-            if (boss && boss.dead && player.x > 6040) {
-                extractionTimer += dt;
-                if (extractionTimer > .8) showEnd(true);
+            updatePlayer(dt); updateEnemies(dt); updateBoss(dt); updateProjectiles(dt); updatePickups(dt); updateEffects(dt); updateParticles(dt);
+            ensureWorld();
+            cullWorld();
+            if (player.x > furthestX) {
+                distanceCarry += player.x - furthestX;
+                furthestX = player.x;
+                while (distanceCarry >= 25) { score += 1; distanceCarry -= 25; }
             }
+            if (boss && boss.dead && player.x > gateX() + 40) advanceSector();
+            cameraX += ((player.x - innerWidth * .34) - cameraX) * Math.min(1, dt * 4.5);
+            cameraX = Math.max(0, cameraX);
+            shake *= Math.pow(.01, dt); flash -= dt;
             updateHud();
         }
 
@@ -615,20 +916,73 @@
                 var mountainX = i * 190 - (cameraX * .08 % 190);
                 ctx.beginPath(); ctx.moveTo(mountainX, innerHeight * .65); ctx.lineTo(mountainX + 105, innerHeight * .28); ctx.lineTo(mountainX + 220, innerHeight * .65); ctx.fill();
             }
-            for (var layer = 0; layer < 2; layer++) {
-                var speed = layer ? .32 : .16;
-                var baseY = innerHeight * (layer ? .67 : .58);
-                ctx.fillStyle = layer ? '#172b2d' : '#243d39';
-                for (var building = -1; building < 14; building++) {
-                    var width = 90 + (building % 3) * 28;
-                    var x = building * 132 - (cameraX * speed % 132);
-                    var height = 75 + ((building * 47) % 115);
-                    ctx.fillRect(x, baseY - height, width, height);
-                    ctx.fillStyle = layer ? 'rgba(243,189,49,.18)' : 'rgba(244,237,218,.08)';
-                    for (var row = 0; row < 4; row++) for (var col = 0; col < 4; col++) ctx.fillRect(x + 12 + col * 19, baseY - height + 15 + row * 21, 7, 9);
-                    ctx.fillStyle = layer ? '#172b2d' : '#243d39';
+            for (var layer = 0; layer < BUILDING_LAYERS.length; layer++) {
+                drawBuildingLayer(BUILDING_LAYERS[layer]);
+            }
+        }
+
+        // Deterministic per-building-index pseudo-random so the skyline never reshuffles as it scrolls.
+        function seededRandom(seed) {
+            var value = Math.sin(seed * 12.9898) * 43758.5453;
+            return value - Math.floor(value);
+        }
+
+        function drawBuildingWindows(x, y, width, height, litRatio, color, seed) {
+            var cols = Math.max(1, Math.floor((width - 10) / 19));
+            var rows = Math.max(1, Math.floor((height - 24) / 21));
+            var cellW = (width - 10) / cols;
+            var cellH = (height - 24) / rows;
+            ctx.fillStyle = color;
+            for (var row = 0; row < rows; row++) {
+                for (var col = 0; col < cols; col++) {
+                    if (seededRandom(seed * 1000 + row * 31 + col * 7) > litRatio) continue;
+                    ctx.fillRect(x + 5 + col * cellW, y + 14 + row * cellH, Math.max(2, cellW - 8), Math.max(2, cellH - 10));
                 }
             }
+        }
+
+        function drawBuildingLayer(layer) {
+            var offset = cameraX * layer.speed;
+            var baseY = innerHeight * layer.baseRatio;
+            var slotWidth = BUILDING_SLOT_WIDTH - BUILDING_GAP;
+            var firstIndex = Math.floor(offset / BUILDING_SLOT_WIDTH) - 1;
+            var lastIndex = Math.ceil((offset + innerWidth) / BUILDING_SLOT_WIDTH) + 1;
+            for (var index = firstIndex; index <= lastIndex; index++) {
+                var seed = index + layer.seed;
+                var width = slotWidth * (.62 + seededRandom(seed * 3.7 + 11) * .38);
+                var height = 70 + seededRandom(seed) * 135;
+                var x = index * BUILDING_SLOT_WIDTH - offset + (slotWidth - width) / 2;
+                var y = baseY - height;
+                ctx.fillStyle = layer.color;
+                ctx.fillRect(x, y, width, height);
+                ctx.fillStyle = 'rgba(244,237,218,.07)';
+                ctx.fillRect(x, y, width, 4);
+                drawBuildingWindows(x, y, width, height, .15 + seededRandom(seed * 2.1 + 5) * .35, layer.windowColor, seed);
+                if (layer.billboard && ((index % AD_EVERY_N_BUILDINGS) + AD_EVERY_N_BUILDINGS) % AD_EVERY_N_BUILDINGS === 0) {
+                    drawBillboardOnBuilding(x, y, width, height);
+                }
+            }
+        }
+
+        function drawSectorGate(viewLeft, viewWidth) {
+            var x = gateX();
+            if (x < viewLeft - GATE_W || x > viewLeft + viewWidth + GATE_W) return;
+            var sealed = boss && !boss.dead;
+            if (gateImageReady) {
+                ctx.drawImage(
+                    gateImage, (sealed ? 0 : 1) * GATE_CELL_W, 0, GATE_CELL_W, GATE_CELL_H,
+                    x - GATE_W / 2, GROUND_Y - GATE_H, GATE_W, GATE_H
+                );
+            } else {
+                ctx.fillStyle = sealed ? '#8e281e' : '#2c4a44';
+                ctx.fillRect(x - GATE_PASSAGE_HALF, GROUND_Y - GATE_H, GATE_PASSAGE_HALF * 2, GATE_H);
+            }
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.fillStyle = sealed ? '#dc4c36' : '#55d6a7';
+            ctx.font = '900 24px Impact';
+            ctx.fillText('SECTOR ' + (sector + 1), x, GROUND_Y - GATE_H - 16);
+            ctx.restore();
         }
 
         function drawWorld() {
@@ -639,10 +993,14 @@
             ctx.scale(scale, scale);
             ctx.translate(-cameraX, 0);
 
-            ctx.fillStyle = '#263231'; ctx.fillRect(0, GROUND_Y, WORLD_WIDTH, 100);
-            ctx.fillStyle = '#53625a'; ctx.fillRect(0, GROUND_Y, WORLD_WIDTH, 9);
+            var viewLeft = cameraX - 120;
+            var viewWidth = innerWidth / scale + 240;
+            ctx.fillStyle = '#263231'; ctx.fillRect(viewLeft, GROUND_Y, viewWidth, 100);
+            ctx.fillStyle = '#53625a'; ctx.fillRect(viewLeft, GROUND_Y, viewWidth, 9);
             ctx.fillStyle = '#111c1d';
-            for (var slab = 0; slab < WORLD_WIDTH; slab += 92) ctx.fillRect(slab, GROUND_Y + 18, 70, 7);
+            for (var slab = Math.floor(viewLeft / 92) * 92; slab < viewLeft + viewWidth; slab += 92) {
+                ctx.fillRect(slab, GROUND_Y + 18, 70, 7);
+            }
 
             platforms.forEach(function (platform) {
                 ctx.fillStyle = '#29393a'; ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
@@ -651,21 +1009,16 @@
                 for (var x = platform.x + 10; x < platform.x + platform.width; x += 28) ctx.fillRect(x, platform.y + 10, 15, 6);
             });
 
-            ctx.fillStyle = '#8e281e'; ctx.fillRect(5180, 195, 18, 345); ctx.fillRect(6010, 195, 18, 345);
-            ctx.fillStyle = '#f3bd31'; ctx.fillRect(5165, 190, 48, 12); ctx.fillRect(5995, 190, 48, 12);
-            ctx.font = '900 22px Impact'; ctx.fillText('LOCKDOWN ZONE', 5350, 230);
-            ctx.fillStyle = boss && boss.dead ? '#55d6a7' : '#dc4c36'; ctx.fillRect(6080, 350, 90, 190);
-            ctx.fillStyle = '#f4edda'; ctx.font = '18px Impact'; ctx.fillText('EXTRACT', 6083, 335);
+            drawSectorGate(viewLeft, viewWidth);
 
             pickups.forEach(drawPickup);
             enemies.forEach(drawEnemy);
-            if (boss && !boss.dead) drawBoss(boss);
+            if (boss) drawBoss(boss);
+            drawShells();
             drawPlayer();
-
-            ctx.fillStyle = '#f3bd31';
-            bullets.forEach(function (bullet) { ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height); });
-            ctx.fillStyle = '#ef6a4c';
-            enemyBullets.forEach(function (bullet) { ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height); });
+            drawMuzzleFlash();
+            drawBullets();
+            drawImpacts();
             particles.forEach(function (particle) {
                 ctx.globalAlpha = Math.max(0, particle.life / particle.maxLife);
                 ctx.fillStyle = particle.color; ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
@@ -674,8 +1027,93 @@
             ctx.restore();
         }
 
+        function drawFxCell(index, centerX, centerY, size, angle, flip) {
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            if (angle) ctx.rotate(angle);
+            if (flip) ctx.scale(-1, 1);
+            ctx.drawImage(fxImage, index * FX_CELL, 0, FX_CELL, FX_CELL, -size / 2, -size / 2, size, size);
+            ctx.restore();
+        }
+
+        function drawDirectionalFx(index, bullet, size) {
+            var direction = bullet.velocityX < 0 ? -1 : 1;
+            var angle = Math.atan2(bullet.velocityY * direction, bullet.velocityX * direction);
+            drawFxCell(index, bullet.x + bullet.width / 2, bullet.y + bullet.height / 2, size, angle, direction < 0);
+        }
+
+        function drawMuzzleFlash() {
+            if (!fxImageReady || player.muzzleTimer <= 0) return;
+            var progress = 1 - player.muzzleTimer / MUZZLE_FLASH_TIME;
+            var index = FX_FRAMES.flash[Math.min(FX_FRAMES.flash.length - 1, Math.floor(progress * FX_FRAMES.flash.length))];
+            var origin = muzzlePoint();
+            ctx.save();
+            ctx.translate(origin.x, origin.y);
+            ctx.scale(player.facing, 1);
+            ctx.drawImage(fxImage, index * FX_CELL, 0, FX_CELL, FX_CELL, 0, -FX_FLASH_SIZE / 2, FX_FLASH_SIZE, FX_FLASH_SIZE);
+            ctx.restore();
+        }
+
+        function drawBullets() {
+            if (!fxImageReady) {
+                ctx.fillStyle = '#f3bd31';
+                bullets.forEach(function (bullet) { ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height); });
+                ctx.fillStyle = '#ef6a4c';
+                enemyBullets.forEach(function (bullet) { ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height); });
+                return;
+            }
+            bullets.forEach(function (bullet) {
+                drawDirectionalFx(bullet.spread ? FX_FRAMES.spread : FX_FRAMES.bullet, bullet, FX_BULLET_SIZE);
+            });
+            enemyBullets.forEach(function (bullet) {
+                drawDirectionalFx(FX_FRAMES.enemyBullet, bullet, FX_ENEMY_BULLET_SIZE);
+            });
+        }
+
+        function drawImpacts() {
+            if (!fxImageReady) return;
+            impacts.forEach(function (impact) {
+                var progress = 1 - impact.life / impact.maxLife;
+                var index = FX_FRAMES.impact[Math.min(FX_FRAMES.impact.length - 1, Math.floor(progress * FX_FRAMES.impact.length))];
+                drawFxCell(index, impact.x, impact.y, FX_IMPACT_SIZE, 0, false);
+            });
+        }
+
+        function drawShells() {
+            if (!fxImageReady) return;
+            shells.forEach(function (shell) {
+                ctx.globalAlpha = Math.min(1, shell.life / shell.maxLife * 2);
+                drawFxCell(FX_FRAMES.shell, shell.x, shell.y, FX_SHELL_SIZE, shell.angle, false);
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function playerFrameIndex() {
+            if (player.hitTimer > 0) return SPRITE_FRAMES.hit;
+            if (!player.grounded) return player.velocityY < 0 ? SPRITE_FRAMES.jump : SPRITE_FRAMES.fall;
+            var moving = Math.abs(player.velocityX) > 25;
+            if (player.shootTimer > 0) return moving ? SPRITE_FRAMES.shootRun : SPRITE_FRAMES.shootStand;
+            if (!moving) return SPRITE_FRAMES.idle;
+            return SPRITE_FRAMES.run[Math.floor(player.runTime) % SPRITE_FRAMES.run.length];
+        }
+
         function drawPlayer() {
             if (player.invulnerable > 0 && Math.floor(player.invulnerable * 12) % 2 === 0) return;
+            if (!playerImageReady) { drawPlayerFallback(); return; }
+            var drawWidth = SPRITE_CELL_W * SPRITE_SCALE;
+            var drawHeight = SPRITE_CELL_H * SPRITE_SCALE;
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height - SPRITE_FEET_Y * SPRITE_SCALE);
+            ctx.scale(player.facing, 1);
+            ctx.drawImage(
+                playerImage,
+                playerFrameIndex() * SPRITE_CELL_W, 0, SPRITE_CELL_W, SPRITE_CELL_H,
+                -drawWidth / 2, 0, drawWidth, drawHeight
+            );
+            ctx.restore();
+        }
+
+        function drawPlayerFallback() {
             ctx.save();
             ctx.translate(player.x + player.width / 2, player.y);
             ctx.scale(player.facing, 1);
@@ -692,7 +1130,44 @@
             ctx.restore();
         }
 
+        function enemyFrameIndex(unit, sheet) {
+            var frames = sheet.frames;
+            if (unit.dead) return frames.die[unit.deathTimer > .3 ? 1 : 0];
+            if (unit.hitFlash > 0) return frames.hit;
+            if (unit.fireTimer > 0) return frames.fire;
+            if (unit.aimTimer > 0) return frames.aim;
+            if (unit.type === 'warden' || unit.walking) {
+                return frames.walk[Math.floor(unit.animTime * 7) % frames.walk.length];
+            }
+            return frames.idle;
+        }
+
+        function drawEnemySprite(unit) {
+            var sheet = enemySheet(unit);
+            if (!sheet.ready) return false;
+            var drawWidth = sheet.cellW * SPRITE_SCALE;
+            var drawHeight = sheet.cellH * SPRITE_SCALE;
+            var index = enemyFrameIndex(unit, sheet);
+            ctx.save();
+            ctx.translate(unit.x + unit.width / 2, unit.y + unit.height - sheet.baseline * SPRITE_SCALE);
+            ctx.scale(unit.facing * sheet.flip, 1);
+            ctx.drawImage(sheet.image, index * sheet.cellW, 0, sheet.cellW, sheet.cellH,
+                -drawWidth / 2, 0, drawWidth, drawHeight);
+            if (unit.hitFlash > 0) {
+                // Additive re-draw reads as a hit flash without needing canvas filters.
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = .75;
+                ctx.drawImage(sheet.image, index * sheet.cellW, 0, sheet.cellW, sheet.cellH,
+                    -drawWidth / 2, 0, drawWidth, drawHeight);
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = 'source-over';
+            }
+            ctx.restore();
+            return true;
+        }
+
         function drawEnemy(enemy) {
+            if (drawEnemySprite(enemy)) return;
             if (enemy.dead) return;
             ctx.save(); ctx.translate(enemy.x + enemy.width / 2, enemy.y); ctx.scale(enemy.facing, 1);
             ctx.fillStyle = enemy.hitFlash > 0 ? '#f4edda' : (enemy.type === 'heavy' ? '#38474d' : '#273a36');
@@ -705,6 +1180,8 @@
         }
 
         function drawBoss(unit) {
+            if (drawEnemySprite(unit)) return;
+            if (unit.dead) return;
             ctx.save(); ctx.translate(unit.x + unit.width / 2, unit.y); ctx.scale(unit.facing, 1);
             ctx.fillStyle = unit.hitFlash > 0 ? '#f4edda' : '#1e292d'; ctx.fillRect(-52, 30, 104, 82);
             ctx.fillStyle = '#4d5b5c'; ctx.fillRect(-46, 13, 92, 35);
