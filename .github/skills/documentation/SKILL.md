@@ -75,7 +75,9 @@ Detailed breakdown of work items.
 
 ## Requirements Directory Placement
 
-Place new documents in the correct subdirectory under `docs/requirements/`:
+This repository has no `docs/` directory. Requirement documents live in the consuming application repository, not here.
+
+Only create a document in this repository when explicitly asked. If asked, create `docs/requirements/` and place the file in the correct subdirectory:
 
 | Directory | When to Use |
 |---|---|

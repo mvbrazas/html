@@ -1,65 +1,64 @@
 ---
 name: unit-testing
-description: Unit testing patterns for HTML - test structure, mocking, assertions, and coverage.
+description: Verification rules for HTML games - manual browser checks, regression checklist, and what to prove before declaring work complete.
 ---
 
 <!-- AUTHORING RULE: Rules and decision tables only. No narrative prose, no rationale, no ticket refs, no future work. Each section answers "what must I do?" -->
 
-# Unit Testing - HTML
+# Verification - HTML
 
 ## When to Activate
 
-- Writing tests for new or changed code
-- Reviewing test coverage
-- Debugging test failures
-- After generating or modifying any code
+- After any gameplay, rendering, or asset change
+- Before declaring work complete
+- When changing physics, collision, or tuning constants
 
-## File Structure
+## Tooling Reality
 
-- Location: alongside source as `[FileName].test.ts` or `[FileName].test.tsx`
-- Naming: `describe('FeatureName', () => { it('should [outcome] when [condition]') })`
-- Pattern: Arrange -> Act -> Assert within each test
+This repository has no test runner, no package manager, and no module system. There is no `package.json`, `tsconfig.json`, or Jest config.
 
-## Rules
+- Do not add `.test.ts` / `.test.js` files
+- Do not add Jest, Vitest, or any test dependency without an explicit request
+- Verification is manual, in a browser, against the running game
 
-- Mock all external dependencies: network calls, browser APIs, storage, analytics
-- Never make real network calls in unit tests
-- Reset mocks between tests - no shared mutable state
-- Test happy path, error paths, edge cases, and empty/null inputs
-- Cover business logic in game loops, render helpers, and utility modules
+## Required Checks Before Completion
 
-## Mocking Network Calls
+- [ ] Game loads with no console errors
+- [ ] Start, game over, revive, and restart paths all reachable
+- [ ] Every new sprite renders at the intended scale and baseline
+- [ ] Image fallback path still draws when the asset fails to load
+- [ ] Touch controls and keyboard controls both work
+- [ ] Target orientation renders correctly
 
-```ts
-jest.mock('../services/apiClient');
-const mockApi = jest.mocked(apiClient);
-mockApi.request.mockResolvedValue({ data: { ok: true } });
-```
+## Physics and Collision Changes
 
-## Mocking Browser APIs
+When changing player size, obstacle size, jump strength, gravity, or speed, prove the level is still completable.
 
-```ts
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(() => ({ matches: false })),
-});
-```
+- Compute airborne time and peak height from the jump constants
+- Compute the crossing distance as `player.width + obstacle.width`
+- Confirm the clearance window exceeds the crossing distance with margin
+- Confirm the tallest obstacle is lower than peak jump height
+- Re-verify by playing, not by inspection alone
 
-## Mocking Storage
+## Temporary Test Builds
 
-```ts
-const storageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-};
-Object.defineProperty(window, 'localStorage', { value: storageMock });
-```
+To reach late-game state quickly, copy the game to a scratch file and reduce constants there.
 
-## Test Requirements Checklist
+- Name scratch copies with a leading underscore: `_sectortest.html`
+- Never commit scratch copies
+- Delete the scratch file once verification is done
+- Never ship a file that was only verified in modified form without saying so
 
-- [ ] Happy path covered
-- [ ] Each error path covered
-- [ ] No real network or platform side-effect calls
-- [ ] Mocks reset between tests
-- [ ] Assertions verify output/state and user-visible behavior
+## Asset Verification
+
+- [ ] Packed sheet frame count matches the frame map in code
+- [ ] Baseline offset places feet/base on the ground line
+- [ ] Facing direction and flip multiplier produce correct mirroring both ways
+- [ ] Attachment points (muzzle, door opening) line up with the art
+- [ ] No frame is clipped at its cell boundary
+
+## Regression Checklist
+
+- [ ] Existing games in the repo still load after shared-pattern changes
+- [ ] WebView `postMessage` events still fire: `orientation`, `gameStart`, `gameOver`, `gameEnd`, `requestRevive`, `goBack`, `viewLeaderboard`
+- [ ] Score finalization fires exactly once per run

@@ -2,23 +2,40 @@
 
 ## Context
 
-Static HTML game repository focused on a WebView-ready mini-game and asset files.
+Static HTML game repository. Each game is a single self-contained `.html` file with inline CSS and script, loaded in a React Native WebView.
+
+No build step, no bundler, no package manager, no module system.
 
 ## Architecture
 
 ### Directory Structure
 
-**`sigaboGame.html`** - Main standalone game page
-**`assets/`** - SVG/PNG game assets (logo, player, obstacle, background)
+**`*.html`** - One file per game, fully self-contained:
+
+| File | Game | Orientation |
+|---|---|---|
+| `sigaboGame.html` | Sigabo Dash (endless runner) | Portrait |
+| `sigaboPlatformer.html` | Sigabo platformer | Portrait |
+| `sigaboRunAndGun.html` | Sigabo Breakpoint (endless run-and-gun) | Landscape |
+| `babyDollsMatch.html` | Baby Dolls match-three | Portrait |
+| `biniTriviaGame.html` | BINI trivia | Portrait |
+
 **`.github/skills/`** - Skill definitions and repo-specific authoring rules
+
+Game assets are not in this repo. They live in the sibling `images/joinnow-app/<brand>/assets/` folder.
+
+### Asset References
+
+| Style | Used by | Rule |
+|---|---|---|
+| Absolute `https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/...` | `sigaboGame.html`, `sigaboPlatformer.html` | Asset must be pushed to the images repo before release |
+| Relative `../images/joinnow-app/...` | `sigaboRunAndGun.html` | Requires the images folder to be served alongside `html/` |
+
+Match the existing convention of the file being edited. Do not mix styles within one file.
 
 ### Layers
 
-HTML -> CSS -> Canvas/DOM script -> optional WebView postMessage bridge.
-
-### Data Access
-
-Prefer local assets. If remote assets are used, provide fallbacks for offline/failed loads.
+HTML -> CSS -> Canvas script -> WebView `postMessage` bridge.
 
 ## Simplicity Rule
 
@@ -34,13 +51,28 @@ Prefer local assets. If remote assets are used, provide fallbacks for offline/fa
 
 ## Code Patterns
 
+- **Script style:** ES5 inside an IIFE. Use `var`, `function` declarations, and `.then()` chains. Do not introduce `let`, `const`, arrow functions, classes, or modules into existing files.
 - **UI composition:** Keep markup minimal and readable; avoid unnecessary wrapper layers.
 - **Error handling:** Catch runtime errors and show safe fallback states.
-- **Async:** Use `async/await` for fetch and bridge flows.
+- **Image loading:** Track an `imageReady` flag set in `onload`, and keep a vector or rectangle fallback path that draws until the image resolves.
 - **Validation:** Validate postMessage payloads before acting.
-- **Logging:** Use structured console logs with masked sensitive values.
 - **Constants:** Centralize game tuning values near the top of the script.
 - **Performance:** Avoid heavy loops and expensive per-frame allocations in animation code.
+
+## Sprite Sheet Conventions
+
+- Pack frames into a uniform grid; store cell width, cell height, and the feet/baseline offset as named constants
+- Bottom-align characters to a shared baseline so physics, not art, controls vertical position
+- Anchor horizontally on the footprint, not the bounding box, so extended weapons do not shift the character
+- Record the source art's facing direction; use a `flip` multiplier when art faces left
+- Store measured attachment points (muzzle, door opening) as constants in cell coordinates and convert to world space at use
+- Keep the unpacked original alongside the packed sheet as `<name>-source.png`
+
+## Endless Level Conventions
+
+- Generate content in fixed-width chunks ahead of the player; never precompute a fixed-length level
+- Cull entities behind the camera every frame
+- Derive scenery from a deterministic seeded function of world index so parallax layers never reshuffle while scrolling
 
 ## Secrets and Environment
 
@@ -53,12 +85,12 @@ Prefer local assets. If remote assets are used, provide fallbacks for offline/fa
 **Methods:** Use simple `GET` for static assets unless write behavior is explicitly required.
 **Status codes:** Handle common codes explicitly and map failures to fallback visuals/UI.
 **Timeouts:** Guard remote fetches with fallback behavior.
+**House ads:** Fetched from the shared house-ads endpoint. A failed fetch must leave the game fully playable with no billboard drawn.
 
 ## Naming
 
 - Files: follow existing naming in each folder; keep conventions consistent within the folder.
 - Constants: reuse existing constants in the same file before adding new ones.
-- Imports: group third-party, then local modules.
 
 ## Rules
 

@@ -42,6 +42,15 @@ description: Security checklist for HTML - secrets management, input validation,
 - Set auth headers only through shared service layers
 - Validate backend response shape before use
 
+### Known Exception - House Ads Endpoint
+
+The house-ads config endpoint is currently plain HTTP to a bare IP address. It is consumed by `sigaboGame.html`, `sigaboPlatformer.html`, and `sigaboRunAndGun.html`.
+
+- Do not add new cleartext endpoints
+- Do not send any credential, token, or user identifier to this endpoint
+- Treat its response as untrusted: filter by expected `type` and verify image dimensions before drawing
+- Migrate to HTTPS when the endpoint has a certificate
+
 ## Sensitive Data in Responses and UI
 
 - Never render raw internal errors to end users
