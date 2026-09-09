@@ -37,7 +37,7 @@
     .primary,.secondary { width:100%; padding:15px 18px; border:0; border-radius:16px; margin-top:10px; font-weight:900; letter-spacing:.06em; }.primary { background:linear-gradient(90deg,#ff2b80,#ff725c); box-shadow:0 10px 30px rgba(255,43,128,.28); }.secondary { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.13); }.tiny { font-size:11px; opacity:.55!important; margin-bottom:0; }
     .resultScore { font-size:46px; font-weight:1000; color:#fff; margin:12px 0 18px; }.stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }.stats div { display:flex; justify-content:space-between; gap:12px; padding:11px 13px; border-radius:13px; background:rgba(255,255,255,.06); }.stats span{opacity:.7}.stats b{font-size:18px}
     .musicPicker { display:grid; grid-template-columns:1fr 92px; gap:8px; margin:10px 0 14px; text-align:left; }.musicPicker label { display:block; min-width:0; font-size:10px; letter-spacing:.12em; font-weight:800; }.musicPicker select,.musicPicker input { width:100%; margin-top:6px; padding:9px 8px; border:1px solid rgba(255,255,255,.18); border-radius:10px; background:#24101b; color:#fff; font-size:13px; }.musicPicker input[type=file] { padding:7px 5px; font-size:11px; }
-    .ytWrap { position:absolute; z-index:-1; width:1px; height:1px; overflow:hidden; opacity:.001; pointer-events:none; }.playerStatus{margin:14px 0 10px;padding:10px 12px;border-radius:14px;background:rgba(98,236,255,.10);border:1px solid rgba(98,236,255,.2);font-size:12px;line-height:1.3}.playerStatus.warn{background:rgba(255,101,120,.10);border-color:rgba(255,101,120,.25)}.difficultyLabel{display:block;text-align:left;font-size:11px;letter-spacing:.16em;font-weight:800;margin:10px 0 14px;opacity:.92}.difficultyLabel select{width:100%;margin-top:8px;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:#24101b;color:white;font-size:16px;font-weight:800;outline:none}.resultDifficulty{margin-top:-12px;margin-bottom:14px;font-size:12px;letter-spacing:.12em;opacity:.75}
+    .playerStatus{margin:14px 0 10px;padding:10px 12px;border-radius:14px;background:rgba(98,236,255,.10);border:1px solid rgba(98,236,255,.2);font-size:12px;line-height:1.3}.playerStatus.warn{background:rgba(255,101,120,.10);border-color:rgba(255,101,120,.25)}.difficultyLabel{display:block;text-align:left;font-size:11px;letter-spacing:.16em;font-weight:800;margin:10px 0 14px;opacity:.92}.difficultyLabel select{width:100%;margin-top:8px;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:#24101b;color:white;font-size:16px;font-weight:800;outline:none}.resultDifficulty{margin-top:-12px;margin-bottom:14px;font-size:12px;letter-spacing:.12em;opacity:.75}
     @media (max-height:650px){ .lanes{top:10%;height:68%}.tapRow{bottom:8px}.tap{max-height:70px}.hud{top:6px} }
   </style>
   <style>
@@ -102,7 +102,7 @@
           <span><b>GREAT</b> ±100ms</span>
           <span><b>GOOD</b> ±160ms</span>
         </div>
-        <button id="startBtn" class="primary">START SONG.</button>
+        <button id="startBtn" class="primary">START SONG</button>
         <!-- <button id="calibrateBtn" class="secondary">CALIBRATION: <span id="calibrationLabel">0 ms</span></button> -->
         <button class="secondary" data-action="back">BACK</button>
         <button class="secondary" data-action="leaderboard">TROPHIES</button>
@@ -128,11 +128,8 @@
       </div>
     </section>
 
-    <div id="ytWrap" class="ytWrap" aria-hidden="true"><div id="youtubePlayer"></div></div>
-    <audio id="musicAudio" preload="auto"></audio>
   </div>
 
-  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     window.BINI_SONGS = [
       {
@@ -148,7 +145,6 @@
     window.BINI_BEATMAP = {
       title: 'Step Back',
       artist: 'BINI',
-      youtubeVideoId: 'bzQs95bs7og',
       bpm: window.BINI_SONGS[0].bpm,
       offsetSeconds: window.BINI_SONGS[0].offsetSeconds,
       durationSeconds: 230,
@@ -217,7 +213,7 @@
         perfect: 0, great: 0, good: 0, miss: 0, notes: [],
         calibrationMs: Number(localStorage.getItem('biniTapCalibration') || 0),
         lastBackground: -1, animationFrame: 0, simulatedStart: 0,
-        hasYouTube: false, audioReady: false, difficulty: localStorage.getItem('biniTapDifficulty') || 'normal'
+        audioReady: false, difficulty: localStorage.getItem('biniTapDifficulty') || 'normal'
       };
       var getElement = function (id) { return document.getElementById(id); };
       var background = getElement('bg');
@@ -227,8 +223,12 @@
       var combo = getElement('combo');
       var startScreen = getElement('startScreen');
       var resultScreen = getElement('resultScreen');
-      var musicAudio = getElement('musicAudio');
-      var player = null;
+      var musicAudio = new Audio(cfg.audioSource);
+      musicAudio.loop = false;
+      musicAudio.preload = 'auto';
+      musicAudio.playsInline = true;
+      musicAudio.volume = 1;
+      var musicStarted = false;
       var audioContext = null;
 
       function populateSongSelector() {
@@ -261,22 +261,16 @@
         status.classList.toggle('warn', Boolean(warning));
       }
 
-      window.onYouTubeIframeAPIReady = function () {
-        if (window.location.protocol === 'file:') return;
-        if (!window.YT || !window.YT.Player) return;
-        player = new window.YT.Player('youtubePlayer', {
-          height: '1', width: '1', videoId: cfg.youtubeVideoId,
-          playerVars: { playsinline: 1, controls: 0, rel: 0, modestbranding: 1, disablekb: 1 },
-          events: {
-            onReady: function () { state.hasYouTube = true; setStatus('Song ready - tap Start'); },
-            onError: function () { setStatus('Ready to play - audio is optional.'); },
-            onStateChange: function (event) {
-              if (event.data === window.YT.PlayerState.PLAYING) setStatus('Playing: BINI - Step Back');
-              if (event.data === window.YT.PlayerState.ENDED && state.running) finish();
-            }
-          }
-        });
-      };
+      function playBackgroundMusic() {
+        musicStarted = true;
+        musicAudio.volume = 1;
+        var playPromise = musicAudio.play();
+        if (playPromise && playPromise.catch) {
+          playPromise.catch(function () {
+            setStatus('Music playback was blocked - tap Start again to retry.', true);
+          });
+        }
+      }
 
       function currentTime() {
         if (state.audioReady) {
@@ -284,9 +278,6 @@
             return musicAudio.currentTime + state.calibrationMs / 1000;
           }
           return (performance.now() - state.simulatedStart) / 1000 + state.calibrationMs / 1000;
-        }
-        if (state.hasYouTube && player && typeof player.getCurrentTime === 'function' && player.getPlayerState() === window.YT.PlayerState.PLAYING) {
-          return player.getCurrentTime() + state.calibrationMs / 1000;
         }
         return (performance.now() - state.simulatedStart) / 1000 + state.calibrationMs / 1000;
       }
@@ -318,7 +309,7 @@
       }
 
       function playBeatSounds(time) {
-        if (state.audioReady || state.hasYouTube) return;
+        if (state.audioReady) return;
         for (var index = 0; index < state.notes.length; index += 1) {
           var note = state.notes[index];
           if (note.soundPlayed || note.time > time + 0.02) break;
@@ -344,7 +335,7 @@
         musicAudio.currentTime = 0;
         musicAudio.src = source;
         musicAudio.load();
-        musicAudio.onloadedmetadata = function () {
+        musicAudio.oncanplay = function () {
           state.audioReady = true;
           if (Number.isFinite(musicAudio.duration) && musicAudio.duration > 0) cfg.durationSeconds = musicAudio.duration;
           setStatus((label || 'Music') + ' ready - tap Start');
@@ -386,7 +377,7 @@
           if (delta < -missWindow) missNote(note);
         });
         updateBackground(time);
-        var duration = state.audioReady && Number.isFinite(musicAudio.duration) ? musicAudio.duration : (state.hasYouTube && player && player.getDuration ? player.getDuration() : cfg.durationSeconds);
+        var duration = state.audioReady && Number.isFinite(musicAudio.duration) ? musicAudio.duration : cfg.durationSeconds;
         if (duration > 1 && time > duration + 0.5 && state.running) finish();
         state.animationFrame = requestAnimationFrame(render);
       }
@@ -462,13 +453,8 @@
         state.running = true;
         state.lastBackground = -1;
         ensureAudio();
-        if (state.audioReady) {
-          musicAudio.currentTime = 0;
-          var playPromise = musicAudio.play();
-          if (playPromise && playPromise.catch) playPromise.catch(function () { setStatus('Tap Start again to enable music.', true); });
-        } else if (state.hasYouTube && player) {
-          try { player.seekTo(0, true); player.playVideo(); } catch (error) { /* Visual mode remains available. */ }
-        } else setStatus('Playing with generated beat tones.');
+        musicAudio.currentTime = 0;
+        playBackgroundMusic();
         render();
       }
 
@@ -478,7 +464,6 @@
         cancelAnimationFrame(state.animationFrame);
         musicAudio.pause();
         musicAudio.currentTime = 0;
-        if (state.hasYouTube && player) { try { player.pauseVideo(); } catch (error) { /* Ignore unavailable audio. */ } }
         var weighted = state.perfect + state.great * 0.7 + state.good * 0.4;
         var total = Math.max(1, state.perfect + state.great + state.good + state.miss);
         getElement('resultScore').textContent = state.score.toLocaleString();
