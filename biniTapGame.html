@@ -225,10 +225,10 @@
       var resultScreen = getElement('resultScreen');
       var musicAudio = new Audio(cfg.audioSource);
       musicAudio.loop = false;
+      musicAudio.autoplay = false;
       musicAudio.preload = 'auto';
       musicAudio.playsInline = true;
       musicAudio.volume = 1;
-      var musicStarted = false;
       var audioContext = null;
 
       function populateSongSelector() {
@@ -262,7 +262,7 @@
       }
 
       function playBackgroundMusic() {
-        musicStarted = true;
+        musicAudio.loop = false;
         musicAudio.volume = 1;
         var playPromise = musicAudio.play();
         if (playPromise && playPromise.catch) {
@@ -334,6 +334,8 @@
         musicAudio.pause();
         musicAudio.currentTime = 0;
         musicAudio.src = source;
+        musicAudio.loop = false;
+        musicAudio.autoplay = false;
         musicAudio.load();
         musicAudio.oncanplay = function () {
           state.audioReady = true;
