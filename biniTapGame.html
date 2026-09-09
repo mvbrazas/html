@@ -102,7 +102,7 @@
           <span><b>GREAT</b> ±100ms</span>
           <span><b>GOOD</b> ±160ms</span>
         </div>
-        <button id="startBtn" class="primary">START SONG</button>
+        <button id="startBtn" class="primary">START SONG.</button>
         <!-- <button id="calibrateBtn" class="secondary">CALIBRATION: <span id="calibrationLabel">0 ms</span></button> -->
         <button class="secondary" data-action="back">BACK</button>
         <button class="secondary" data-action="leaderboard">TROPHIES</button>
@@ -279,10 +279,13 @@
       };
 
       function currentTime() {
-        if (state.audioReady && !musicAudio.paused) {
-          return musicAudio.currentTime + state.calibrationMs / 1000;
+        if (state.audioReady) {
+          if (!musicAudio.paused) {
+            return musicAudio.currentTime + state.calibrationMs / 1000;
+          }
+          return (performance.now() - state.simulatedStart) / 1000 + state.calibrationMs / 1000;
         }
-        if (state.hasYouTube && player && typeof player.getCurrentTime === 'function') {
+        if (state.hasYouTube && player && typeof player.getCurrentTime === 'function' && player.getPlayerState() === window.YT.PlayerState.PLAYING) {
           return player.getCurrentTime() + state.calibrationMs / 1000;
         }
         return (performance.now() - state.simulatedStart) / 1000 + state.calibrationMs / 1000;
