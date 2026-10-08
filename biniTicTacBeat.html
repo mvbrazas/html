@@ -8,7 +8,6 @@
     <style>
         :root { color-scheme: dark; --ink: #111114; --panel: #1b191f; --panel-raised: #252129; --paper: #f7f4f5; --muted: #bcb4be; --pink: #f7a7d2; --lime: #d9f78a; --line: #423a46; --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); font-family: Arial, Helvetica, sans-serif; background: var(--ink); color: var(--paper); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        html { min-height: 100%; background: var(--ink); }
         body { min-height: 100vh; min-height: 100svh; margin: 0; background: radial-gradient(ellipse at 84% 10%, #332131 0, transparent 40%), linear-gradient(145deg, #151319, #111114 62%); }
         button, input, select { font: inherit; }
         button { color: inherit; cursor: pointer; touch-action: manipulation; }
@@ -37,8 +36,6 @@
         .setup, .score-panel { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: rgba(27,25,31,.94); }
         .setup h2 { margin: 0 0 16px; }
         .field-label, .section-label { display: block; margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 1.1px; }
-        #name { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #514754; border-radius: 8px; background: #131116; color: var(--paper); }
-        .name-note { margin: 7px 0 0; font-size: 12px; }
         .section-label { margin-top: 18px; }
         .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
         .mode-option { min-height: 88px; padding: 11px; display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 8px; text-align: left; border: 1px solid var(--line); border-radius: 8px; background: #211e25; }
@@ -82,11 +79,6 @@
         .round-dots .current { border-color: var(--pink); color: var(--pink); }
         .round-dots .complete { border-color: var(--lime); background: #303622; color: var(--lime); }
         .outcome { min-height: 27px; margin: 14px 0 4px; color: var(--pink); font-size: 16px; font-weight: 900; text-align: center; }
-        #musicPanel { margin: 16px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: #17151a; }
-        .music-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; font-weight: 800; }
-        .music-heading small, #musicStatus { color: var(--muted); font-size: 11px; }
-        #videoMount { width: 100%; min-height: 200px; background: #08070a; }
-        #videoMount iframe { display: block; width: 100%; min-height: 200px; border: 0; }
         #resultScreen { max-width: 680px; margin: 22px auto; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); text-align: center; }
         #resultTitle { color: var(--pink); font-size: 20px; }
         #resultScore { margin: 14px 0 0; color: var(--lime); font-size: 52px; font-weight: 900; font-variant-numeric: tabular-nums; }
@@ -141,9 +133,6 @@
             <div class="start-layout">
                 <section class="setup">
                     <h2>Ready, Bloom?</h2>
-                    <label class="field-label" for="name">YOUR BLOOM NAME</label>
-                    <input id="name" type="text" maxlength="24" autocomplete="off" placeholder="Bloom00000000" />
-                    <p class="name-note">Use 3 to 24 letters, numbers, spaces, underscores or hyphens.</p>
                     <span class="section-label">CHOOSE YOUR CHALLENGE</span>
                     <div class="mode-grid" id="modeGrid">
                         <button class="mode-option" type="button" data-mode="quick-play" aria-pressed="false"><span class="mode-icon" aria-hidden="true">✿</span><strong>Quick Play</strong><small>One board, no music needed</small></button>
@@ -159,8 +148,6 @@
                             <button type="button" data-difficulty="slay" aria-pressed="false">SLAY</button>
                         </div>
                     </div>
-                    <button type="button" class="action secondary" id="loadMusicButton" style="width:100%;margin-top:12px"><span aria-hidden="true">♫</span> Load music video</button>
-                    <p class="fine-print">The optional visual rhythm guide is an authored 100 BPM pattern, not verified song-beat synchronization.</p>
                     <p class="notice" id="notice" role="status" aria-live="polite"></p>
                     <button type="button" class="action primary" id="startButton">Let’s play BINI Eight <span aria-hidden="true">→</span></button>
                     <div class="action-row"><button type="button" class="action secondary" data-native-action="trophy">Trophies</button><button type="button" class="action secondary" data-native-action="back">Back</button><button type="button" class="action secondary" id="helpButton">How to play</button></div>
@@ -218,12 +205,8 @@
             <button type="button" class="action primary" id="againButton">Play again <span aria-hidden="true">↻</span></button>
             <div class="action-row"><button type="button" class="action secondary" data-native-action="trophy">Trophies</button><button type="button" class="action secondary" id="changeModeButton">Change mode</button><button type="button" class="action secondary" data-native-action="back">Back</button></div>
         </section>
-        <section id="musicPanel" hidden>
-            <div class="music-heading"><span>BINI · TIC TAC TOE</span><small id="musicState">MUSIC VIDEO</small></div>
-            <div id="videoMount"></div>
-            <p id="musicStatus" role="status">Load the official video for optional rhythm timing.</p>
-        </section>
     </main>
+    <audio id="musicAudio" preload="none" playsinline></audio>
     <footer>Star Magic · ABS-CBN Music · ABS-CBN Digital · Digital Consumer Technology</footer>
 </div>
 <dialog id="helpDialog">
@@ -235,7 +218,7 @@
         <li>The BINI Eight and Beat Challenge power tile doubles move points. Fast wins add a bonus; consecutive wins grow your streak multiplier.</li>
         <li>Complete all eight BINI Eight boards for a 2,000 point Bloom Master bonus.</li>
         <li>Chill is unpredictable, Groove blocks and takes wins, and Slay uses optimal strategy.</li>
-        <li>Beat Challenge can use the optional music video. Without it, play an unranked practice run and finish after any board.</li>
+        <li>Beat Challenge uses the BINI track for its timed run. If the track is unavailable, play Quick Play or BINI Eight as unranked practice.</li>
     </ul>
     <button type="button" class="action primary" id="closeHelpButton">Got it</button>
 </dialog>
@@ -387,30 +370,22 @@
         if (mode === 'bini-eight' && stats.rounds === 8) stats.score += 2000;
         return stats;
     }
-    function validNickname(value) {
-        var name = String(value || '').trim().replace(/\s+/g, ' ');
-        return /^[A-Za-z0-9 _-]{3,24}$/.test(name) ? name : null;
-    }
-    function makeNickname() {
-        var number = window.crypto && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] % 100000000 : Date.now() % 100000000;
-        return 'Bloom' + String(number).padStart(8, '0');
-    }
     function showScreen(name) {
         query('#startScreen').hidden = name !== 'start';
         query('#playScreen').hidden = name !== 'play';
         query('#resultScreen').hidden = name !== 'result';
-        query('#musicPanel').hidden = !state.mediaLoaded || name === 'result';
         state.screen = name;
     }
     function modeIsArcade() { return state.mode === 'bini-eight' || state.mode === 'beat-challenge'; }
     function scoreNow() { return state.stats ? state.stats.score : 0; }
 
+    var MUSIC_URL = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/assets/BINI-Tic-Tac-Toe.mp3';
     var state = {
-        screen: 'start', mode: 'bini-eight', difficulty: 'groove', name: '', board: emptyBoard(), turn: 1,
+        screen: 'start', mode: 'bini-eight', difficulty: 'groove', board: emptyBoard(), turn: 1,
         stats: emptyStats(), round: 0, roundDone: false, outcome: '', paused: false, muted: false,
-        localPoints: [0, 0], mediaLoaded: false, mediaState: 'off', player: null, timer: null,
+        localPoints: [0, 0], mediaState: 'off', player: null, timer: null,
         run: { id: '', seed: 1, started: 0, rounds: [], timing: false, duration: 0 },
-        usedBeats: new Set(), finished: false, reduced: false
+        usedBeats: new Set(), finished: false, reduced: false, audioStartPending: false
     };
 
     query('#joinnowLogo').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
@@ -418,13 +393,13 @@
 
     var storedMode = storage.get('bloomMode');
     var storedDifficulty = storage.get('bloomDifficulty');
-    var storedName = validNickname(storage.get('joinnowBiniNickname'));
     if (MODES.indexOf(storedMode) >= 0) state.mode = storedMode;
     if (DIFFICULTIES.indexOf(storedDifficulty) >= 0) state.difficulty = storedDifficulty;
-    state.name = storedName || makeNickname();
     state.muted = storage.get('bloomMuted') === 'true';
+    state.player = query('#musicAudio');
+    state.player.volume = 0.32;
+    state.player.muted = state.muted;
     state.reduced = storage.get('bloomReduced') === 'true' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    query('#name').value = state.name;
     query('#soundButton').setAttribute('aria-pressed', String(state.muted));
     query('#soundButton').title = state.muted ? 'Sound off' : 'Sound on';
 
@@ -513,7 +488,7 @@
         query('#playEyebrow').textContent = MODE_NAMES[state.mode].toUpperCase() + ' / ' + (state.mode === 'local-two-player' ? 'TWO PLAYERS' : state.difficulty.toUpperCase());
         query('#firstPlayerLabel').textContent = state.mode === 'local-two-player' ? 'Bloom 1' : 'You / Bloom';
         query('#secondPlayerLabel').textContent = state.mode === 'local-two-player' ? 'Bloom 2' : 'BINI';
-        query('#turnLabel').textContent = state.paused ? 'PAUSED' : state.roundDone ? state.outcome : state.turn === 1 ? (state.mode === 'local-two-player' ? 'BLOOM 1’S TURN' : 'YOUR TURN') : state.mode === 'local-two-player' ? 'BLOOM 2’S TURN' : state.run.timing && state.mediaState !== 'playing' ? 'PRESS PLAY ON THE MUSIC VIDEO' : 'BINI’S TURN';
+        query('#turnLabel').textContent = state.paused ? 'PAUSED' : state.roundDone ? state.outcome : state.turn === 1 ? (state.mode === 'local-two-player' ? 'BLOOM 1’S TURN' : 'YOUR TURN') : state.mode === 'local-two-player' ? 'BLOOM 2’S TURN' : state.run.timing && state.mediaState !== 'playing' ? 'WAITING FOR THE BINI TRACK' : 'BINI’S TURN';
         query('#pauseButton').textContent = state.paused ? 'Resume' : 'Pause';
         query('#pauseButton').disabled = state.roundDone;
         query('#playHint').textContent = state.run.timing ? 'Catch the pink pulse for a timing bonus.' : 'Make three in a row. Every valid move earns points.';
@@ -578,7 +553,7 @@
         updateBoardState();
     }
     function moveTime() {
-        if (state.run.timing && state.player && state.player.getCurrentTime) return Math.round(state.player.getCurrentTime() * 1000);
+        if (state.run.timing && state.player) return Math.round(state.player.currentTime * 1000);
         return Math.round(performance.now() - state.run.started);
     }
     function makeMove(cell) {
@@ -615,13 +590,51 @@
         }, 480);
     }
     function stopAI() { if (state.aiTimer) { clearTimeout(state.aiTimer); state.aiTimer = null; } }
-    function startGame() {
-        var cleanName = validNickname(query('#name').value);
-        if (!cleanName) { query('#notice').textContent = 'Use 3–24 letters, numbers, spaces, _ or -.'; query('#name').focus(); return; }
+    function startGame(audioAlreadyPlaying) {
+        if (state.audioStartPending) return;
+        var hasMusic = !!(state.player && Number.isFinite(state.player.duration) && state.player.duration > 0 && state.mediaState !== 'error');
+        if (state.mode === 'beat-challenge' && !hasMusic) {
+            state.audioStartPending = true;
+            var startButton = query('#startButton');
+            var requestedMode = state.mode;
+            startButton.disabled = true;
+            startButton.textContent = 'Starting BINI track…';
+            loadMusic();
+            try { state.player.currentTime = 0; } catch (error) {}
+            state.player.muted = state.muted;
+            var continueAfterAudioStarts = function () {
+                state.audioStartPending = false;
+                startButton.disabled = false;
+                if (state.mode !== requestedMode || state.screen !== 'start') {
+                    state.player.pause();
+                    updateSetup();
+                    return;
+                }
+                if (!Number.isFinite(state.player.duration) || state.player.duration <= 0) {
+                    state.mediaState = 'error';
+                    updateSetup();
+                    state.notice = 'BINI track duration is unavailable. Try Quick Play or BINI Eight practice.';
+                    query('#notice').textContent = state.notice;
+                    return;
+                }
+                state.mediaState = 'playing';
+                startGame(true);
+            };
+            var audioStartFailed = function () {
+                state.audioStartPending = false;
+                startButton.disabled = false;
+                state.mediaState = 'error';
+                updateSetup();
+                state.notice = 'BINI track could not start. Try Quick Play or BINI Eight practice.';
+                query('#notice').textContent = state.notice;
+            };
+            var playPromise = state.player.play();
+            if (playPromise && playPromise.then) playPromise.then(continueAfterAudioStarts).catch(audioStartFailed);
+            else state.player.addEventListener('playing', continueAfterAudioStarts, { once: true });
+            return;
+        }
         stopAI();
         if (state.audio && state.audio.state === 'suspended') state.audio.resume();
-        state.name = cleanName;
-        storage.set('joinnowBiniNickname', cleanName);
         storage.set('bloomMode', state.mode);
         storage.set('bloomDifficulty', state.difficulty);
         state.round = 0;
@@ -637,10 +650,24 @@
         state.finished = false;
         var seed = window.crypto && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] % 2147483647 : Date.now() % 2147483647;
         state.run = { id: String(Date.now()), seed: seed || 1, started: performance.now(), rounds: [{ moves: [] }], timing: false, duration: 0 };
-        var hasMusic = !!(state.player && state.player.getDuration && state.player.getDuration() > 0 && state.mediaState !== 'error');
         state.run.timing = hasMusic;
-        state.run.duration = hasMusic ? Math.round(state.player.getDuration() * 1000) : 180000;
-        if (hasMusic) { state.mediaState = 'playing'; state.player.seekTo(0, true); state.player.playVideo(); }
+        state.run.duration = hasMusic ? Math.round(state.player.duration * 1000) : 180000;
+        if (hasMusic) {
+            state.mediaState = audioAlreadyPlaying ? 'playing' : 'ready';
+            if (!audioAlreadyPlaying) {
+                state.player.currentTime = 0;
+                state.player.muted = state.muted;
+            }
+            var playPromise = audioAlreadyPlaying ? null : state.player.play();
+            if (playPromise && playPromise.catch) playPromise.catch(function () {
+                state.mediaState = 'error';
+                state.run.timing = false;
+                state.run.valid = false;
+                state.practice = modeIsArcade();
+                state.notice = 'The BINI track could not play. This run is unranked practice.';
+                updateBoardState();
+            });
+        }
         state.practice = modeIsArcade();
         if (modeIsArcade() && !hasMusic) state.notice = 'Unranked practice · music and timing bonuses are off.';
         showScreen('play');
@@ -677,81 +704,107 @@
         var submitsScore = state.mode !== 'local-two-player';
         query('#resultNotice').textContent = submitsScore ? window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.' : 'Local two-player is just for fun.';
         if (submitsScore) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: state.stats.score, final: true });
-        if (state.player && state.player.pauseVideo) state.player.pauseVideo();
+        if (state.player) state.player.pause();
     }
     function exitToStart() {
         stopAI();
         state.run.timing = false;
         state.paused = false;
         state.notice = '';
-        if (state.player && state.player.pauseVideo) state.player.pauseVideo();
+        if (state.player) state.player.pause();
         showScreen('start');
         updateSetup();
     }
     function togglePause() {
         if (state.screen !== 'play' || state.roundDone) return;
         state.paused = !state.paused;
-        if (state.paused) { stopAI(); if (state.player && state.player.pauseVideo) state.player.pauseVideo(); }
-        else if (state.run.timing && state.player) state.player.playVideo();
+        if (state.paused) { stopAI(); if (state.player) state.player.pause(); }
+        else if (state.run.timing && state.player) {
+            var playPromise = state.player.play();
+            if (playPromise && playPromise.catch) playPromise.catch(function () {
+                state.run.timing = false;
+                state.run.valid = false;
+                state.practice = modeIsArcade();
+                state.notice = 'The BINI track could not resume. Timing bonuses are off.';
+                updateBoardState();
+            });
+        }
         updateBoardState();
     }
     function openTrophies() { post({ type: 'viewLeaderboard', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
     function leaveGame() { post({ type: 'goBack', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
-    function showMusicStatus(message, label) {
-        query('#musicStatus').textContent = message;
-        query('#musicState').textContent = label;
+    function showMusicStatus(message) {
+        var target = state.screen === 'play' ? query('#playNotice') : query('#notice');
+        if (target) target.textContent = message;
     }
-    function initYouTube() {
-        if (state.player || !window.YT || !window.YT.Player) return;
-        state.player = new window.YT.Player('videoMount', {
-            width: '100%', height: '200', videoId: 'vXlM5lzCmRU',
-            playerVars: { playsinline: 1, controls: 1, rel: 0, origin: location.origin },
-            events: {
-                onReady: function () { state.mediaState = 'ready'; showMusicStatus('Video ready. Start a challenge, then use the player controls.', 'READY'); },
-                onError: function () {
-                    state.mediaState = 'error';
-                    if (state.run && state.run.timing) { state.run.timing = false; state.practice = true; }
-                    showMusicStatus('Video unavailable. The game remains playable without timing bonuses.', 'UNAVAILABLE');
-                    updateBoardState();
-                },
-                onStateChange: function (event) {
-                    if (event.data === 1) { state.mediaState = 'playing'; showMusicStatus('Music playing.', 'NOW PLAYING'); }
-                    else if (event.data === 2 || event.data === 3) {
-                        state.mediaState = event.data === 2 ? 'paused' : 'buffering';
-                        if (state.run && state.run.timing && state.screen === 'play') {
-                            state.run.timing = false;
-                            state.practice = true;
-                            state.notice = 'Music paused or buffering. Timing bonuses are now off; keep playing.';
-                            updateBoardState();
-                        }
-                        showMusicStatus('Use the video controls to play or pause.', state.mediaState.toUpperCase());
-                    } else if (event.data === 0) {
-                        state.mediaState = 'ended';
-                        showMusicStatus('Music ended.', 'ENDED');
-                        if (state.screen === 'play' && state.mode === 'beat-challenge') finishGame();
-                        else if (state.screen === 'play' && state.mode === 'bini-eight') {
-                            state.run.timing = false;
-                            state.practice = true;
-                            state.notice = 'The song ended. Finish your eight boards as unranked practice.';
-                            updateBoardState();
-                        }
-                    }
-                }
-            }
-        });
-    }
+    state.player.addEventListener('loadedmetadata', function () {
+        state.mediaState = 'ready';
+        showMusicStatus('BINI track ready. Start a challenge to play it from the beginning.', 'READY');
+        if (state.screen === 'start' && state.mode === 'beat-challenge') {
+            state.notice = 'BINI track ready. Start Beat Challenge to begin.';
+            query('#notice').textContent = state.notice;
+        }
+    });
+    state.player.addEventListener('playing', function () {
+        state.mediaState = 'playing';
+        showMusicStatus('BINI track is playing.', 'NOW PLAYING');
+        if (state.screen === 'play') updateBoardState();
+    });
+    state.player.addEventListener('pause', function () {
+        var wasPlaying = state.mediaState === 'playing';
+        state.mediaState = state.player.ended ? 'ended' : 'paused';
+        if (wasPlaying && state.screen === 'play' && state.run.timing && !state.paused && !state.player.ended) {
+            state.run.timing = false;
+            state.run.valid = false;
+            state.practice = modeIsArcade();
+            state.notice = 'Track paused. Timing bonuses are off; keep playing unranked.';
+            updateBoardState();
+        }
+        showMusicStatus(state.player.ended ? 'BINI track ended.' : 'BINI track paused.', state.player.ended ? 'ENDED' : 'PAUSED');
+    });
+    state.player.addEventListener('waiting', function () {
+        var wasPlaying = state.mediaState === 'playing';
+        state.mediaState = 'buffering';
+        if (wasPlaying && state.screen === 'play' && state.run.timing) {
+            state.run.timing = false;
+            state.run.valid = false;
+            state.practice = modeIsArcade();
+            state.notice = 'BINI track is buffering. Timing bonuses are off; keep playing unranked.';
+            updateBoardState();
+        }
+        showMusicStatus('BINI track is loading.', 'BUFFERING');
+    });
+    state.player.addEventListener('error', function () {
+        state.mediaState = 'error';
+        if (state.run && state.run.timing) {
+            state.run.timing = false;
+            state.run.valid = false;
+            state.practice = modeIsArcade();
+        }
+        showMusicStatus('BINI track unavailable. The game is still playable.', 'UNAVAILABLE');
+        if (state.screen === 'play') {
+            state.notice = 'Music unavailable. Timing bonuses are off; keep playing unranked.';
+            updateBoardState();
+        }
+    });
+    state.player.addEventListener('ended', function () {
+        state.mediaState = 'ended';
+        showMusicStatus('BINI track ended.', 'ENDED');
+        if (state.screen === 'play' && state.mode === 'beat-challenge') finishGame();
+        else if (state.screen === 'play' && state.mode === 'bini-eight') {
+            state.run.timing = false;
+            state.run.valid = false;
+            state.practice = true;
+            state.notice = 'The BINI track ended. Finish BINI Eight as unranked practice.';
+            updateBoardState();
+        }
+    });
     function loadMusic() {
-        query('#musicPanel').hidden = false;
-        state.mediaLoaded = true;
-        showMusicStatus('Loading the official video…', 'LOADING');
-        if (window.YT && window.YT.Player) { initYouTube(); return; }
-        if (query('#youtubeApi')) return;
-        window.onYouTubeIframeAPIReady = function () { initYouTube(); };
-        var script = document.createElement('script');
-        script.id = 'youtubeApi';
-        script.src = 'https://www.youtube.com/iframe_api';
-        script.onerror = function () { state.mediaState = 'error'; showMusicStatus('Video unavailable. You can still play without music.', 'UNAVAILABLE'); };
-        document.head.appendChild(script);
+        if (state.mediaState === 'ready' || state.mediaState === 'playing') return;
+        state.mediaState = 'loading';
+        showMusicStatus('Loading the BINI track…', 'LOADING');
+        state.player.src = MUSIC_URL;
+        state.player.load();
     }
 
     query('#modeGrid').addEventListener('click', function (event) {
@@ -773,7 +826,6 @@
     query('#exitButton').addEventListener('click', exitToStart);
     query('#changeModeButton').addEventListener('click', exitToStart);
     query('#againButton').addEventListener('click', startGame);
-    query('#loadMusicButton').addEventListener('click', loadMusic);
     query('#helpButton').addEventListener('click', function () { query('#helpDialog').showModal(); });
     query('#closeHelpButton').addEventListener('click', function () { query('#helpDialog').close(); });
     query('#soundButton').addEventListener('click', function () {
@@ -781,14 +833,14 @@
         storage.set('bloomMuted', String(state.muted));
         query('#soundButton').setAttribute('aria-pressed', String(state.muted));
         query('#soundButton').title = state.muted ? 'Sound off' : 'Sound on';
-        if (state.player) { if (state.muted) state.player.mute(); else state.player.unMute(); }
+        if (state.player) state.player.muted = state.muted;
     });
     all('[data-native-action="back"]').forEach(function (button) { button.addEventListener('click', leaveGame); });
     all('[data-native-action="trophy"]').forEach(function (button) { button.addEventListener('click', openTrophies); });
     document.addEventListener('visibilitychange', function () {
         if (document.hidden && state.screen === 'play' && !state.paused) togglePause();
     });
-    window.addEventListener('pagehide', function () { stopAI(); if (state.player && state.player.pauseVideo) state.player.pauseVideo(); });
+    window.addEventListener('pagehide', function () { stopAI(); if (state.player) state.player.pause(); });
     post({ type: 'orientation', orientation: 'portrait' });
     updateSetup();
 })();
