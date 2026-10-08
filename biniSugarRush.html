@@ -4,12 +4,13 @@
 :root {
   color-scheme: dark;
   color: #efffff;
-  background: #10a6b8;
+  background: #087f8d;
 }
 
 body {
   color: #efffff;
   background: radial-gradient(ellipse at 50% 24%, #16b2c0 0, #0b9aa8 60%, #087f8d 100%);
+  display: flow-root;
 }
 
 .arena {
@@ -111,12 +112,12 @@ header>button#sound{margin-left:0}
 
 </style></head><body>
 <header><div class="brand"><img id="joinnow-logo" alt="JoinNow"></div><span class="brand-label">GAMES / SUGAR RUSH</span><div class="native-actions"><button type="button" class="native-action" data-native-action="back" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button><button type="button" class="native-action" data-native-action="trophy" title="Trophies" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button></div><button id="sound" aria-pressed="true" aria-label="Toggle sound">Sound on ♪</button></header>
-<main><section class="arena" aria-label="Sugar Rush game"><div id="start" class="start-screen"><span class="eyebrow">BINI × JOINNOW</span><h1>SUGAR<br><em>RUSH</em></h1><div class="candy-line" aria-hidden="true"><canvas id="showcase" width="640" height="150"></canvas></div><p class="intro">Swipe the sweets. Keep the streak.</p><p class="sub">60 seconds. One sweet challenge.</p><form id="setup"><label for="name">Your nickname</label><input id="name" maxlength="24" autocomplete="off" required pattern="[A-Za-z0-9 _\-]{3,24}"><fieldset><legend>Choose your difficulty</legend><label><input type="radio" name="difficulty" value="easy">Easy</label><label><input type="radio" name="difficulty" value="normal" checked>Normal</label><label><input type="radio" name="difficulty" value="hard">Hard</label></fieldset><button id="play" class="primary" disabled>Loading sweets…</button></form><p id="startMessage" role="status"></p><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button><button id="help">How to play</button></nav></div>
+<main><section class="arena" aria-label="Sugar Rush game"><div id="start" class="start-screen"><span class="eyebrow">BINI × JOINNOW</span><h1>SUGAR<br><em>RUSH</em></h1><div class="candy-line" aria-hidden="true"><canvas id="showcase" width="640" height="150"></canvas></div><p class="intro">Swipe the sweets. Keep the streak.</p><p class="sub">60 seconds. One sweet challenge.</p><form id="setup"><fieldset><legend>Choose your difficulty</legend><label><input type="radio" name="difficulty" value="easy">Easy</label><label><input type="radio" name="difficulty" value="normal" checked>Normal</label><label><input type="radio" name="difficulty" value="hard">Hard</label></fieldset><button id="play" class="primary" disabled>Loading sweets…</button></form><p id="startMessage" role="status"></p><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button><button id="help">How to play</button></nav></div>
 <div id="game" hidden><div class="hud"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="combo">0×</strong></div><div><small>ACCURACY</small><strong id="accuracy">0.0%</strong></div></div><div class="progress"><div id="progress"></div></div><div class="mode-row"><span id="mode">Warm up</span><span id="time">1:00</span></div><canvas id="canvas" aria-label="Swipe across the candies and gummies. Avoid spiky dark candies."></canvas><div id="countdown" hidden></div><div id="pausePanel" hidden><h2>Take a breather</h2><p id="pauseMessage">Your game is paused.</p><button id="resume" class="primary">Resume</button></div><div class="game-controls"><button id="restart">↻ Restart</button><button id="pause">Pause</button><button id="exit">✕ Exit</button></div></div>
 <section id="result" hidden><span class="eyebrow">SUGAR RUSH COMPLETE</span><h2 id="final">0</h2><p id="best"></p><div id="stats"></div><p id="save" role="status"></p><button id="retry" hidden>Retry save</button><button id="again" class="primary">Play again</button><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button></nav></section></section>
 </main>
 <footer><p>Credits · Star Magic · ABS-CBN Music · ABS-CBN Digital · Digital Consumer Technology</p><p><a href="https://www.joinnow.ph/privacy" target="_blank" rel="noopener noreferrer">Data Privacy</a><span> / </span><a href="https://www.joinnow.ph/terms" target="_blank" rel="noopener noreferrer">Terms and Conditions</a></p><small>BINI Sugar Rush v1.0.0</small></footer>
-<dialog id="helpDialog"><button class="close" data-close aria-label="Close">✕</button><span class="eyebrow">HOW TO PLAY</span><h2>Make it a sweet streak.</h2><p>Hold your mouse button and drag, or swipe with your finger through candies and gummies. Each sweet counts once.</p><p>Build combos for up to 2.5× points. Sugar Rush sections double your points. A missed sweet resets your combo. Dark, spiky candies cost 500 points and reset your streak.</p><p>Easy moves slower; Hard brings more sweets and hazards. Finish the 60-second challenge to save your score.</p><p>In the JoinNow app, completed scores are submitted to Trophies using your app profile. Avoid personal information in your game nickname.</p><button data-close class="primary">Let’s play</button></dialog>
+<dialog id="helpDialog"><button class="close" data-close aria-label="Close">✕</button><span class="eyebrow">HOW TO PLAY</span><h2>Make it a sweet streak.</h2><p>Hold your mouse button and drag, or swipe with your finger through candies and gummies. Each sweet counts once.</p><p>Build combos for up to 2.5× points. Sugar Rush sections double your points. A missed sweet resets your combo. Dark, spiky candies cost 500 points and reset your streak.</p><p>Easy moves slower; Hard brings more sweets and hazards. Finish the 60-second challenge to save your score.</p><p>Completed scores in the JoinNow app are submitted using your app profile.</p><button data-close class="primary">Let’s play</button></dialog>
 <dialog id="confirm"><h2 id="confirmTitle"></h2><p>Your current run will not be submitted.</p><div class="actions"><button id="cancel">Keep playing</button><button id="confirmGo" class="primary">Confirm</button></div></dialog>
 
 <script type="module">
@@ -132,7 +133,6 @@ function intersects(a,b,o){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;const p=l?M
 
 function targetPosition(o,t,w,h){const u=(t-o.t)/o.life;return{x:Math.max(45,Math.min(w-45,w*(o.x+o.dx*u))),y:h+55-(h*.72+110)*4*u*(1-u),r:Math.max(20,Math.min(36,w*.056))*o.size,angle:o.phase+o.spin*u};}
 
-const sharedPlayer=null;
 const MUSIC_URL='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/assets/BINI-Sugar-Rush.mp3';
 const backgroundMusic=new Audio(MUSIC_URL);
 backgroundMusic.loop=false;
@@ -142,9 +142,11 @@ backgroundMusic.volume=.32;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],text=(s,v)=>{$(s).textContent=v};
 const postNative=message=>{if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function')window.ReactNativeWebView.postMessage(JSON.stringify(message))};
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{text('#startMessage','Private storage is unavailable. Your identity lasts for this visit.')}}};
-const uid=()=>crypto.randomUUID?.()||"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16)),clean=v=>v.trim().replace(/\s+/g,' '),valid=v=>/^[A-Za-z0-9 _-]{3,24}$/.test(v),bloom=()=>`Bloom${String(crypto.getRandomValues(new Uint32Array(1))[0]%100000000).padStart(8,'0')}`;
-let playerId=sharedPlayer?.id||store.get('joinnowBiniPlayerId')||uid(),secret=store.get('sugarRushPlayerSecret')||uid()+uid();store.set('joinnowBiniPlayerId',playerId);store.set('sugarRushPlayerSecret',secret);
-$('#name').value=sharedPlayer?.nickname||store.get('joinnowBiniNickname')||bloom();$('#name').readOnly=!!sharedPlayer;let difficulty=store.get('sugarRushDifficulty')||'normal';if(!DIFFICULTIES[difficulty])difficulty='normal';$(`input[value="${difficulty}"]`).checked=true;
+const playerNickname=store.get('joinnowBiniNickname')||bloom();
+store.set('joinnowBiniNickname',playerNickname);
+const uid=()=>crypto.randomUUID?.()||"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16)),bloom=()=>`Bloom${String(crypto.getRandomValues(new Uint32Array(1))[0]%100000000).padStart(8,'0')}`;
+let playerId=store.get('joinnowBiniPlayerId')||uid(),secret=store.get('sugarRushPlayerSecret')||uid()+uid();store.set('joinnowBiniPlayerId',playerId);store.set('sugarRushPlayerSecret',secret);
+let difficulty=store.get('sugarRushDifficulty')||'normal';if(!DIFFICULTIES[difficulty])difficulty='normal';$(`input[value="${difficulty}"]`).checked=true;
 let muted=store.get('sugarRushMuted')==='true',phase='start',run=null,raf=0,clock=0,previous=0,spawnIndex=0,targets=[],pieces=[],particles=[],trail=[],pointer=null,events=[],lastStats=null,mediaStarted=false,practice=false,epoch=0,pending='',savedPayload=null,boardView='overall',page=0,voices=0,context=null,lastSlash=0,lastRush=false,lastMusicClock=0,audioOffset=0,mediaError=false,musicStarted=false;
 $('#joinnow-logo').src='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,atlas=new Image();let boxes=[],assetsReady=false;
@@ -171,13 +173,11 @@ backgroundMusic.addEventListener('ended',function(){mediaStarted=false;musicStar
 function reset(){cancelAnimationFrame(raf);raf=0;targets=[];pieces=[];particles=[];trail=[];events=[];pointer=null;clock=0;spawnIndex=0;lastStats=null;lastRush=false;savedPayload=null;$('#retry').hidden=true;document.body.classList.remove('rush');$('#pausePanel').hidden=true;$('#countdown').hidden=true}
 async function start(){
  if(['preparing','waiting','countdown','playing'].includes(phase)||!assetsReady)return;
- const nick=clean($('#name').value);
- if(!valid(nick)){text('#startMessage','Use 3–24 letters, numbers, spaces, _ or -.');$('#name').focus();return}
  audioUnlock();reset();const current=++epoch;phase='preparing';$('#play').disabled=true;$('#again').disabled=true;text('#startMessage','Getting your sweets ready…');
- difficulty=$('input[name=difficulty]:checked').value;store.set('joinnowBiniNickname',nick);store.set('sugarRushDifficulty',difficulty);
+ difficulty=$('input[name=difficulty]:checked').value;store.set('sugarRushDifficulty',difficulty);
  practice=!!window.ReactNativeWebView;run=null;mediaError=false;mediaStarted=false;musicStarted=false;
  musicPause();try{backgroundMusic.currentTime=0}catch(error){}backgroundMusic.muted=muted;playBackgroundMusic();
- if(!practice){try{await api('player',{playerId,secret,nickname:nick});run=await api('game-sessions',{...versionBody,difficulty})}catch(error){practice=true}}
+ if(!practice){try{await api('player',{playerId,secret,nickname:playerNickname});run=await api('game-sessions',{...versionBody,difficulty})}catch(error){practice=true}}
  if(epoch!==current)return;
  run??={seed:crypto.getRandomValues(new Uint32Array(1))[0]||1};run.list=schedule(run.seed,difficulty);
  $('#start').hidden=true;$('#result').hidden=true;$('#game').hidden=false;document.body.classList.add('playing');resize();$('#play').disabled=false;$('#again').disabled=false;phase='waiting';$('#countdown').hidden=true;
