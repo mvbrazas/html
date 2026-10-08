@@ -1,0 +1,188 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b9aa8"><title>BINI Sugar Rush | JoinNow</title><meta name="description" content="A candy-slicing Sugar Rush challenge. Swipe, build your combo, and climb the JoinNow leaderboard."><style>
+:root{color-scheme:dark;font-family:Arial,Helvetica,sans-serif;color:#efffff;background:#087f8d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 24%,#16b2c0 0,#0b9aa8 60%,#087f8d 100%)}button,input,select{font:inherit}button{cursor:pointer;color:inherit;border:1px solid #ffffff32;background:#ffffff0a;border-radius:12px;padding:12px 18px;min-height:44px;font-weight:700;transition:background .15s,transform .15s}button:hover{background:#ffffff20}button:disabled{opacity:.5;cursor:wait}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #7cfce9;outline-offset:4px}[hidden]{display:none!important}header{max-width:1180px;margin:auto;padding:22px 24px;display:flex;align-items:center;gap:20px}.brand img{width:112px;display:block}.brand-label{font-size:12px;letter-spacing:2px;color:#d5f3f0}header>button{margin-left:auto;font-size:14px}main{max-width:1132px;margin:0 auto;display:grid;grid-template-columns:minmax(0,740px) minmax(260px,320px);gap:24px;padding:0 16px}.arena{position:relative;min-width:0;border:1px solid #b25d854a;border-radius:30px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#117c8355,transparent 65%),linear-gradient(140deg,#075e69,#064650);box-shadow:0 28px 90px #0006}.start-screen{text-align:center;padding:32px 28px 24px}.eyebrow{font-size:12px;font-weight:800;letter-spacing:3px;color:#9cf5e9}h1{margin:20px 0 0;font-family:Arial Black,Arial,sans-serif;font-size:clamp(56px,8vw,90px);font-weight:1000;letter-spacing:-4px;line-height:.87;transform:rotate(-5deg);text-shadow:0 5px 0 #087c80,0 9px 0 #064f5a}h1 em{font-style:normal;color:#a4fff0}h2{font-size:28px;letter-spacing:-1px}.candy-line{height:100px;margin:12px auto 0;max-width:420px}.candy-line canvas{width:100%;height:100%;object-fit:contain}.intro{font-weight:700;font-size:19px;margin:8px 0}.sub{color:#c1acca;font-size:14px;margin:8px}form{max-width:360px;margin:22px auto 0;text-align:left}form>label{display:block;margin-bottom:8px;font-size:14px;color:#e4cfe8}input[type=text],#name{width:100%;padding:12px 16px;border:1px solid #318e91;background:#063f4888;border-radius:10px;color:white;outline-offset:2px}fieldset{border:0;padding:0;margin:16px 0}legend{font-size:14px;margin-bottom:9px;color:#e4cfe8}fieldset{display:flex;gap:8px}fieldset label{flex:1;text-align:center;border:1px solid #318e91;border-radius:10px;padding:12px 4px;cursor:pointer;font-size:14px}fieldset label:has(input:checked){background:#0d7376;border-color:#66e7dc}fieldset input{position:absolute;opacity:0}fieldset label:has(input:focus-visible){outline:3px solid #7cfce9}.primary{color:#073d43;background:linear-gradient(120deg,#b6fff1,#57dccc);border-color:#adfff2;box-shadow:0 4px 0 #168c88}.primary:hover{background:#a0fff0}form>.primary{width:100%;font-size:18px}.menu{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:16px}.menu button{border:0;font-size:14px;color:#e8cbe4;padding:10px}#startMessage{font-size:14px;color:#ffd4ef;min-height:18px;margin:13px 0 0}.music{align-self:start;border:1px solid #65e6de44;border-radius:20px;overflow:hidden;background:#07545e}.music-heading{display:flex;justify-content:space-between;padding:18px;font-size:14px;letter-spacing:1px}.music-heading small{color:#e6aed5}.video{width:100%;min-height:200px;background:#09060f}.video iframe{display:block;width:100%;height:200px;border:0}#mediaStatus{font-size:14px;line-height:1.5;color:#cfb8d1;padding:0 18px}.tip{padding:18px;border-top:1px solid #ffffff20;font-size:14px;line-height:1.7;color:#e7cce3;margin-bottom:0}footer{text-align:center;font-size:12px;color:#ae94b3;line-height:1.8;margin:24px auto;padding:0 20px}footer a{color:#dbc8e0}footer small{font-size:12px}#game{position:relative}.hud{height:78px;display:flex;justify-content:space-around;padding:16px 10px 10px;background:#063f48aa}.hud div{text-align:center;min-width:80px}.hud small{display:block;font-size:12px;letter-spacing:2px;color:#cea7cd}.hud strong{font-size:26px;font-variant-numeric:tabular-nums}.progress{height:3px;background:#ffffff15}.progress>div{height:100%;width:100%;background:#69eee0}.mode-row{position:absolute;top:95px;left:22px;right:22px;display:flex;justify-content:space-between;pointer-events:none;font-size:14px;color:#e1b8d6;z-index:1}.rush #mode{color:#a4fff0;text-shadow:0 0 20px #99fff1}#canvas{display:block;width:100%;height:510px;touch-action:none;cursor:crosshair}.game-controls{display:flex;justify-content:space-between;padding:12px 16px;border-top:1px solid #ffffff18}.game-controls button{font-size:14px}#countdown,#pausePanel{position:absolute;inset:81px 0 70px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#063f48e8;z-index:2;text-align:center;padding:24px}#countdown{font-size:64px;font-weight:900}#pausePanel p{line-height:1.5}#result{text-align:center;padding:64px 24px;min-height:610px}#final{font-size:70px;margin:28px 0 8px;color:#a4fff0}#best{color:#a4fff0;font-weight:700}#stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:360px;margin:28px auto;text-align:left}#stats div{padding:12px;background:#ffffff08;border-radius:10px;font-size:14px;color:#c5eeeb}#stats b{display:block;color:white;font-size:23px;margin-top:5px}#save{font-size:14px;color:#c5eeeb;max-width:400px;margin:20px auto}dialog{color:#efffff;background:#07545e;border-color:#50bdb7;border-radius:22px;padding:30px;width:min(600px,calc(100% - 28px));max-height:85dvh;overflow:auto}dialog::backdrop{background:#080515cc;backdrop-filter:blur(8px)}dialog p{line-height:1.6;color:#c5eeeb}.close{float:right;padding:8px 14px}.actions{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:20px}.tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:18px}.tabs button{font-size:14px;padding:10px}.tabs button[aria-pressed=true]{background:#0d7376;border-color:#66e7dc}select{border:1px solid #946583;background:#301d40;color:white;padding:10px;border-radius:8px}#boardFilter{font-size:14px;display:flex;align-items:center;gap:12px}#boardNote{font-size:14px}#rows{min-height:90px;font-size:14px}.score-row{display:flex;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid #ffffff20}.score-row b{display:block}.score-row small{display:block;margin-top:6px;color:#b5dfdc;font-size:12px}.score-row .number{text-align:right;color:#a4fff0}#pageLabel{font-size:14px}body.rush .arena{border-color:#8af3e8;box-shadow:0 0 50px #6fffe033}@media(max-width:760px){header{padding:16px;gap:12px}.brand img{width:88px}.brand-label{display:none}main{grid-template-columns:1fr;gap:16px;padding:0 10px}.arena{border-radius:22px}.start-screen{padding:26px 18px 20px}h1{font-size:76px}.music{width:min(100%,420px);margin:auto}.music-heading{padding:12px 16px}.tip{display:none}#canvas{height:calc(100svh - 270px);min-height:310px;max-height:610px}#game .hud strong{font-size:24px}#result{min-height:540px;padding-top:48px}body.playing .music{margin-top:0}footer{margin:18px auto;padding-bottom:env(safe-area-inset-bottom)}.game-controls{padding:10px}.game-controls button{padding:10px 14px}dialog{padding:24px 18px}}@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}body.rush .arena{box-shadow:none}}@media(max-width:360px){h1{font-size:66px}.menu{gap:0}.menu button{font-size:13px;padding:9px}#final{font-size:60px}.hud small{font-size:11px;letter-spacing:1px}}
+
+:root {
+  color-scheme: dark;
+  color: #efffff;
+  background: #10a6b8;
+}
+
+body {
+  color: #efffff;
+  background: radial-gradient(ellipse at 50% 24%, #16b2c0 0, #0b9aa8 60%, #087f8d 100%);
+}
+
+.arena {
+  border-color: #65e6de66;
+  background: linear-gradient(140deg, rgb(5 91 101 / 58%), rgb(4 74 83 / 58%));
+  backdrop-filter: blur(1px);
+}
+
+.eyebrow,
+h1 em,
+#best,
+#final,
+.score-row .number,
+.rush #mode {
+  color: #a4fff0;
+}
+
+.brand-label,
+.sub,
+form > label,
+legend,
+.menu button,
+#startMessage,
+.music-heading,
+.music-heading small,
+#mediaStatus,
+.tip,
+footer,
+footer a,
+.hud small,
+.mode-row,
+#stats div,
+#save,
+dialog p,
+#boardNote,
+.score-row small,
+#pageLabel {
+  color: #e5fffc;
+}
+
+.music {
+  border-color: #65e6de66;
+  background: rgb(4 74 83 / 88%);
+}
+
+input[type="text"],
+#name,
+fieldset label,
+select {
+  border-color: #52b8b5;
+}
+
+fieldset label:has(input:checked),
+.tabs button[aria-pressed="true"] {
+  border-color: #66e7dc;
+  background: #0d7376;
+}
+
+select {
+  color: #efffff;
+  background: #064650;
+}
+
+.primary {
+  color: #073d43;
+  border-color: #adfff2;
+  background: linear-gradient(120deg, #b6fff1, #57dccc);
+  box-shadow: 0 4px 0 #168c88;
+}
+
+.primary:hover {
+  background: #a0fff0;
+}
+
+.progress > div {
+  background: #69eee0;
+}
+
+#countdown,
+#pausePanel {
+  background: #063f48e8;
+}
+
+dialog {
+  color: #efffff;
+  border-color: #50bdb7;
+  background: #07545e;
+}
+
+a, a:visited {
+  color: #e5fffc;
+}
+
+.native-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.native-action{width:38px;height:38px;min-height:38px;padding:8px;display:grid;place-items:center}
+.native-action svg{width:20px;height:20px;fill:currentColor}
+header>button#sound{margin-left:0}
+@media(max-width:760px){header{padding:max(10px,env(safe-area-inset-top)) 12px 12px;gap:8px}.brand img{width:64px}.native-actions{gap:6px}.native-action{width:36px;height:36px;min-height:36px;padding:7px}header>button#sound{font-size:12px;padding:8px 10px;min-height:36px}}
+
+</style></head><body>
+<header><div class="brand"><img id="joinnow-logo" alt="JoinNow"></div><span class="brand-label">GAMES / SUGAR RUSH</span><div class="native-actions"><button type="button" class="native-action" data-native-action="back" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button><button type="button" class="native-action" data-native-action="trophy" title="Trophies" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button></div><button id="sound" aria-pressed="true" aria-label="Toggle sound">Sound on ♪</button></header>
+<main><section class="arena" aria-label="Sugar Rush game"><div id="start" class="start-screen"><span class="eyebrow">BINI × JOINNOW</span><h1>SUGAR<br><em>RUSH</em></h1><div class="candy-line" aria-hidden="true"><canvas id="showcase" width="640" height="150"></canvas></div><p class="intro">Swipe the sweets. Keep the streak.</p><p class="sub">60 seconds. One sweet challenge.</p><form id="setup"><label for="name">Your nickname</label><input id="name" maxlength="24" autocomplete="off" required pattern="[A-Za-z0-9 _\-]{3,24}"><fieldset><legend>Choose your difficulty</legend><label><input type="radio" name="difficulty" value="easy">Easy</label><label><input type="radio" name="difficulty" value="normal" checked>Normal</label><label><input type="radio" name="difficulty" value="hard">Hard</label></fieldset><button id="play" class="primary" disabled>Loading sweets…</button></form><p id="startMessage" role="status"></p><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button><button id="help">How to play</button></nav></div>
+<div id="game" hidden><div class="hud"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="combo">0×</strong></div><div><small>ACCURACY</small><strong id="accuracy">0.0%</strong></div></div><div class="progress"><div id="progress"></div></div><div class="mode-row"><span id="mode">Warm up</span><span id="time">1:00</span></div><canvas id="canvas" aria-label="Swipe across the candies and gummies. Avoid spiky dark candies."></canvas><div id="countdown" hidden></div><div id="pausePanel" hidden><h2>Take a breather</h2><p id="pauseMessage">Your game is paused.</p><button id="resume" class="primary">Resume</button></div><div class="game-controls"><button id="restart">↻ Restart</button><button id="pause">Pause</button><button id="exit">✕ Exit</button></div></div>
+<section id="result" hidden><span class="eyebrow">SUGAR RUSH COMPLETE</span><h2 id="final">0</h2><p id="best"></p><div id="stats"></div><p id="save" role="status"></p><button id="retry" hidden>Retry save</button><button id="again" class="primary">Play again</button><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button></nav></section></section>
+<aside class="music"><div class="music-heading"><span>♫ SUGAR RUSH</span><small>BINI</small></div><div class="video"><div id="youtube-player"></div></div><p id="mediaStatus" role="status">The music starts when you play.</p><p class="tip">Drag or swipe through the sweets.<br>Avoid the dark, spiky candies.</p></aside></main>
+<footer><p>Credits · Star Magic · ABS-CBN Music · ABS-CBN Digital · Digital Consumer Technology</p><p><a href="https://www.joinnow.ph/privacy" target="_blank" rel="noopener noreferrer">Data Privacy</a><span> / </span><a href="https://www.joinnow.ph/terms" target="_blank" rel="noopener noreferrer">Terms and Conditions</a></p><small>BINI Sugar Rush v1.0.0</small></footer>
+<dialog id="helpDialog"><button class="close" data-close aria-label="Close">✕</button><span class="eyebrow">HOW TO PLAY</span><h2>Make it a sweet streak.</h2><p>Hold your mouse button and drag, or swipe with your finger through candies and gummies. Each sweet counts once.</p><p>Build combos for up to 2.5× points. Sugar Rush sections double your points. A missed sweet resets your combo. Dark, spiky candies cost 500 points and reset your streak.</p><p>Easy moves slower; Hard brings more sweets and hazards. Finish the 60-second challenge to save your score.</p><p>In the JoinNow app, completed scores are submitted to Trophies using your app profile. Avoid personal information in your game nickname.</p><button data-close class="primary">Let’s play</button></dialog>
+<dialog id="confirm"><h2 id="confirmTitle"></h2><p>Your current run will not be submitted.</p><div class="actions"><button id="cancel">Keep playing</button><button id="confirmGo" class="primary">Confirm</button></div></dialog>
+
+<script type="module">
+const VERSION='1.0.0', MAP='sugar-rush-1.0', DURATION=60000;
+const DIFFICULTIES={easy:{interval:920,life:3400,cap:6,hazard:0.08},normal:{interval:680,life:2800,cap:9,hazard:0.13},hard:{interval:480,life:2300,cap:12,hazard:0.19}};
+// Authored 60-second challenge, referenced to Hs4tWLQDiXk media time.
+const sections=[{start:0,end:15000,name:'Warm up',scale:1},{start:15000,end:28000,name:'Sweet streak',scale:.85},{start:28000,end:40000,name:'Sugar Rush',scale:.65,rush:true},{start:40000,end:48000,name:'Keep it sweet',scale:.85},{start:48000,end:60000,name:'Sugar Rush',scale:.65,rush:true}];
+const sectionAt=t=>sections.find(s=>t>=s.start&&t<s.end)||sections[sections.length-1];
+const multiplier=c=>c>=40?2.5:c>=20?2:c>=10?1.5:c>=5?1.2:1;
+function schedule(seed,difficulty){const cfg=DIFFICULTIES[difficulty];if(!cfg)throw Error('INVALID_DIFFICULTY');let x=seed>>>0;const rand=()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296};const list=[];for(let t=1000;t<DURATION-cfg.life;t+=Math.round(cfg.interval*sectionAt(t).scale)){const hazard=rand()<cfg.hazard;list.push({id:list.length,t,life:cfg.life,kind:hazard?5:Math.floor(rand()*5),hazard,x:.14+rand()*.72,dx:(rand()-.5)*.22,size:.85+rand()*.3,spin:(rand()-.5)*2,phase:rand()*6.28});}return list;}
+function replay(list,events,end=DURATION){let score=0,combo=0,maxCombo=0,hits=0,misses=0,hazards=0,bonus=0;const resolved=new Set();let previous=-1;const expire=t=>{for(const o of list)if(o.t+o.life<=t&&!resolved.has(o.id)){resolved.add(o.id);if(!o.hazard){misses++;combo=0}}};for(const e of events){if(!Number.isInteger(e.id)||!Number.isFinite(e.t)||e.t<previous||e.t<0||e.t>end)throw Error('INVALID_EVENT');const o=list[e.id];if(!o||resolved.has(e.id)||e.t<o.t||e.t>=o.t+o.life)throw Error('INVALID_HIT');expire(e.t);if(resolved.has(e.id))throw Error('EXPIRED_TARGET');resolved.add(e.id);previous=e.t;if(o.hazard){hazards++;combo=0;score=Math.max(0,score-500)}else{hits++;combo++;maxCombo=Math.max(maxCombo,combo);const rush=!!sectionAt(e.t).rush;if(rush)bonus++;score+=Math.round((o.kind===3?120:100)*multiplier(combo)*(rush?2:1));}}expire(end);const spawned=list.filter(o=>!o.hazard&&o.t<=end).length;return{score,combo,maxCombo,targetsHit:hits,targetsMissed:misses,targetsSpawned:spawned,hazardsHit:hazards,bonusTargetsHit:bonus,accuracy:spawned?Math.round(hits/spawned*1000)/10:0};}
+function intersects(a,b,o){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;const p=l?Math.max(0,Math.min(1,((o.x-a.x)*dx+(o.y-a.y)*dy)/l)):0;return Math.hypot(a.x+p*dx-o.x,a.y+p*dy-o.y)<=o.r;}
+
+function targetPosition(o,t,w,h){const u=(t-o.t)/o.life;return{x:Math.max(45,Math.min(w-45,w*(o.x+o.dx*u))),y:h+55-(h*.72+110)*4*u*(1-u),r:Math.max(20,Math.min(36,w*.056))*o.size,angle:o.phase+o.spin*u};}
+
+const sharedPlayer=null;
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],text=(s,v)=>{$(s).textContent=v};
+const postNative=message=>{if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function')window.ReactNativeWebView.postMessage(JSON.stringify(message))};
+const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{text('#startMessage','Private storage is unavailable. Your identity lasts for this visit.')}}};
+const uid=()=>crypto.randomUUID?.()||"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16)),clean=v=>v.trim().replace(/\s+/g,' '),valid=v=>/^[A-Za-z0-9 _-]{3,24}$/.test(v),bloom=()=>`Bloom${String(crypto.getRandomValues(new Uint32Array(1))[0]%100000000).padStart(8,'0')}`;
+let playerId=sharedPlayer?.id||store.get('joinnowBiniPlayerId')||uid(),secret=store.get('sugarRushPlayerSecret')||uid()+uid();store.set('joinnowBiniPlayerId',playerId);store.set('sugarRushPlayerSecret',secret);
+$('#name').value=sharedPlayer?.nickname||store.get('joinnowBiniNickname')||bloom();$('#name').readOnly=!!sharedPlayer;let difficulty=store.get('sugarRushDifficulty')||'normal';if(!DIFFICULTIES[difficulty])difficulty='normal';$(`input[value="${difficulty}"]`).checked=true;
+let muted=store.get('sugarRushMuted')==='true',phase='start',run=null,raf=0,clock=0,previous=0,spawnIndex=0,targets=[],pieces=[],particles=[],trail=[],pointer=null,events=[],lastStats=null,yt=null,ytReady=false,mediaStarted=false,practice=false,epoch=0,pending='',savedPayload=null,boardView='overall',page=0,voices=0,context=null,lastSlash=0,lastRush=false,lastVideoClock=0,videoOffset=0,mediaError=false;
+$('#joinnow-logo').src='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,atlas=new Image();let boxes=[],assetsReady=false;
+const canvas=$('#canvas'),ctx=canvas.getContext('2d');let w=600,h=510;
+function musicPause(){try{yt?.pauseVideo()}catch{}}
+function soundUI(){text('#sound',muted?'Sound off ♫':'Sound on ♪');$('#sound').setAttribute('aria-pressed',String(!muted));if(ytReady){muted?yt.mute():yt.unMute()}}
+function audioUnlock(){context??=new (window.AudioContext||window.webkitAudioContext)();context.resume().catch(()=>{})}
+function sfx(type){if(muted||!context||voices>=8)return;voices++;const t=context.currentTime,g=context.createGain(),duration=type==='slash'?.09:type==='gummy'?.16:type==='hard'?.11:.3;g.connect(context.destination);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(type==='slash'?.09:.13,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+duration);let node;if(type==='slash'||type==='hard'){const b=context.createBuffer(1,Math.round(context.sampleRate*duration),context.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);node=context.createBufferSource();node.buffer=b;const filter=context.createBiquadFilter();filter.type='bandpass';filter.frequency.value=type==='hard'?2800:1000;node.connect(filter);filter.connect(g)}else{node=context.createOscillator();node.type=type==='hazard'?'sawtooth':'sine';const f=type==='hazard'?120:type==='fever'?880:type==='combo'?700:type==='saved'?1000:400+Math.random()*150;node.frequency.setValueAtTime(f,t);node.frequency.exponentialRampToValueAtTime(type==='gummy'?130:f*1.5,t+duration);node.connect(g)}node.start(t);node.stop(t+duration);node.onended=()=>{voices--;node.disconnect();g.disconnect()}}
+function auth(){return{'content-type':'application/json','x-player-id':playerId,'x-player-secret':secret}}
+async function api(path,body){const r=await fetch('/api/'+path,{method:body?'POST':'GET',headers:auth(),body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(10000)});let data;try{data=await r.json()}catch{throw Error('Service unavailable')}if(!r.ok){const e=Error((data.code||'Service unavailable')+(data.reference?' · '+data.reference:''));e.code=data.code;throw e}return data}
+const versionBody={gameId:'bini-sugar-rush',gameVersion:VERSION,timingMapVersion:MAP,scoringVersion:'1.0'};
+function resize(){const r=canvas.getBoundingClientRect();w=r.width||600;h=r.height||510;const d=Math.min(devicePixelRatio||1,2);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0)}new ResizeObserver(resize).observe(canvas);
+function sprite(context,o,clip){const b=boxes[o.kind];if(!b)return;const size=o.r*2.5,sw=b[2],sh=b[3],dw=size*sw/Math.max(sw,sh),dh=size*sh/Math.max(sw,sh);context.save();context.translate(o.x,o.y);context.rotate(o.angle||0);context.globalAlpha=o.opacity??1;if(clip!==undefined){context.rotate(o.cut||0);context.beginPath();context.rect(-size*2,clip<0?-size*2:0,size*4,size*2);context.clip();context.rotate(-(o.cut||0))}context.drawImage(atlas,...b,-dw/2,-dh/2,dw,dh);context.restore()}
+function showcase(){const c=$('#showcase'),cx=c.getContext('2d');cx.clearRect(0,0,640,150);[0,2,3,1,4].forEach((kind,i)=>sprite(cx,{kind,x:76+i*122,y:78,r:48,angle:(i%2?1:-1)*.16}))}
+Promise.all([new Promise((resolve,reject)=>{atlas.onload=resolve;atlas.onerror=reject;atlas.src='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/candy-atlas.png'}),Promise.resolve([[57,97,347,474],[421,27,415,562],[839,45,375,488],[33,650,371,530],[429,630,407,624],[837,708,396,546]])]).then(([,b])=>{boxes=b;assetsReady=true;showcase();$('#play').disabled=false;text('#play','Let’s slice!')}).catch(()=>text('#startMessage','The sweets could not load. Reload to try again.'));
+window.onYouTubeIframeAPIReady=()=>{yt=new YT.Player('youtube-player',{videoId:'Hs4tWLQDiXk',playerVars:{playsinline:1,rel:0,origin:location.origin},events:{onReady(){ytReady=true;mediaError=false;soundUI();text('#mediaStatus','Sugar Rush is ready. Press Let’s slice!')},onError(){mediaError=true;text('#mediaStatus','The video could not play. Practice is available without music.');if(phase==='waiting'){startPractice()}else if(phase==='playing'){pauseGame('Music unavailable. Resume in practice mode.');practice=true}},onStateChange(e){if(e.data===1&&phase==='waiting'){mediaStarted=true;videoOffset=0;lastVideoClock=0;begin()}else if(e.data===1&&phase==='paused'){musicPause()}else if((e.data===2||e.data===3)&&phase==='playing'&&mediaStarted){pauseGame('Music paused or buffering. Resume when you’re ready.')}else if(e.data===0&&phase==='playing'){practice=true;finish()}}}})};
+const ytScript=document.createElement('script');ytScript.src='https://www.youtube.com/iframe_api';ytScript.onerror=()=>{mediaError=true;text('#mediaStatus','Video unavailable. You can still play in practice mode.')};document.head.append(ytScript);
+function reset(){cancelAnimationFrame(raf);raf=0;targets=[];pieces=[];particles=[];trail=[];events=[];pointer=null;clock=0;spawnIndex=0;lastStats=null;lastRush=false;savedPayload=null;$('#retry').hidden=true;document.body.classList.remove('rush');$('#pausePanel').hidden=true;$('#countdown').hidden=true}
+async function start(){if(['preparing','waiting','countdown','playing'].includes(phase))return;if(!assetsReady)return;const nick=clean($('#name').value);if(!valid(nick)){text('#startMessage','Use 3–24 letters, numbers, spaces, _ or -.');$('#name').focus();return}audioUnlock();reset();const current=++epoch;phase='preparing';$('#play').disabled=true;$('#again').disabled=true;text('#startMessage','Getting your sweets ready…');difficulty=$('input[name=difficulty]:checked').value;store.set('joinnowBiniNickname',nick);store.set('sugarRushDifficulty',difficulty);practice=!!window.ReactNativeWebView;run=null;if(practice){text('#mediaStatus','Your score will be sent to JoinNow Trophies.')}else{try{await api('player',{playerId,secret,nickname:nick});run=await api('game-sessions',{...versionBody,difficulty});}catch(e){practice=true;text('#mediaStatus','Scores are unavailable. This is a practice run.')}}if(epoch!==current)return;run??={seed:crypto.getRandomValues(new Uint32Array(1))[0]||1};run.list=schedule(run.seed,difficulty);$('#start').hidden=true;$('#result').hidden=true;$('#game').hidden=false;document.body.classList.add('playing');resize();$('#play').disabled=false;$('#again').disabled=false;phase='countdown';$('#countdown').hidden=false;for(const n of ['3','2','1']){if(epoch!==current)return;text('#countdown',n);await new Promise(r=>setTimeout(r,650))}if(epoch!==current)return;phase='waiting';text('#countdown','♫');if(ytReady&&!mediaError){text('#mediaStatus','Starting music. If prompted, press Play in the video.');yt.seekTo(0,true);yt.playVideo();setTimeout(()=>{if(epoch===current&&phase==='waiting'){text('#countdown','Ready');$('#pausePanel').hidden=false;$('#countdown').hidden=true;text('#pauseMessage','Press Play on the video, or continue in practice mode.');text('#resume','Play without music')}},6000)}else startPractice();}
+function startPractice(){practice=true;mediaStarted=false;musicPause();begin();text('#mediaStatus',window.ReactNativeWebView?'Practice mode · music unavailable. Your final score will be sent to JoinNow Trophies.':'Practice mode · music unavailable. This run will not be ranked.')}
+function begin(){if(document.hidden){phase='paused';$('#pausePanel').hidden=false;text('#pauseMessage','Resume when you return.');return}phase='playing';$('#countdown').hidden=true;$('#pausePanel').hidden=true;previous=performance.now();raf=requestAnimationFrame(frame)}
+function position(o,t){return targetPosition(run.list[o.id],t,w,h)}
+function frame(now){if(phase!=='playing')return;let dt=Math.min(50,now-previous);previous=now;let next=clock+dt;if(mediaStarted&&ytReady){const raw=yt.getCurrentTime()*1000;const t=raw-videoOffset;if(t<clock-700||t>clock+1600){practice=true;pauseGame('The video position changed. Resume to continue in practice mode.');return}next=Math.max(clock,t);if(raw===lastVideoClock&&now-(run.lastMediaAdvance||now)>1600){pauseGame('Waiting for music. Resume when playback is ready.');return}if(raw!==lastVideoClock){run.lastMediaAdvance=now;lastVideoClock=raw}}clock=Math.min(DURATION,next);dt=Math.min(50,dt);while(spawnIndex<run.list.length&&run.list[spawnIndex].t<=clock){const o=run.list[spawnIndex++];if(o.t+o.life>clock&&targets.length<DIFFICULTIES[difficulty].cap)targets.push({...o,...position(o,clock)})}targets=targets.filter(o=>o.t+o.life>clock);for(const o of targets)Object.assign(o,position(o,clock));for(const p of pieces){p.life-=dt;p.x+=p.vx*dt/1000;p.y+=p.vy*dt/1000;p.vy+=450*dt/1000;p.angle+=p.spin*dt/1000;p.opacity=Math.max(0,p.life/700)}pieces=pieces.filter(p=>p.life>0);for(const p of particles){p.life-=dt;p.x+=p.vx*dt/1000;p.y+=p.vy*dt/1000;p.vy+=180*dt/1000}particles=particles.filter(p=>p.life>0);trail=trail.filter(p=>now-p.now<130);const rush=!!sectionAt(clock).rush;if(rush&&!lastRush)sfx('fever');lastRush=rush;document.body.classList.toggle('rush',rush);draw();hud();if(clock>=DURATION)finish();else raf=requestAnimationFrame(frame)}
+function draw(){ctx.clearRect(0,0,w,h);for(const o of targets)sprite(ctx,o);for(const p of pieces)sprite(ctx,p,p.side);for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/500);ctx.fillStyle=p.color;ctx.beginPath();if(p.hard)ctx.rect(p.x,p.y,p.r,p.r*1.6);else ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;if(trail.length>1){ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#ff87ca';ctx.lineWidth=10;ctx.beginPath();trail.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.strokeStyle='#fff9ff';ctx.lineWidth=3;ctx.stroke()}}
+function hud(){lastStats=replay(run.list,events,clock);text('#score',lastStats.score.toLocaleString());text('#combo',lastStats.combo+'×');text('#accuracy',lastStats.accuracy.toFixed(1)+'%');text('#mode',sectionAt(clock).rush?'SUGAR RUSH · 2×':sectionAt(clock).name);text('#time',Math.floor(Math.ceil((DURATION-clock)/1000)/60)+':'+String(Math.ceil((DURATION-clock)/1000)%60).padStart(2,'0'));$('#progress').style.width=`${100-clock/DURATION*100}%`}
+function burst(o,angle){sfx(o.hazard?'hazard':o.kind===3?'hard':'gummy');const hard=o.kind===3||o.hazard;for(const side of [-1,1])pieces.push({...o,cut:angle-o.angle,side,life:700,vx:Math.cos(angle+Math.PI/2)*side*(hard?160:90),vy:Math.sin(angle+Math.PI/2)*side*90-70,spin:side*(hard?5:2)});const colors=['#ff668f','#c1ff67','#61f6eb','#ffc4e8','#ffd37f','#b851e2'];for(let i=0;i<(reduced?4:hard?14:10)&&particles.length<180;i++){const a=Math.random()*Math.PI*2,v=50+Math.random()*180;particles.push({x:o.x,y:o.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:500,r:2+Math.random()*4,color:colors[o.kind],hard})}pieces=pieces.slice(-24)}
+function point(e){const b=canvas.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top,now:performance.now()}}
+canvas.onpointerdown=e=>{if(phase!=='playing'||pointer)return;pointer={id:e.pointerId,last:point(e)};canvas.setPointerCapture(e.pointerId);trail=[pointer.last]};
+canvas.onpointermove=e=>{if(phase!=='playing'||!pointer||e.pointerId!==pointer.id)return;const p=point(e),a=pointer.last,dist=Math.hypot(p.x-a.x,p.y-a.y);if(dist<2)return;trail.push(p);trail=trail.slice(-18);pointer.last=p;if(dist>8&&p.now-lastSlash>85){sfx('slash');lastSlash=p.now}const hit=targets.filter(o=>intersects(a,p,o));for(const o of hit){events.push({id:o.id,t:Math.floor(clock)});burst(o,Math.atan2(p.y-a.y,p.x-a.x));targets=targets.filter(t=>t.id!==o.id)}if(hit.length){const s=replay(run.list,events,clock);if(s.combo>0&&Math.floor(s.combo/10)>Math.floor((lastStats?.combo||0)/10))sfx('combo');hud();draw()}};
+function clearPointer(){pointer=null;trail=[]}canvas.onpointerup=clearPointer;canvas.onpointercancel=clearPointer;canvas.onlostpointercapture=clearPointer;
+function pauseGame(message='Your game is paused.'){if(!['playing','waiting'].includes(phase))return;phase='paused';cancelAnimationFrame(raf);clearPointer();musicPause();$('#pausePanel').hidden=false;text('#pauseMessage',message);text('#resume','Resume')}
+$('#resume').onclick=()=>{if(phase==='waiting'){startPractice();return}if(phase!=='paused')return;audioUnlock();$('#pausePanel').hidden=true;if(mediaStarted&&!mediaError){yt.seekTo((clock+videoOffset)/1000,true);phase='resuming';yt.playVideo();const check=()=>{if(phase!=='resuming')return;if(yt.getPlayerState()===1){previous=performance.now();run.lastMediaAdvance=previous;phase='playing';raf=requestAnimationFrame(frame)}else setTimeout(check,200)};check();setTimeout(()=>{if(phase==='resuming'){phase='paused';$('#pausePanel').hidden=false;text('#pauseMessage','Playback is unavailable. Resume in practice mode.');mediaStarted=false;practice=true}},5000)}else{mediaStarted=false;practice=true;begin()}};
+async function finish(){if(!['playing','paused'].includes(phase))return;phase='result';cancelAnimationFrame(raf);musicPause();clearPointer();document.body.classList.remove('playing','rush');$('#game').hidden=true;$('#result').hidden=false;lastStats=replay(run.list,events,DURATION);text('#final',lastStats.score.toLocaleString());postNative({type:'gameOver',score:lastStats.score,final:true});text('#best','');const root=$('#stats');root.replaceChildren();for(const[label,value]of [['Accuracy',lastStats.accuracy.toFixed(1)+'%'],['Max combo',lastStats.maxCombo+'×'],['Sweets sliced',lastStats.targetsHit],['Sweets missed',lastStats.targetsMissed],['Hazards hit',lastStats.hazardsHit],['Difficulty',difficulty]]){const d=document.createElement('div'),b=document.createElement('b');d.textContent=label;b.textContent=value;d.append(b);root.append(d)}if(practice||clock<DURATION){text('#save',window.ReactNativeWebView?'Final score sent to JoinNow Trophies.':'Practice complete · this run was not submitted.');return}savedPayload={...versionBody,sessionId:run.sessionId,sessionToken:run.sessionToken,durationMs:DURATION,events,stats:lastStats};await save();}
+async function save(){if(!savedPayload)return;$('#retry').hidden=true;text('#save','Saving your score…');const resultEpoch=epoch;try{const result=await api('runs',savedPayload);if(resultEpoch!==epoch)return;text('#save','Score saved');text('#best',result.personalBest?'NEW PERSONAL BEST!':'');savedPayload=null;sfx('saved')}catch(e){if(resultEpoch!==epoch)return;if(e.code==='SESSION_ALREADY_USED'){text('#save','This run was already submitted. Check My history for your saved result.');savedPayload=null}else{text('#save','Your score could not be saved. '+e.message);$('#retry').hidden=false}}}
+function currentScore(){return lastStats?lastStats.score:0}
+function leave(notifyNative=true){const score=currentScore();epoch++;musicPause();reset();phase='start';$('#start').hidden=false;$('#game').hidden=true;$('#result').hidden=true;$('#play').disabled=!assetsReady;$('#again').disabled=false;document.body.classList.remove('playing');text('#startMessage','');if(notifyNative)postNative({type:'goBack',score:score})}
+function ask(action){pending=action;pauseGame();text('#confirmTitle',action==='restart'?'Restart this game?':'Exit this game?');$('#confirm').showModal()}
+$('#setup').onsubmit=e=>{e.preventDefault();start()};$('#again').onclick=start;$('#restart').onclick=()=>ask('restart');$('#exit').onclick=()=>ask('exit');$('#pause').onclick=()=>pauseGame();$('#retry').onclick=save;$('#cancel').onclick=()=>{$('#confirm').close()};$('#confirmGo').onclick=()=>{$('#confirm').close();const action=pending;leave(action!=='restart');if(action==='restart')start()};$('#help').onclick=()=>$('#helpDialog').showModal();$$('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());$('#sound').onclick=()=>{audioUnlock();muted=!muted;store.set('sugarRushMuted',String(muted));soundUI()};soundUI();
+$$('[data-native-action]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.nativeAction==='back'){leave();return}if(['playing','waiting'].includes(phase))pauseGame('Paused while viewing Trophies.');postNative({type:'viewLeaderboard',score:currentScore()})}));
+postNative({type:'orientation',orientation:'portrait'});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(['playing','waiting'].includes(phase))pauseGame('You left the game. Resume when you’re ready.');else if(['countdown','preparing','resuming'].includes(phase))leave(false)}});
+window.addEventListener('pagehide',()=>{epoch++;cancelAnimationFrame(raf);musicPause();clearPointer()});
+
+
+
+</script></body></html>
