@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#111114" />
+    <title>BINI Tic Tac Beat</title>
+    <style>
+        :root { color-scheme: dark; --ink: #111114; --panel: #1b191f; --panel-raised: #252129; --paper: #f7f4f5; --muted: #bcb4be; --pink: #f7a7d2; --lime: #d9f78a; --line: #423a46; --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); font-family: Arial, Helvetica, sans-serif; background: var(--ink); color: var(--paper); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { min-height: 100%; background: var(--ink); }
+        body { min-height: 100vh; min-height: 100svh; margin: 0; background: radial-gradient(ellipse at 84% 10%, #332131 0, transparent 40%), linear-gradient(145deg, #151319, #111114 62%); }
+        button, input, select { font: inherit; }
+        button { color: inherit; cursor: pointer; touch-action: manipulation; }
+        button:disabled { cursor: default; opacity: .55; }
+        button:focus-visible, input:focus-visible { outline: 3px solid var(--lime); outline-offset: 3px; }
+        [hidden] { display: none !important; }
+        #app { width: min(100%, 1120px); min-height: 100vh; min-height: 100svh; margin: 0 auto; padding: max(12px, var(--safe-top)) 20px max(18px, var(--safe-bottom)); display: flex; flex-direction: column; }
+        header { display: flex; align-items: center; gap: 14px; min-height: 54px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.1); }
+        .brand { display: flex; align-items: center; flex: 0 0 auto; }
+        .brand img { display: block; width: 104px; height: 38px; object-fit: contain; }
+        .brand-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .icon-button { width: 40px; height: 40px; min-height: 40px; padding: 8px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--paper); }
+        .icon-button svg { width: 20px; height: 20px; fill: currentColor; }
+        .icon-button:active, .action:active, .mode-option:active { transform: scale(.97); }
+        main { flex: 1; }
+        .screen { padding-top: 18px; animation: arrive .28s ease-out both; }
+        @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .eyebrow { margin: 0 0 9px; color: var(--lime); font-size: 11px; font-weight: 800; letter-spacing: 1.7px; }
+        h1 { margin: 0; font-size: clamp(30px, 7vw, 50px); line-height: 1; font-weight: 900; }
+        h1 em { color: var(--pink); font-style: normal; }
+        h2 { margin: 0; font-size: 23px; line-height: 1.15; }
+        p { color: var(--muted); line-height: 1.5; }
+        .lede { margin: 10px 0 0; }
+        .start-layout, .play-layout { display: grid; grid-template-columns: minmax(280px, .95fr) minmax(320px, 1.05fr); gap: 20px; align-items: start; margin-top: 20px; }
+        .setup, .score-panel { min-width: 0; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: rgba(27,25,31,.94); }
+        .setup h2 { margin: 0 0 16px; }
+        .field-label, .section-label { display: block; margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 1.1px; }
+        #name { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #514754; border-radius: 8px; background: #131116; color: var(--paper); }
+        .name-note { margin: 7px 0 0; font-size: 12px; }
+        .section-label { margin-top: 18px; }
+        .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .mode-option { min-height: 88px; padding: 11px; display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 8px; text-align: left; border: 1px solid var(--line); border-radius: 8px; background: #211e25; }
+        .mode-option[aria-pressed="true"] { border-color: var(--pink); background: #3a2936; box-shadow: inset 0 0 0 1px var(--pink); }
+        .mode-icon { grid-row: 1 / 3; width: 26px; color: var(--pink); text-align: center; font-size: 20px; font-weight: 800; }
+        .mode-option strong { font-size: 13px; }
+        .mode-option small { align-self: start; color: var(--muted); font-size: 11px; line-height: 1.3; }
+        .difficulty { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .difficulty button { min-height: 40px; padding: 8px 5px; border: 1px solid var(--line); border-radius: 6px; background: #211e25; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .6px; }
+        .difficulty button[aria-pressed="true"] { border-color: var(--lime); background: #303622; color: var(--lime); }
+        .toggle-row { min-height: 42px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
+        .toggle-row input { width: 20px; height: 20px; accent-color: var(--pink); }
+        .action { min-height: 44px; padding: 11px 16px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid var(--line); border-radius: 8px; background: #28242c; font-size: 14px; font-weight: 800; }
+        .action.primary { width: 100%; margin-top: 14px; border-color: #f7a7d2; background: var(--pink); color: #25131f; }
+        .action.secondary { background: transparent; }
+        .action-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .action-row .action { flex: 1 1 120px; }
+        .notice { min-height: 20px; margin: 10px 0 0; color: var(--lime); font-size: 12px; line-height: 1.45; }
+        .fine-print { margin: 12px 0 0; color: #948b98; font-size: 11px; }
+        .arena { min-width: 0; padding: 18px; border: 1px solid #51414e; border-radius: 16px; background: linear-gradient(145deg, #211b23, #19171d); }
+        .arena-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 1.2px; }
+        .arena-heading strong { color: var(--pink); font-size: 15px; }
+        .board { width: min(100%, 430px); aspect-ratio: 1; margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+        .cell { position: relative; min-width: 0; min-height: 0; padding: 0; display: grid; place-items: center; aspect-ratio: 1; border: 1px solid #655365; border-radius: 12px; background: linear-gradient(145deg, #352c38, #24202a); color: var(--pink); font-size: clamp(38px, 10vw, 74px); line-height: 1; transition: background .15s, border-color .15s, transform .15s; }
+        .cell:not(:disabled):hover { border-color: var(--pink); background: #493344; }
+        .cell.opponent { color: var(--lime); }
+        .cell.won { border-color: var(--pink); background: #56334a; box-shadow: 0 0 20px rgba(247,167,210,.18); }
+        .cell .power { position: absolute; right: 5px; bottom: 5px; padding: 3px 5px; border-radius: 4px; background: var(--lime); color: #25251b; font-size: 9px; font-weight: 900; }
+        .turn { min-height: 24px; margin: 14px 0 0; color: var(--paper); font-size: 12px; font-weight: 800; letter-spacing: 1px; text-align: center; }
+        .legend { margin: 10px 0 0; display: flex; justify-content: center; gap: 18px; color: var(--muted); font-size: 12px; }
+        .legend b { margin-right: 5px; color: var(--pink); font-size: 17px; }
+        .legend span + span b { color: var(--lime); }
+        .scorebar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 14px 0; }
+        .scorebar div { min-width: 0; padding: 10px 8px; border: 1px solid #38313d; border-radius: 7px; background: #211e25; text-align: center; }
+        .scorebar small { display: block; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .8px; }
+        .scorebar strong { display: block; margin-top: 4px; color: var(--paper); font-size: 20px; font-variant-numeric: tabular-nums; }
+        .scorebar .streak strong { color: var(--lime); }
+        .scorebar .perfect strong { color: var(--pink); }
+        .round-dots { display: flex; gap: 5px; margin: 12px 0; }
+        .round-dots span { width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--muted); font-size: 10px; }
+        .round-dots .current { border-color: var(--pink); color: var(--pink); }
+        .round-dots .complete { border-color: var(--lime); background: #303622; color: var(--lime); }
+        .outcome { min-height: 27px; margin: 14px 0 4px; color: var(--pink); font-size: 16px; font-weight: 900; text-align: center; }
+        #musicPanel { margin: 16px 0 0; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: #17151a; }
+        .music-heading { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; font-weight: 800; }
+        .music-heading small, #musicStatus { color: var(--muted); font-size: 11px; }
+        #videoMount { width: 100%; min-height: 200px; background: #08070a; }
+        #videoMount iframe { display: block; width: 100%; min-height: 200px; border: 0; }
+        #resultScreen { max-width: 680px; margin: 22px auto; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); text-align: center; }
+        #resultTitle { color: var(--pink); font-size: 20px; }
+        #resultScore { margin: 14px 0 0; color: var(--lime); font-size: 52px; font-weight: 900; font-variant-numeric: tabular-nums; }
+        #resultScreen .scorebar { max-width: 440px; margin: 18px auto; }
+        footer { padding: 20px 0 2px; color: #867e8a; font-size: 10px; line-height: 1.6; text-align: center; }
+        dialog { width: min(540px, calc(100% - 24px)); max-height: min(82svh, 700px); padding: 22px; overflow: auto; border: 1px solid #5a4659; border-radius: 12px; background: #201c23; color: var(--paper); }
+        dialog::backdrop { background: rgba(8,7,10,.82); backdrop-filter: blur(4px); }
+        dialog h2 { color: var(--pink); }
+        dialog p, dialog li { color: #cec6d0; font-size: 13px; line-height: 1.55; }
+        dialog .action { width: 100%; margin-top: 12px; }
+        @media (max-width: 760px) {
+            #app { padding-right: 14px; padding-left: 14px; }
+            .brand img { width: 88px; }
+            .brand-label { display: none; }
+            .start-layout, .play-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 14px; }
+            .arena { padding: 14px; }
+            .play-layout .arena { order: -1; }
+            .setup, .score-panel { padding: 16px; }
+            .board { max-width: 420px; gap: 7px; }
+            .cell { border-radius: 10px; font-size: clamp(42px, 16vw, 68px); }
+            .screen { padding-top: 15px; }
+            footer { padding-bottom: max(4px, var(--safe-bottom)); }
+        }
+        @media (max-width: 360px) {
+            #app { padding-right: 10px; padding-left: 10px; }
+            .header-actions { gap: 5px; }
+            .icon-button { width: 36px; height: 36px; min-height: 36px; }
+            .mode-option { padding: 9px 7px; grid-template-columns: 22px 1fr; }
+            .mode-icon { width: 22px; font-size: 18px; }
+        }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header>
+        <div class="brand"><img id="joinnowLogo" alt="JoinNow" width="104" height="38" /></div>
+        <span class="brand-label">BINI GAMES</span>
+        <div class="header-actions">
+            <button type="button" class="icon-button" id="soundButton" title="Toggle sound" aria-label="Toggle sound" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg></button>
+            <button type="button" class="icon-button" data-native-action="back" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
+            <button type="button" class="icon-button" data-native-action="trophy" title="Trophies" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
+        </div>
+    </header>
+    <main>
+        <section id="startScreen" class="screen">
+            <div class="intro">
+                <p class="eyebrow">THE BLOOM BOARD</p>
+                <h1>BINI <em>TIC TAC BEAT</em></h1>
+                <p class="lede">Three in a row. Right on the beat.</p>
+            </div>
+            <div class="start-layout">
+                <section class="setup">
+                    <h2>Ready, Bloom?</h2>
+                    <label class="field-label" for="name">YOUR BLOOM NAME</label>
+                    <input id="name" type="text" maxlength="24" autocomplete="off" placeholder="Bloom00000000" />
+                    <p class="name-note">Use 3 to 24 letters, numbers, spaces, underscores or hyphens.</p>
+                    <span class="section-label">CHOOSE YOUR CHALLENGE</span>
+                    <div class="mode-grid" id="modeGrid">
+                        <button class="mode-option" type="button" data-mode="quick-play" aria-pressed="false"><span class="mode-icon" aria-hidden="true">✿</span><strong>Quick Play</strong><small>One board, no music needed</small></button>
+                        <button class="mode-option" type="button" data-mode="beat-challenge" aria-pressed="false"><span class="mode-icon" aria-hidden="true">♫</span><strong>Beat Challenge</strong><small>Play until the song ends</small></button>
+                        <button class="mode-option" type="button" data-mode="bini-eight" aria-pressed="true"><span class="mode-icon" aria-hidden="true">8</span><strong>BINI Eight</strong><small>Eight boards, one big Bloom</small></button>
+                        <button class="mode-option" type="button" data-mode="local-two-player" aria-pressed="false"><span class="mode-icon" aria-hidden="true">2</span><strong>Bloom vs Bloom</strong><small>Two players, one device</small></button>
+                    </div>
+                    <div id="difficultyGroup">
+                        <span class="section-label">PICK YOUR DIFFICULTY</span>
+                        <div class="difficulty" id="difficultyGroupButtons">
+                            <button type="button" data-difficulty="chill" aria-pressed="false">CHILL</button>
+                            <button type="button" data-difficulty="groove" aria-pressed="true">GROOVE</button>
+                            <button type="button" data-difficulty="slay" aria-pressed="false">SLAY</button>
+                        </div>
+                    </div>
+                    <button type="button" class="action secondary" id="loadMusicButton" style="width:100%;margin-top:12px"><span aria-hidden="true">♫</span> Load music video</button>
+                    <p class="fine-print">The optional visual rhythm guide is an authored 100 BPM pattern, not verified song-beat synchronization.</p>
+                    <p class="notice" id="notice" role="status" aria-live="polite"></p>
+                    <button type="button" class="action primary" id="startButton">Let’s play BINI Eight <span aria-hidden="true">→</span></button>
+                    <div class="action-row"><button type="button" class="action secondary" data-native-action="trophy">Trophies</button><button type="button" class="action secondary" data-native-action="back">Back</button><button type="button" class="action secondary" id="helpButton">How to play</button></div>
+                </section>
+                <section class="arena">
+                    <div class="arena-heading"><span>THE BLOOM BOARD</span><strong>✿ &nbsp; × &nbsp; ✧</strong></div>
+                    <div class="board" id="previewBoard" aria-hidden="true"></div>
+                    <p class="turn">A LITTLE STRATEGY. A LOT OF BLOOM.</p>
+                    <div class="legend"><span><b>✿</b>You / Bloom</span><span><b>✧</b>BINI</span></div>
+                </section>
+            </div>
+        </section>
+        <section id="playScreen" class="screen" hidden>
+            <p class="eyebrow" id="playEyebrow">BINI EIGHT / GROOVE</p>
+            <h2 id="roundTitle">Board 1 of 8</h2>
+            <div class="round-dots" id="roundDots" aria-label="Challenge progress"></div>
+            <div class="play-layout">
+                <section class="arena">
+                    <div class="arena-heading"><span id="boardNumber">BOARD 01</span><strong>✿ &nbsp; × &nbsp; ✧</strong></div>
+                    <div class="board" id="gameBoard" role="group" aria-label="Tic tac toe board"></div>
+                    <p class="turn" id="turnLabel" aria-live="polite">YOUR TURN</p>
+                    <div class="legend"><span><b>✿</b><span id="firstPlayerLabel">You / Bloom</span></span><span><b>✧</b><span id="secondPlayerLabel">BINI</span></span></div>
+                    <p class="outcome" id="roundOutcome" aria-live="polite"></p>
+                    <div class="action-row"><button type="button" class="action secondary" id="pauseButton">Pause</button><button type="button" class="action secondary" data-native-action="trophy">Trophies</button></div>
+                    <button type="button" class="action primary" id="nextButton" hidden>Next board <span aria-hidden="true">→</span></button>
+                    <button type="button" class="action secondary" id="finishBeatButton" hidden>Finish unranked run</button>
+                </section>
+                <section class="score-panel">
+                    <span class="section-label" style="margin-top:0">CHALLENGE SCORE</span>
+                    <div class="scorebar">
+                        <div><small>SCORE</small><strong id="scoreValue">0</strong></div>
+                        <div class="streak"><small>STREAK</small><strong id="streakValue">0</strong></div>
+                        <div class="perfect"><small>PERFECT</small><strong id="perfectValue">0</strong></div>
+                    </div>
+                    <p id="statsLine">0 wins · 0 draws · 0 losses</p>
+                    <p class="notice" id="playNotice" role="status" aria-live="polite"></p>
+                    <p class="fine-print" id="playHint">Make three in a row. Every valid move earns points.</p>
+                    <div id="roundDotsSpacer"></div>
+                    <div class="action-row"><button type="button" class="action secondary" data-native-action="back">Back</button><button type="button" class="action secondary" id="exitButton">Change mode</button></div>
+                </section>
+            </div>
+        </section>
+        <section id="resultScreen" class="screen" hidden>
+            <p class="eyebrow" id="resultEyebrow">THAT’S A WRAP</p>
+            <h2 id="resultTitle">Nice play, Bloom!</h2>
+            <div id="resultScore">0</div>
+            <p class="field-label" id="resultScoreLabel">TOTAL SCORE</p>
+            <div class="scorebar">
+                <div><small>WINS</small><strong id="resultWins">0</strong></div>
+                <div><small>DRAWS</small><strong id="resultDraws">0</strong></div>
+                <div><small>LOSSES</small><strong id="resultLosses">0</strong></div>
+            </div>
+            <p id="resultDetails"></p>
+            <p class="notice" id="resultNotice" role="status"></p>
+            <button type="button" class="action primary" id="againButton">Play again <span aria-hidden="true">↻</span></button>
+            <div class="action-row"><button type="button" class="action secondary" data-native-action="trophy">Trophies</button><button type="button" class="action secondary" id="changeModeButton">Change mode</button><button type="button" class="action secondary" data-native-action="back">Back</button></div>
+        </section>
+        <section id="musicPanel" hidden>
+            <div class="music-heading"><span>BINI · TIC TAC TOE</span><small id="musicState">MUSIC VIDEO</small></div>
+            <div id="videoMount"></div>
+            <p id="musicStatus" role="status">Load the official video for optional rhythm timing.</p>
+        </section>
+    </main>
+    <footer>Star Magic · ABS-CBN Music · ABS-CBN Digital · Digital Consumer Technology</footer>
+</div>
+<dialog id="helpDialog">
+    <p class="eyebrow">HOW TO PLAY</p>
+    <h2>Three in a row. Right on the beat.</h2>
+    <ul>
+        <li>Place your flower in an empty cell. Three in a row wins.</li>
+        <li>Every move earns 100 points. The optional visual 100 BPM guide adds Good +25, Great +50 or Perfect +100.</li>
+        <li>The BINI Eight and Beat Challenge power tile doubles move points. Fast wins add a bonus; consecutive wins grow your streak multiplier.</li>
+        <li>Complete all eight BINI Eight boards for a 2,000 point Bloom Master bonus.</li>
+        <li>Chill is unpredictable, Groove blocks and takes wins, and Slay uses optimal strategy.</li>
+        <li>Beat Challenge can use the optional music video. Without it, play an unranked practice run and finish after any board.</li>
+    </ul>
+    <button type="button" class="action primary" id="closeHelpButton">Got it</button>
+</dialog>
+<script>
+(function () {
+    'use strict';
+
+    var VERSION = '1.0.1';
+    var SCORING_VERSION = '1.0';
+    var TIMING = { version: 'guide-1.0', period: 600, offset: 1200, perfect: 70, great: 140, good: 220 };
+    var MODES = ['quick-play', 'beat-challenge', 'bini-eight', 'local-two-player'];
+    var LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    var MODE_NAMES = { 'quick-play': 'Quick Play', 'beat-challenge': 'Beat Challenge', 'bini-eight': 'BINI Eight', 'local-two-player': 'Bloom vs Bloom' };
+    var MODE_DESCRIPTIONS = { 'quick-play': 'One board, no music needed', 'beat-challenge': 'Play until the song ends', 'bini-eight': 'Eight boards, one big Bloom', 'local-two-player': 'Two players, one device' };
+    var DIFFICULTIES = ['chill', 'groove', 'slay'];
+    var storage = {
+        get: function (key) { try { return localStorage.getItem(key); } catch (error) { return null; } },
+        set: function (key, value) { try { localStorage.setItem(key, value); } catch (error) {} }
+    };
+
+    function query(selector) { return document.querySelector(selector); }
+    function all(selector) { return Array.prototype.slice.call(document.querySelectorAll(selector)); }
+    function post(message) {
+        try {
+            if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+                window.ReactNativeWebView.postMessage(JSON.stringify(message));
+            }
+        } catch (error) {}
+    }
+    function emptyBoard() { return [null,null,null,null,null,null,null,null,null]; }
+    function emptyStats() { return { score:0, wins:0, draws:0, losses:0, streak:0, bestStreak:0, perfect:0, great:0, good:0, normal:0, fast:0, power:0, rounds:0 }; }
+    function boardResult(board) {
+        var line = null;
+        for (var i = 0; i < LINES.length; i++) {
+            var row = LINES[i];
+            if (board[row[0]] && row.every(function (cell) { return board[cell] === board[row[0]]; })) { line = row; break; }
+        }
+        return { winner: line ? board[line[0]] : null, line: line || [], done: !!line || board.every(function (cell) { return !!cell; }) };
+    }
+    function random(seed) {
+        var value = seed | 0;
+        value ^= value << 13;
+        value ^= value >>> 17;
+        value ^= value << 5;
+        return (value >>> 0) / 4294967296;
+    }
+    function opponent(board, difficulty, seed) {
+        var free = [];
+        for (var i = 0; i < board.length; i++) if (board[i] === null) free.push(i);
+        if (!free.length || boardResult(board).done) return -1;
+        function pick() { return free[Math.floor(random(seed) * free.length)]; }
+        function immediate(player) {
+            for (var index = 0; index < free.length; index++) {
+                var candidate = board.slice();
+                candidate[free[index]] = player;
+                if (boardResult(candidate).winner === player) return free[index];
+            }
+            return undefined;
+        }
+        if (difficulty === 'chill') {
+            var block = immediate(1);
+            return block !== undefined && random(seed + 7) < .3 ? block : pick();
+        }
+        if (difficulty === 'groove') {
+            var win = immediate(2);
+            var defend = immediate(1);
+            return win !== undefined ? win : defend !== undefined ? defend : board[4] === null && random(seed + 7) < .6 ? 4 : pick();
+        }
+        function minimax(position, player, depth) {
+            var outcome = boardResult(position);
+            if (outcome.done) return outcome.winner === 2 ? 10 - depth : outcome.winner === 1 ? depth - 10 : 0;
+            var scores = [];
+            for (var cell = 0; cell < position.length; cell++) {
+                if (position[cell] !== null) continue;
+                var next = position.slice();
+                next[cell] = player;
+                scores.push(minimax(next, player === 2 ? 1 : 2, depth + 1));
+            }
+            return player === 2 ? Math.max.apply(Math, scores) : Math.min.apply(Math, scores);
+        }
+        var best = -Infinity;
+        var bestCell = free[0];
+        for (var moveIndex = 0; moveIndex < free.length; moveIndex++) {
+            var nextBoard = board.slice();
+            nextBoard[free[moveIndex]] = 2;
+            var value = minimax(nextBoard, 1, 0);
+            if (value > best) { best = value; bestCell = free[moveIndex]; }
+        }
+        return bestCell;
+    }
+    function powerCell(seed, round) { return Math.floor(random(seed + round * 7919) * 9); }
+    function grade(time, used, enabled) {
+        if (!enabled || time < TIMING.offset) return { name: 'NORMAL', bonus: 0, beat: -1 };
+        var beat = Math.round((time - TIMING.offset) / TIMING.period);
+        var distance = Math.abs(time - (TIMING.offset + beat * TIMING.period));
+        if (used.has(beat)) return { name: 'NORMAL', bonus: 0, beat: -1 };
+        if (distance <= TIMING.perfect) return { name: 'PERFECT', bonus: 100, beat: beat };
+        if (distance <= TIMING.great) return { name: 'GREAT', bonus: 50, beat: beat };
+        if (distance <= TIMING.good) return { name: 'GOOD', bonus: 25, beat: beat };
+        return { name: 'NORMAL', bonus: 0, beat: -1 };
+    }
+    function replay(rounds, difficulty, seed, mode, timing, allowPartial) {
+        var stats = emptyStats();
+        var used = new Set();
+        var previousTime = -1;
+        var previousElapsed = -1;
+        if (rounds.length > 120) throw new Error('Too many rounds');
+        rounds.forEach(function (round, roundIndex) {
+            var board = emptyBoard();
+            var ended = false;
+            if (!Array.isArray(round.moves) || !round.moves.length || round.moves.length > 5) throw new Error('Invalid move count');
+            round.moves.forEach(function (move, moveIndex) {
+                if (ended || !Number.isInteger(move.cell) || move.cell < 0 || move.cell > 8 || board[move.cell] !== null || !Number.isFinite(move.time) || !Number.isFinite(move.elapsed) || move.time < 0 || move.time > 600000 || move.elapsed < 0 || move.elapsed > 3600000 || move.elapsed <= previousElapsed || moveIndex > 0 && move.elapsed - previousElapsed < 400 || timing && move.time < previousTime) throw new Error('Invalid transcript');
+                previousTime = move.time;
+                previousElapsed = move.elapsed;
+                board[move.cell] = 1;
+                var timingGrade = grade(move.time, used, timing);
+                if (timingGrade.beat >= 0) used.add(timingGrade.beat);
+                stats[timingGrade.name.toLowerCase()]++;
+                var isPower = (mode === 'bini-eight' || mode === 'beat-challenge') && move.cell === powerCell(seed, roundIndex);
+                stats.score += (100 + timingGrade.bonus) * (isPower ? 2 : 1);
+                if (isPower) stats.power += 100 + timingGrade.bonus;
+                if (!boardResult(board).done) {
+                    var aiMove = opponent(board, difficulty, seed + roundIndex * 101 + moveIndex * 17);
+                    if (aiMove >= 0) board[aiMove] = 2;
+                }
+                var outcome = boardResult(board);
+                if (outcome.done) {
+                    ended = true;
+                    stats.rounds++;
+                    if (outcome.winner === 1) {
+                        stats.wins++;
+                        stats.streak++;
+                        stats.bestStreak = Math.max(stats.bestStreak, stats.streak);
+                        var fastBonus = (5 - (moveIndex + 1)) * 500;
+                        stats.fast += fastBonus;
+                        stats.score += Math.round((1000 + fastBonus) * Math.min(2, 1 + (stats.streak - 1) * .25));
+                    } else if (outcome.winner === 2) {
+                        stats.losses++;
+                        stats.streak = 0;
+                    } else {
+                        stats.draws++;
+                        stats.score += 250;
+                    }
+                }
+            });
+            if (!ended && (!allowPartial || roundIndex !== rounds.length - 1)) throw new Error('Incomplete board');
+        });
+        if (mode === 'bini-eight' && stats.rounds === 8) stats.score += 2000;
+        return stats;
+    }
+    function validNickname(value) {
+        var name = String(value || '').trim().replace(/\s+/g, ' ');
+        return /^[A-Za-z0-9 _-]{3,24}$/.test(name) ? name : null;
+    }
+    function makeNickname() {
+        var number = window.crypto && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] % 100000000 : Date.now() % 100000000;
+        return 'Bloom' + String(number).padStart(8, '0');
+    }
+    function showScreen(name) {
+        query('#startScreen').hidden = name !== 'start';
+        query('#playScreen').hidden = name !== 'play';
+        query('#resultScreen').hidden = name !== 'result';
+        query('#musicPanel').hidden = !state.mediaLoaded || name === 'result';
+        state.screen = name;
+    }
+    function modeIsArcade() { return state.mode === 'bini-eight' || state.mode === 'beat-challenge'; }
+    function scoreNow() { return state.stats ? state.stats.score : 0; }
+
+    var state = {
+        screen: 'start', mode: 'bini-eight', difficulty: 'groove', name: '', board: emptyBoard(), turn: 1,
+        stats: emptyStats(), round: 0, roundDone: false, outcome: '', paused: false, muted: false,
+        localPoints: [0, 0], mediaLoaded: false, mediaState: 'off', player: null, timer: null,
+        run: { id: '', seed: 1, started: 0, rounds: [], timing: false, duration: 0 },
+        usedBeats: new Set(), finished: false, reduced: false
+    };
+
+    query('#joinnowLogo').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
+    query('#joinnowLogo').addEventListener('error', function () { query('#joinnowLogo').style.visibility = 'hidden'; });
+
+    var storedMode = storage.get('bloomMode');
+    var storedDifficulty = storage.get('bloomDifficulty');
+    var storedName = validNickname(storage.get('joinnowBiniNickname'));
+    if (MODES.indexOf(storedMode) >= 0) state.mode = storedMode;
+    if (DIFFICULTIES.indexOf(storedDifficulty) >= 0) state.difficulty = storedDifficulty;
+    state.name = storedName || makeNickname();
+    state.muted = storage.get('bloomMuted') === 'true';
+    state.reduced = storage.get('bloomReduced') === 'true' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    query('#name').value = state.name;
+    query('#soundButton').setAttribute('aria-pressed', String(state.muted));
+    query('#soundButton').title = state.muted ? 'Sound off' : 'Sound on';
+
+    function makeBoardButtons(container, preview) {
+        container.replaceChildren();
+        for (var i = 0; i < 9; i++) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'cell';
+            button.dataset.cell = String(i);
+            button.setAttribute('aria-label', 'Row ' + (Math.floor(i / 3) + 1) + ', column ' + (i % 3 + 1) + ': empty');
+            if (preview) button.disabled = true;
+            else {
+                button.addEventListener('click', function () { makeMove(Number(this.dataset.cell)); });
+                button.addEventListener('keydown', function (event) {
+                    var offsets = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3 };
+                    if (!offsets[event.key]) return;
+                    event.preventDefault();
+                    var cells = all('#gameBoard .cell');
+                    var start = Number(this.dataset.cell);
+                    for (var step = 1; step <= 9; step++) {
+                        var next = (start + offsets[event.key] * step + 90) % 9;
+                        if (!cells[next].disabled) { cells[next].focus(); break; }
+                    }
+                });
+            }
+            container.appendChild(button);
+        }
+    }
+    makeBoardButtons(query('#previewBoard'), true);
+    makeBoardButtons(query('#gameBoard'), false);
+    [0, 4, 8].forEach(function (cell) { query('#previewBoard [data-cell="' + cell + '"]').textContent = cell === 4 ? '✿' : '✧'; });
+    query('#previewBoard [data-cell="4"]').classList.remove('opponent');
+    query('#previewBoard [data-cell="0"]').classList.add('opponent');
+    query('#previewBoard [data-cell="8"]').classList.add('opponent');
+
+    function setButtonState(selector, attribute, value) {
+        all(selector).forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute(attribute) === value)); });
+    }
+    function updateSetup() {
+        setButtonState('[data-mode]', 'data-mode', state.mode);
+        setButtonState('[data-difficulty]', 'data-difficulty', state.difficulty);
+        query('#difficultyGroup').hidden = state.mode === 'local-two-player';
+        query('#startButton').textContent = 'Let’s play ' + (state.mode === 'bini-eight' ? 'BINI Eight' : state.mode === 'local-two-player' ? 'Bloom vs Bloom' : state.mode === 'beat-challenge' ? 'Beat Challenge' : 'Quick Play') + ' →';
+        query('#notice').textContent = modeIsArcade() ? window.ReactNativeWebView ? 'Arcade scores are sent to JoinNow Trophies when the challenge ends.' : 'Standalone practice · trophies require the JoinNow app.' : '';
+        storage.set('bloomMode', state.mode);
+        storage.set('bloomDifficulty', state.difficulty);
+    }
+    function sound(win) {
+        if (state.muted) return;
+        try {
+            state.audio = state.audio || new (window.AudioContext || window.webkitAudioContext)();
+            state.audio.resume();
+            var frequencies = win ? [523, 659, 784] : [660];
+            var now = state.audio.currentTime;
+            frequencies.forEach(function (frequency, index) {
+                var oscillator = state.audio.createOscillator();
+                var gain = state.audio.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.value = frequency;
+                oscillator.connect(gain);
+                gain.connect(state.audio.destination);
+                gain.gain.setValueAtTime(.07, now + index * .09);
+                gain.gain.exponentialRampToValueAtTime(.001, now + index * .09 + .15);
+                oscillator.start(now + index * .09);
+                oscillator.stop(now + index * .09 + .16);
+            });
+        } catch (error) {}
+    }
+    function calcStats() {
+        if (state.mode === 'local-two-player') return state.stats;
+        var rounds = state.run.rounds.filter(function (round) { return round.moves.length > 0; });
+        if (!rounds.length) return emptyStats();
+        try { return replay(rounds, state.difficulty, state.run.seed, state.mode, state.run.timing, true); }
+        catch (error) { return state.stats; }
+    }
+    function updateScore() {
+        query('#scoreValue').textContent = state.stats.score.toLocaleString();
+        query('#streakValue').textContent = String(state.stats.streak);
+        query('#perfectValue').textContent = String(state.stats.perfect);
+        query('#statsLine').textContent = state.stats.wins + ' wins · ' + state.stats.draws + ' draws · ' + state.stats.losses + ' losses' + (modeIsArcade() && !state.run.timing ? ' · Unranked practice' : '');
+        if (state.mode === 'bini-eight') query('#roundTitle').textContent = 'Board ' + (state.round + 1) + ' of 8';
+        else query('#roundTitle').textContent = 'Board ' + (state.round + 1);
+        query('#boardNumber').textContent = 'BOARD ' + String(state.round + 1).padStart(2, '0');
+        query('#playEyebrow').textContent = MODE_NAMES[state.mode].toUpperCase() + ' / ' + (state.mode === 'local-two-player' ? 'TWO PLAYERS' : state.difficulty.toUpperCase());
+        query('#firstPlayerLabel').textContent = state.mode === 'local-two-player' ? 'Bloom 1' : 'You / Bloom';
+        query('#secondPlayerLabel').textContent = state.mode === 'local-two-player' ? 'Bloom 2' : 'BINI';
+        query('#turnLabel').textContent = state.paused ? 'PAUSED' : state.roundDone ? state.outcome : state.turn === 1 ? (state.mode === 'local-two-player' ? 'BLOOM 1’S TURN' : 'YOUR TURN') : state.mode === 'local-two-player' ? 'BLOOM 2’S TURN' : state.run.timing && state.mediaState !== 'playing' ? 'PRESS PLAY ON THE MUSIC VIDEO' : 'BINI’S TURN';
+        query('#pauseButton').textContent = state.paused ? 'Resume' : 'Pause';
+        query('#pauseButton').disabled = state.roundDone;
+        query('#playHint').textContent = state.run.timing ? 'Catch the pink pulse for a timing bonus.' : 'Make three in a row. Every valid move earns points.';
+        query('#finishBeatButton').hidden = state.mode !== 'beat-challenge' || state.stats.rounds < 1;
+        query('#roundDots').hidden = state.mode !== 'bini-eight';
+        query('#roundDots').replaceChildren();
+        if (state.mode === 'bini-eight') {
+            for (var dotIndex = 0; dotIndex < 8; dotIndex++) {
+                var dot = document.createElement('span');
+                dot.textContent = String(dotIndex + 1);
+                if (dotIndex < state.stats.rounds) dot.className = 'complete';
+                else if (dotIndex === state.round) dot.className = 'current';
+                query('#roundDots').appendChild(dot);
+            }
+        }
+    }
+    function renderBoard() {
+        var outcome = boardResult(state.board);
+        all('#gameBoard .cell').forEach(function (button) {
+            var cell = Number(button.dataset.cell);
+            var value = state.board[cell];
+            button.textContent = value === 1 ? '✿' : value === 2 ? '✧' : '';
+            button.classList.toggle('opponent', value === 2);
+            button.classList.toggle('won', state.roundDone && outcome.line.indexOf(cell) >= 0);
+            var isPower = modeIsArcade() && value === null && cell === powerCell(state.run.seed, state.round);
+            if (isPower) {
+                var badge = document.createElement('small');
+                badge.className = 'power';
+                badge.textContent = '2×';
+                button.appendChild(badge);
+            }
+            button.disabled = state.screen !== 'play' || value !== null || state.paused || state.roundDone || state.turn === 2 && state.mode !== 'local-two-player' || state.run.timing && state.mediaState !== 'playing';
+            var label = value === 1 ? 'Bloom flower' : value === 2 ? 'starburst' : 'empty';
+            button.setAttribute('aria-label', 'Row ' + (Math.floor(cell / 3) + 1) + ', column ' + (cell % 3 + 1) + ': ' + label + (isPower ? ', double points' : ''));
+        });
+    }
+    function updateBoardState() {
+        renderBoard();
+        updateScore();
+        query('#roundOutcome').textContent = state.roundDone ? state.outcome : '';
+        query('#nextButton').hidden = !state.roundDone;
+        query('#nextButton').textContent = state.mode === 'quick-play' || state.mode === 'local-two-player' || state.mode === 'bini-eight' && state.round === 7 ? 'See results →' : 'Next board →';
+        query('#playNotice').textContent = state.notice || '';
+    }
+    function completeBoard() {
+        var result = boardResult(state.board);
+        if (!result.done || state.roundDone) return;
+        stopAI();
+        state.roundDone = true;
+        state.outcome = result.winner === 1 ? 'TIC! TAC! BINI!' : result.winner === 2 ? state.mode === 'local-two-player' ? 'BLOOM 2 WINS' : 'BINI TAKES THIS ONE' : 'IT’S A DRAW';
+        if (result.winner === 1) sound(true);
+        if (state.mode === 'local-two-player') {
+            var award = result.winner ? 1000 : 250;
+            if (result.winner) state.localPoints[result.winner - 1] += award;
+            else { state.localPoints[0] += award; state.localPoints[1] += award; }
+            state.stats.score += award * (result.winner ? 1 : 2);
+            state.stats.rounds = 1;
+            if (result.winner === 1) state.stats.wins = 1;
+            else if (result.winner === 2) state.stats.losses = 1;
+            else state.stats.draws = 1;
+        } else state.stats = calcStats();
+        updateBoardState();
+    }
+    function moveTime() {
+        if (state.run.timing && state.player && state.player.getCurrentTime) return Math.round(state.player.getCurrentTime() * 1000);
+        return Math.round(performance.now() - state.run.started);
+    }
+    function makeMove(cell) {
+        if (state.screen !== 'play' || state.paused || state.roundDone || state.board[cell] !== null || state.turn !== 1 && state.mode !== 'local-two-player' || state.run.timing && state.mediaState !== 'playing') return;
+        state.board[cell] = state.turn;
+        sound(false);
+        var time = moveTime();
+        var moves = state.run.rounds[state.round].moves;
+        var elapsed = Math.round(performance.now() - state.run.started);
+        if (moves.length > 0) elapsed = Math.max(elapsed, moves[moves.length - 1].elapsed + 400);
+        moves.push({ cell: cell, time: time, elapsed: elapsed });
+        if (state.mode === 'local-two-player') {
+            var localGrade = grade(time, state.usedBeats, state.run.timing);
+            if (localGrade.beat >= 0) state.usedBeats.add(localGrade.beat);
+            state.stats.score += 100 + localGrade.bonus;
+            state.stats[localGrade.name.toLowerCase()]++;
+            state.localPoints[state.turn - 1] += 100 + localGrade.bonus;
+            if (boardResult(state.board).done) completeBoard();
+            else { state.turn = state.turn === 1 ? 2 : 1; updateBoardState(); }
+            return;
+        }
+        if (boardResult(state.board).done) { completeBoard(); return; }
+        state.stats = calcStats();
+        state.turn = 2;
+        updateBoardState();
+        var roundNumber = state.round;
+        var moveIndex = moves.length - 1;
+        state.aiTimer = setTimeout(function () {
+            if (state.screen !== 'play' || state.paused || state.roundDone || roundNumber !== state.round) return;
+            var aiCell = opponent(state.board, state.difficulty, state.run.seed + roundNumber * 101 + moveIndex * 17);
+            if (aiCell >= 0) state.board[aiCell] = 2;
+            if (boardResult(state.board).done) completeBoard();
+            else { state.turn = 1; updateBoardState(); }
+        }, 480);
+    }
+    function stopAI() { if (state.aiTimer) { clearTimeout(state.aiTimer); state.aiTimer = null; } }
+    function startGame() {
+        var cleanName = validNickname(query('#name').value);
+        if (!cleanName) { query('#notice').textContent = 'Use 3–24 letters, numbers, spaces, _ or -.'; query('#name').focus(); return; }
+        stopAI();
+        if (state.audio && state.audio.state === 'suspended') state.audio.resume();
+        state.name = cleanName;
+        storage.set('joinnowBiniNickname', cleanName);
+        storage.set('bloomMode', state.mode);
+        storage.set('bloomDifficulty', state.difficulty);
+        state.round = 0;
+        state.board = emptyBoard();
+        state.turn = 1;
+        state.roundDone = false;
+        state.outcome = '';
+        state.paused = false;
+        state.notice = '';
+        state.stats = emptyStats();
+        state.localPoints = [0, 0];
+        state.usedBeats = new Set();
+        state.finished = false;
+        var seed = window.crypto && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] % 2147483647 : Date.now() % 2147483647;
+        state.run = { id: String(Date.now()), seed: seed || 1, started: performance.now(), rounds: [{ moves: [] }], timing: false, duration: 0 };
+        var hasMusic = !!(state.player && state.player.getDuration && state.player.getDuration() > 0 && state.mediaState !== 'error');
+        state.run.timing = hasMusic;
+        state.run.duration = hasMusic ? Math.round(state.player.getDuration() * 1000) : 180000;
+        if (hasMusic) { state.mediaState = 'playing'; state.player.seekTo(0, true); state.player.playVideo(); }
+        state.practice = modeIsArcade();
+        if (modeIsArcade() && !hasMusic) state.notice = 'Unranked practice · music and timing bonuses are off.';
+        showScreen('play');
+        post({ type: 'ready' });
+        updateBoardState();
+    }
+    function nextBoard() {
+        if (!state.roundDone) return;
+        if (state.mode === 'quick-play' || state.mode === 'local-two-player' || state.mode === 'bini-eight' && state.round === 7) { finishGame(); return; }
+        if (state.round >= 119) { state.notice = 'Round limit reached.'; finishGame(); return; }
+        state.round++;
+        state.board = emptyBoard();
+        state.turn = 1;
+        state.roundDone = false;
+        state.outcome = '';
+        state.run.rounds.push({ moves: [] });
+        updateBoardState();
+    }
+    function finishGame() {
+        if (state.finished) return;
+        stopAI();
+        state.finished = true;
+        state.paused = false;
+        state.stats = state.mode === 'local-two-player' ? state.stats : calcStats();
+        showScreen('result');
+        query('#resultScore').textContent = state.stats.score.toLocaleString();
+        query('#resultWins').textContent = String(state.stats.wins);
+        query('#resultDraws').textContent = String(state.stats.draws);
+        query('#resultLosses').textContent = String(state.stats.losses);
+        query('#resultScoreLabel').textContent = state.mode === 'local-two-player' ? 'COMBINED SCORE' : 'TOTAL SCORE';
+        query('#resultEyebrow').textContent = state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BINI EIGHT COMPLETE' : 'THAT’S A WRAP';
+        query('#resultTitle').textContent = state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BLOOM MASTER' : state.outcome || 'Nice play, Bloom!';
+        query('#resultDetails').textContent = 'Best streak ' + state.stats.bestStreak + ' · Perfect ' + state.stats.perfect + ' · Great ' + state.stats.great + ' · Good ' + state.stats.good;
+        query('#resultNotice').textContent = modeIsArcade() ? window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Unranked practice · open this game in JoinNow to submit scores.' : state.mode === 'quick-play' ? 'Quick Play is just for fun.' : 'Local two-player is just for fun.';
+        if (modeIsArcade()) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: state.stats.score, final: true });
+        if (state.player && state.player.pauseVideo) state.player.pauseVideo();
+    }
+    function exitToStart() {
+        stopAI();
+        state.run.timing = false;
+        state.paused = false;
+        state.notice = '';
+        if (state.player && state.player.pauseVideo) state.player.pauseVideo();
+        showScreen('start');
+        updateSetup();
+    }
+    function togglePause() {
+        if (state.screen !== 'play' || state.roundDone) return;
+        state.paused = !state.paused;
+        if (state.paused) { stopAI(); if (state.player && state.player.pauseVideo) state.player.pauseVideo(); }
+        else if (state.run.timing && state.player) state.player.playVideo();
+        updateBoardState();
+    }
+    function openTrophies() { post({ type: 'viewLeaderboard', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
+    function leaveGame() { post({ type: 'goBack', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
+    function showMusicStatus(message, label) {
+        query('#musicStatus').textContent = message;
+        query('#musicState').textContent = label;
+    }
+    function initYouTube() {
+        if (state.player || !window.YT || !window.YT.Player) return;
+        state.player = new window.YT.Player('videoMount', {
+            width: '100%', height: '200', videoId: 'vXlM5lzCmRU',
+            playerVars: { playsinline: 1, controls: 1, rel: 0, origin: location.origin },
+            events: {
+                onReady: function () { state.mediaState = 'ready'; showMusicStatus('Video ready. Start a challenge, then use the player controls.', 'READY'); },
+                onError: function () {
+                    state.mediaState = 'error';
+                    if (state.run && state.run.timing) { state.run.timing = false; state.practice = true; }
+                    showMusicStatus('Video unavailable. The game remains playable without timing bonuses.', 'UNAVAILABLE');
+                    updateBoardState();
+                },
+                onStateChange: function (event) {
+                    if (event.data === 1) { state.mediaState = 'playing'; showMusicStatus('Music playing.', 'NOW PLAYING'); }
+                    else if (event.data === 2 || event.data === 3) {
+                        state.mediaState = event.data === 2 ? 'paused' : 'buffering';
+                        if (state.run && state.run.timing && state.screen === 'play') {
+                            state.run.timing = false;
+                            state.practice = true;
+                            state.notice = 'Music paused or buffering. Timing bonuses are now off; keep playing.';
+                            updateBoardState();
+                        }
+                        showMusicStatus('Use the video controls to play or pause.', state.mediaState.toUpperCase());
+                    } else if (event.data === 0) {
+                        state.mediaState = 'ended';
+                        showMusicStatus('Music ended.', 'ENDED');
+                        if (state.screen === 'play' && state.mode === 'beat-challenge') finishGame();
+                        else if (state.screen === 'play' && state.mode === 'bini-eight') {
+                            state.run.timing = false;
+                            state.practice = true;
+                            state.notice = 'The song ended. Finish your eight boards as unranked practice.';
+                            updateBoardState();
+                        }
+                    }
+                }
+            }
+        });
+    }
+    function loadMusic() {
+        query('#musicPanel').hidden = false;
+        state.mediaLoaded = true;
+        showMusicStatus('Loading the official video…', 'LOADING');
+        if (window.YT && window.YT.Player) { initYouTube(); return; }
+        if (query('#youtubeApi')) return;
+        window.onYouTubeIframeAPIReady = function () { initYouTube(); };
+        var script = document.createElement('script');
+        script.id = 'youtubeApi';
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.onerror = function () { state.mediaState = 'error'; showMusicStatus('Video unavailable. You can still play without music.', 'UNAVAILABLE'); };
+        document.head.appendChild(script);
+    }
+
+    query('#modeGrid').addEventListener('click', function (event) {
+        var button = event.target.closest('[data-mode]');
+        if (!button) return;
+        state.mode = button.getAttribute('data-mode');
+        updateSetup();
+    });
+    query('#difficultyGroupButtons').addEventListener('click', function (event) {
+        var button = event.target.closest('[data-difficulty]');
+        if (!button) return;
+        state.difficulty = button.getAttribute('data-difficulty');
+        updateSetup();
+    });
+    query('#startButton').addEventListener('click', startGame);
+    query('#nextButton').addEventListener('click', nextBoard);
+    query('#finishBeatButton').addEventListener('click', finishGame);
+    query('#pauseButton').addEventListener('click', togglePause);
+    query('#exitButton').addEventListener('click', exitToStart);
+    query('#changeModeButton').addEventListener('click', exitToStart);
+    query('#againButton').addEventListener('click', startGame);
+    query('#loadMusicButton').addEventListener('click', loadMusic);
+    query('#helpButton').addEventListener('click', function () { query('#helpDialog').showModal(); });
+    query('#closeHelpButton').addEventListener('click', function () { query('#helpDialog').close(); });
+    query('#soundButton').addEventListener('click', function () {
+        state.muted = !state.muted;
+        storage.set('bloomMuted', String(state.muted));
+        query('#soundButton').setAttribute('aria-pressed', String(state.muted));
+        query('#soundButton').title = state.muted ? 'Sound off' : 'Sound on';
+        if (state.player) { if (state.muted) state.player.mute(); else state.player.unMute(); }
+    });
+    all('[data-native-action="back"]').forEach(function (button) { button.addEventListener('click', leaveGame); });
+    all('[data-native-action="trophy"]').forEach(function (button) { button.addEventListener('click', openTrophies); });
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden && state.screen === 'play' && !state.paused) togglePause();
+    });
+    window.addEventListener('pagehide', function () { stopAI(); if (state.player && state.player.pauseVideo) state.player.pauseVideo(); });
+    post({ type: 'orientation', orientation: 'portrait' });
+    updateSetup();
+})();
+</script>
+</body>
+</html>
