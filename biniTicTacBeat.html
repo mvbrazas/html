@@ -469,7 +469,8 @@
         setButtonState('[data-difficulty]', 'data-difficulty', state.difficulty);
         query('#difficultyGroup').hidden = state.mode === 'local-two-player';
         query('#startButton').textContent = 'Let’s play ' + (state.mode === 'bini-eight' ? 'BINI Eight' : state.mode === 'local-two-player' ? 'Bloom vs Bloom' : state.mode === 'beat-challenge' ? 'Beat Challenge' : 'Quick Play') + ' →';
-        query('#notice').textContent = modeIsArcade() ? window.ReactNativeWebView ? 'Arcade scores are sent to JoinNow Trophies when the challenge ends.' : 'Standalone practice · trophies require the JoinNow app.' : '';
+        var submitsScore = state.mode !== 'local-two-player';
+        query('#notice').textContent = submitsScore ? window.ReactNativeWebView ? 'Scores are sent to JoinNow Trophies when a game ends.' : 'Standalone practice · scores are submitted in the JoinNow app.' : 'Local two-player is just for fun.';
         storage.set('bloomMode', state.mode);
         storage.set('bloomDifficulty', state.difficulty);
     }
@@ -673,8 +674,9 @@
         query('#resultEyebrow').textContent = state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BINI EIGHT COMPLETE' : 'THAT’S A WRAP';
         query('#resultTitle').textContent = state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BLOOM MASTER' : state.outcome || 'Nice play, Bloom!';
         query('#resultDetails').textContent = 'Best streak ' + state.stats.bestStreak + ' · Perfect ' + state.stats.perfect + ' · Great ' + state.stats.great + ' · Good ' + state.stats.good;
-        query('#resultNotice').textContent = modeIsArcade() ? window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Unranked practice · open this game in JoinNow to submit scores.' : state.mode === 'quick-play' ? 'Quick Play is just for fun.' : 'Local two-player is just for fun.';
-        if (modeIsArcade()) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: state.stats.score, final: true });
+        var submitsScore = state.mode !== 'local-two-player';
+        query('#resultNotice').textContent = submitsScore ? window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.' : 'Local two-player is just for fun.';
+        if (submitsScore) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: state.stats.score, final: true });
         if (state.player && state.player.pauseVideo) state.player.pauseVideo();
     }
     function exitToStart() {
