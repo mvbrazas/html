@@ -440,7 +440,7 @@
         state.screen = name;
     }
     function modeIsArcade() { return state.mode === 'bini-eight' || state.mode === 'beat-challenge'; }
-    function scoreNow() { return state.stats ? state.stats.score : 0; }
+    function scoreNow() { return state.stats ? Math.floor(state.stats.score / (window.ReactNativeWebView ? 10 : 1)) : 0; }
 
     var MUSIC_URL = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/assets/BINI-Tic-Tac-Toe.mp3';
     var state = {
@@ -533,7 +533,7 @@
         catch (error) { return state.stats; }
     }
     function updateScore() {
-        query('#scoreValue').textContent = state.stats.score.toLocaleString();
+        query('#scoreValue').textContent = scoreNow().toLocaleString();
         query('#streakValue').textContent = String(state.stats.streak);
         query('#perfectValue').textContent = String(state.stats.perfect);
         query('#statsLine').textContent = state.stats.wins + ' wins · ' + state.stats.draws + ' draws · ' + state.stats.losses + ' losses' + (modeIsArcade() && !state.run.timing ? ' · Unranked practice' : '');
@@ -754,11 +754,11 @@
         reviveMusicTime = failed && state.run.timing && state.player ? state.player.currentTime : null;
         state.stats = state.mode === 'local-two-player' ? state.stats : calcStats();
         var canRevive = !!(failed && state.mode !== 'local-two-player' && revivesLeft > 0);
-        pendingScore = state.stats.score;
+        pendingScore = scoreNow();
         pendingGameOver = canRevive;
         resetRevivePrompt();
         showScreen('result');
-        query('#resultScore').textContent = state.stats.score.toLocaleString();
+        query('#resultScore').textContent = scoreNow().toLocaleString();
         query('#resultWins').textContent = String(state.stats.wins);
         query('#resultDraws').textContent = String(state.stats.draws);
         query('#resultLosses').textContent = String(state.stats.losses);
@@ -773,7 +773,7 @@
             post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: pendingScore, final: false });
         } else {
             query('#resultNotice').textContent = submitsScore ? window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.' : 'Local two-player is just for fun.';
-            if (submitsScore) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: state.stats.score, final: true });
+            if (submitsScore) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: scoreNow(), final: true });
         }
         if (state.player) state.player.pause();
     }
