@@ -114,20 +114,89 @@ header>button#sound{margin-left:0}
 <header><div class="brand"><img id="joinnow-logo" alt="JoinNow"></div><span class="brand-label">GAMES / SUGAR RUSH</span><div class="native-actions"><button type="button" class="native-action" data-native-action="back" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button><button type="button" class="native-action" data-native-action="trophy" title="Trophies" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button></div><button id="sound" aria-pressed="true" aria-label="Toggle sound">Sound on ♪</button></header>
 <main><section class="arena" aria-label="Sugar Rush game"><div id="start" class="start-screen"><span class="eyebrow">BINI × JOINNOW</span><h1>SUGAR<br><em>RUSH</em></h1><div class="candy-line" aria-hidden="true"><canvas id="showcase" width="640" height="150"></canvas></div><p class="intro">Swipe the sweets. Keep the streak.</p><p class="sub">60 seconds. One sweet challenge.</p><form id="setup"><fieldset><legend>Choose your difficulty</legend><label><input type="radio" name="difficulty" value="easy">Easy</label><label><input type="radio" name="difficulty" value="normal" checked>Normal</label><label><input type="radio" name="difficulty" value="hard">Hard</label></fieldset><button id="play" class="primary" disabled>Loading sweets…</button></form><p id="startMessage" role="status"></p><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button><button id="help">How to play</button></nav></div>
 <div id="game" hidden><div class="hud"><div><small>SCORE</small><strong id="score">0</strong></div><div><small>COMBO</small><strong id="combo">0×</strong></div><div><small>ACCURACY</small><strong id="accuracy">0.0%</strong></div></div><div class="progress"><div id="progress"></div></div><div class="mode-row"><span id="mode">Warm up</span><span id="time">1:00</span></div><canvas id="canvas" aria-label="Swipe across the candies and gummies. Avoid spiky dark candies."></canvas><div id="countdown" hidden></div><div id="pausePanel" hidden><h2>Take a breather</h2><p id="pauseMessage">Your game is paused.</p><button id="resume" class="primary">Resume</button></div><div class="game-controls"><button id="restart">↻ Restart</button><button id="pause">Pause</button><button id="exit">✕ Exit</button></div></div>
-<section id="result" hidden><span class="eyebrow">SUGAR RUSH COMPLETE</span><h2 id="final">0</h2><p id="best"></p><div id="stats"></div><p id="save" role="status"></p><button id="retry" hidden>Retry save</button><button id="again" class="primary">Play again</button><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button></nav></section></section>
+<section id="result" hidden>
+<span class="eyebrow">SUGAR RUSH COMPLETE</span><h2 id="final">0</h2><p id="best"></p><div id="stats"></div><p id="save" role="status"></p>
+<p id="reviveStatus" role="status" hidden></p><button id="reviveButton" class="primary" hidden>Watch Ad to Play Again</button>
+<button id="retry" hidden>Retry save</button><button id="again" class="primary">Play again</button><nav class="menu"><button type="button" data-native-action="trophy">Trophies</button><button type="button" data-native-action="back">Back</button></nav></section></section>
 </main>
 <dialog id="helpDialog"><button class="close" data-close aria-label="Close">✕</button><span class="eyebrow">HOW TO PLAY</span><h2>Make it a sweet streak.</h2><p>Hold your mouse button and drag, or swipe with your finger through candies and gummies. Each sweet counts once.</p><p>Build combos for up to 2.5× points. Sugar Rush sections double your points. A missed sweet resets your combo. Dark, spiky candies cost 500 points and reset your streak.</p><p>Easy moves slower; Hard brings more sweets and hazards. Finish the 60-second challenge to save your score.</p><p>Completed scores in the JoinNow app are submitted using your app profile.</p><button data-close class="primary">Let’s play</button></dialog>
 <dialog id="confirm"><h2 id="confirmTitle"></h2><p>Your current run will not be submitted.</p><div class="actions"><button id="cancel">Keep playing</button><button id="confirmGo" class="primary">Confirm</button></div></dialog>
 
 <script type="module">
 const VERSION='1.0.0', MAP='sugar-rush-1.0', DURATION=60000;
+const MAX_CONSECUTIVE_FAILURES=3;
+const MAX_REVIVES=2;
+let revivesLeft=MAX_REVIVES,pendingGameOver=false,pendingScore=0,reviveTimes=[];
 const DIFFICULTIES={easy:{interval:920,life:3400,cap:6,hazard:0.08},normal:{interval:680,life:2800,cap:9,hazard:0.13},hard:{interval:480,life:2300,cap:12,hazard:0.19}};
 // The 60-second game clock follows the Sugar Rush MP3 after playback begins.
 const sections=[{start:0,end:15000,name:'Warm up',scale:1},{start:15000,end:28000,name:'Sweet streak',scale:.85},{start:28000,end:40000,name:'Sugar Rush',scale:.65,rush:true},{start:40000,end:48000,name:'Keep it sweet',scale:.85},{start:48000,end:60000,name:'Sugar Rush',scale:.65,rush:true}];
 const sectionAt=t=>sections.find(s=>t>=s.start&&t<s.end)||sections[sections.length-1];
 const multiplier=c=>c>=40?2.5:c>=20?2:c>=10?1.5:c>=5?1.2:1;
 function schedule(seed,difficulty){const cfg=DIFFICULTIES[difficulty];if(!cfg)throw Error('INVALID_DIFFICULTY');let x=seed>>>0;const rand=()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296};const list=[];for(let t=1000;t<DURATION-cfg.life;t+=Math.round(cfg.interval*sectionAt(t).scale)){const hazard=rand()<cfg.hazard;list.push({id:list.length,t,life:cfg.life,kind:hazard?5:Math.floor(rand()*5),hazard,x:.14+rand()*.72,dx:(rand()-.5)*.22,size:.85+rand()*.3,spin:(rand()-.5)*2,phase:rand()*6.28});}return list;}
-function replay(list,events,end=DURATION){let score=0,combo=0,maxCombo=0,hits=0,misses=0,hazards=0,bonus=0;const resolved=new Set();let previous=-1;const expire=t=>{for(const o of list)if(o.t+o.life<=t&&!resolved.has(o.id)){resolved.add(o.id);if(!o.hazard){misses++;combo=0}}};for(const e of events){if(!Number.isInteger(e.id)||!Number.isFinite(e.t)||e.t<previous||e.t<0||e.t>end)throw Error('INVALID_EVENT');const o=list[e.id];if(!o||resolved.has(e.id)||e.t<o.t||e.t>=o.t+o.life)throw Error('INVALID_HIT');expire(e.t);if(resolved.has(e.id))throw Error('EXPIRED_TARGET');resolved.add(e.id);previous=e.t;if(o.hazard){hazards++;combo=0;score=Math.max(0,score-500)}else{hits++;combo++;maxCombo=Math.max(maxCombo,combo);const rush=!!sectionAt(e.t).rush;if(rush)bonus++;score+=Math.round((o.kind===3?120:100)*multiplier(combo)*(rush?2:1));}}expire(end);const spawned=list.filter(o=>!o.hazard&&o.t<=end).length;return{score,combo,maxCombo,targetsHit:hits,targetsMissed:misses,targetsSpawned:spawned,hazardsHit:hazards,bonusTargetsHit:bonus,accuracy:spawned?Math.round(hits/spawned*1000)/10:0};}
+function replay(list, events, end = DURATION, reviveTimes = []) {
+  let score = 0, combo = 0, maxCombo = 0, hits = 0, misses = 0, hazards = 0, bonus = 0, consecutiveFailures = 0;
+  const resolved = new Set();
+  let previous = -1;
+  let reviveIndex = 0;
+  const resetFailuresBefore = time => {
+    while (reviveIndex < reviveTimes.length && reviveTimes[reviveIndex] < time) {
+      consecutiveFailures = 0;
+      reviveIndex++;
+    }
+  };
+  const resetFailuresThrough = time => {
+    while (reviveIndex < reviveTimes.length && reviveTimes[reviveIndex] <= time) {
+      consecutiveFailures = 0;
+      reviveIndex++;
+    }
+  };
+  const expire = time => {
+    for (const target of list) {
+      const expiration = target.t + target.life;
+      if (expiration > time) continue;
+      resetFailuresBefore(expiration);
+      if (!resolved.has(target.id)) {
+        resolved.add(target.id);
+        if (!target.hazard) {
+          misses++;
+          combo = 0;
+          consecutiveFailures++;
+        }
+      }
+      resetFailuresThrough(expiration);
+    }
+    resetFailuresThrough(time);
+  };
+
+  for (const event of events) {
+    if (!Number.isInteger(event.id) || !Number.isFinite(event.t) || event.t < previous || event.t < 0 || event.t > end) throw Error('INVALID_EVENT');
+    const target = list[event.id];
+    if (!target || resolved.has(event.id) || event.t < target.t || event.t >= target.t + target.life) throw Error('INVALID_HIT');
+    expire(event.t);
+    if (resolved.has(event.id)) throw Error('EXPIRED_TARGET');
+    resolved.add(target.id);
+    previous = event.t;
+
+    if (target.hazard) {
+      hazards++;
+      combo = 0;
+      consecutiveFailures++;
+      score = Math.max(0, score - 500);
+    } else {
+      hits++;
+      combo++;
+      consecutiveFailures = 0;
+      maxCombo = Math.max(maxCombo, combo);
+      const rush = !!sectionAt(event.t).rush;
+      if (rush) bonus++;
+      score += Math.round((target.kind === 3 ? 120 : 100) * multiplier(combo) * (rush ? 2 : 1));
+    }
+  }
+
+  expire(end);
+  const spawned = list.filter(target => !target.hazard && target.t <= end).length;
+  return { score, combo, maxCombo, targetsHit: hits, targetsMissed: misses, targetsSpawned: spawned, hazardsHit: hazards, bonusTargetsHit: bonus, consecutiveFailures, accuracy: spawned ? Math.round(hits / spawned * 1000) / 10 : 0 };
+}
 function intersects(a,b,o){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;const p=l?Math.max(0,Math.min(1,((o.x-a.x)*dx+(o.y-a.y)*dy)/l)):0;return Math.hypot(a.x+p*dx-o.x,a.y+p*dy-o.y)<=o.r;}
 
 function targetPosition(o,t,w,h){const u=(t-o.t)/o.life;return{x:Math.max(45,Math.min(w-45,w*(o.x+o.dx*u))),y:h+55-(h*.72+110)*4*u*(1-u),r:Math.max(20,Math.min(36,w*.056))*o.size,angle:o.phase+o.spin*u};}
@@ -140,6 +209,9 @@ backgroundMusic.volume=.32;
 
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],text=(s,v)=>{$(s).textContent=v};
 const postNative=message=>{if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function')window.ReactNativeWebView.postMessage(JSON.stringify(message))};
+const reviveButton=$('#reviveButton'),reviveStatus=$('#reviveStatus');
+function resetRevivePrompt(){reviveButton.hidden=true;reviveButton.disabled=false;reviveButton.textContent='Watch Ad to Play Again';reviveStatus.hidden=true;reviveStatus.textContent=''}
+function finalizePendingGameOver(){if(!pendingGameOver)return;pendingGameOver=false;reviveButton.hidden=true;reviveButton.disabled=false;postNative({type:'gameOver',gameId:'bini-sugar-rush',score:pendingScore,final:true});pendingScore=0}
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{text('#startMessage','Private storage is unavailable. Your identity lasts for this visit.')}}};
 const playerNickname=store.get('joinnowBiniNickname')||bloom();
 store.set('joinnowBiniNickname',playerNickname);
@@ -169,10 +241,10 @@ backgroundMusic.addEventListener('pause',function(){if(mediaStarted&&phase==='pl
 backgroundMusic.addEventListener('error',function(){mediaError=true;mediaStarted=false;musicStarted=false;if(phase==='waiting')startPractice();else if(phase==='playing'){practice=true;pauseGame('Music unavailable. Resume in practice mode.')}});
 backgroundMusic.addEventListener('ended',function(){mediaStarted=false;musicStarted=false;if(phase==='playing'){practice=true;finish()}});
 
-function reset(){cancelAnimationFrame(raf);raf=0;targets=[];pieces=[];particles=[];trail=[];events=[];pointer=null;clock=0;spawnIndex=0;lastStats=null;lastRush=false;savedPayload=null;$('#retry').hidden=true;document.body.classList.remove('rush');$('#pausePanel').hidden=true;$('#countdown').hidden=true}
+function reset(){cancelAnimationFrame(raf);raf=0;targets=[];pieces=[];particles=[];trail=[];events=[];pointer=null;clock=0;spawnIndex=0;lastStats=null;lastRush=false;savedPayload=null;reviveTimes=[];revivesLeft=MAX_REVIVES;pendingGameOver=false;pendingScore=0;resetRevivePrompt();$('#retry').hidden=true;document.body.classList.remove('rush');$('#pausePanel').hidden=true;$('#countdown').hidden=true}
 async function start(){
  if(['preparing','waiting','countdown','playing'].includes(phase)||!assetsReady)return;
- audioUnlock();reset();const current=++epoch;phase='preparing';$('#play').disabled=true;$('#again').disabled=true;text('#startMessage','Getting your sweets ready…');
+ finalizePendingGameOver();audioUnlock();reset();const current=++epoch;phase='preparing';$('#play').disabled=true;$('#again').disabled=true;text('#startMessage','Getting your sweets ready…');
  difficulty=$('input[name=difficulty]:checked').value;store.set('sugarRushDifficulty',difficulty);
  practice=!!window.ReactNativeWebView;run=null;mediaError=false;mediaStarted=false;musicStarted=false;
  musicPause();try{backgroundMusic.currentTime=0}catch(error){}backgroundMusic.muted=muted;playBackgroundMusic();
@@ -197,10 +269,11 @@ function frame(now){
  for(const p of pieces){p.life-=dt;p.x+=p.vx*dt/1000;p.y+=p.vy*dt/1000;p.vy+=450*dt/1000;p.angle+=p.spin*dt/1000;p.opacity=Math.max(0,p.life/700)}pieces=pieces.filter(p=>p.life>0);
  for(const p of particles){p.life-=dt;p.x+=p.vx*dt/1000;p.y+=p.vy*dt/1000;p.vy+=180*dt/1000}particles=particles.filter(p=>p.life>0);trail=trail.filter(p=>now-p.now<130);
  const rush=!!sectionAt(clock).rush;if(rush&&!lastRush)sfx('fever');lastRush=rush;document.body.classList.toggle('rush',rush);draw();hud();
+ if(lastStats.consecutiveFailures>=MAX_CONSECUTIVE_FAILURES){finish(true);return}
  if(clock>=DURATION)finish();else raf=requestAnimationFrame(frame)
 }
 function draw(){ctx.clearRect(0,0,w,h);for(const o of targets)sprite(ctx,o);for(const p of pieces)sprite(ctx,p,p.side);for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/500);ctx.fillStyle=p.color;ctx.beginPath();if(p.hard)ctx.rect(p.x,p.y,p.r,p.r*1.6);else ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;if(trail.length>1){ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#ff87ca';ctx.lineWidth=10;ctx.beginPath();trail.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.strokeStyle='#fff9ff';ctx.lineWidth=3;ctx.stroke()}}
-function hud(){lastStats=replay(run.list,events,clock);text('#score',lastStats.score.toLocaleString());text('#combo',lastStats.combo+'×');text('#accuracy',lastStats.accuracy.toFixed(1)+'%');text('#mode',sectionAt(clock).rush?'SUGAR RUSH · 2×':sectionAt(clock).name);text('#time',Math.floor(Math.ceil((DURATION-clock)/1000)/60)+':'+String(Math.ceil((DURATION-clock)/1000)%60).padStart(2,'0'));$('#progress').style.width=`${100-clock/DURATION*100}%`}
+function hud(){lastStats=replay(run.list,events,clock,reviveTimes);text('#score',lastStats.score.toLocaleString());text('#combo',lastStats.combo+'×');text('#accuracy',lastStats.accuracy.toFixed(1)+'%');text('#mode',sectionAt(clock).rush?'SUGAR RUSH · 2×':sectionAt(clock).name);text('#time',Math.floor(Math.ceil((DURATION-clock)/1000)/60)+':'+String(Math.ceil((DURATION-clock)/1000)%60).padStart(2,'0'));$('#progress').style.width=`${100-clock/DURATION*100}%`}
 function burst(o,angle){sfx(o.hazard?'hazard':o.kind===3?'hard':'gummy');const hard=o.kind===3||o.hazard;for(const side of [-1,1])pieces.push({...o,cut:angle-o.angle,side,life:700,vx:Math.cos(angle+Math.PI/2)*side*(hard?160:90),vy:Math.sin(angle+Math.PI/2)*side*90-70,spin:side*(hard?5:2)});const colors=['#ff668f','#c1ff67','#61f6eb','#ffc4e8','#ffd37f','#b851e2'];for(let i=0;i<(reduced?4:hard?14:10)&&particles.length<180;i++){const a=Math.random()*Math.PI*2,v=50+Math.random()*180;particles.push({x:o.x,y:o.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:500,r:2+Math.random()*4,color:colors[o.kind],hard})}pieces=pieces.slice(-24)}
 function point(e){const b=canvas.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top,now:performance.now()}}
 canvas.onpointerdown=e=>{if(phase!=='playing'||pointer)return;pointer={id:e.pointerId,last:point(e)};canvas.setPointerCapture(e.pointerId);trail=[pointer.last]};
@@ -214,13 +287,107 @@ $('#resume').onclick=function(){
  if(mediaStarted&&!mediaError){try{backgroundMusic.currentTime=(clock+audioOffset)/1000}catch(error){}phase='resuming';var playPromise=playBackgroundMusic();if(playPromise&&playPromise.catch)playPromise.catch(function(){mediaStarted=false;practice=true;begin()})}
  else{mediaStarted=false;practice=true;begin()}
 };
-async function finish(){if(!['playing','paused'].includes(phase))return;phase='result';cancelAnimationFrame(raf);musicPause();clearPointer();document.body.classList.remove('playing','rush');$('#game').hidden=true;$('#result').hidden=false;lastStats=replay(run.list,events,DURATION);text('#final',lastStats.score.toLocaleString());postNative({type:'gameOver',score:lastStats.score,final:true});text('#best','');const root=$('#stats');root.replaceChildren();for(const[label,value]of [['Accuracy',lastStats.accuracy.toFixed(1)+'%'],['Max combo',lastStats.maxCombo+'×'],['Sweets sliced',lastStats.targetsHit],['Sweets missed',lastStats.targetsMissed],['Hazards hit',lastStats.hazardsHit],['Difficulty',difficulty]]){const d=document.createElement('div'),b=document.createElement('b');d.textContent=label;b.textContent=value;d.append(b);root.append(d)}if(practice||clock<DURATION){text('#save',window.ReactNativeWebView?'Final score sent to JoinNow Trophies.':'Practice complete · this run was not submitted.');return}savedPayload={...versionBody,sessionId:run.sessionId,sessionToken:run.sessionToken,durationMs:DURATION,events,stats:lastStats};await save();}
+async function finish(failed = false) {
+ if (!['playing', 'paused'].includes(phase)) return;
+ const canRevive = failed && revivesLeft > 0;
+ phase = canRevive ? 'failed' : 'result';
+ cancelAnimationFrame(raf);
+ musicPause();
+ clearPointer();
+ document.body.classList.remove('playing', 'rush');
+ $('#game').hidden = true;
+ $('#result').hidden = false;
+ resetRevivePrompt();
+ lastStats = replay(run.list, events, failed ? clock : DURATION, reviveTimes);
+ $('#result .eyebrow').textContent = failed ? 'SUGAR RUSH FAILED' : 'SUGAR RUSH COMPLETE';
+ text('#final', lastStats.score.toLocaleString());
+ pendingScore = lastStats.score;
+ pendingGameOver = canRevive;
+ if (canRevive) {
+  reviveButton.hidden = false;
+  postNative({ type: 'gameOver', gameId: 'bini-sugar-rush', score: pendingScore, final: false });
+ } else {
+  postNative({ type: 'gameOver', gameId: 'bini-sugar-rush', score: pendingScore, final: true });
+ }
+ text('#best', failed ? 'Ended after 3 consecutive failures.' : '');
+
+ const root = $('#stats');
+ root.replaceChildren();
+ const summaryRows = [
+  ['Accuracy', lastStats.accuracy.toFixed(1) + '%'],
+  ['Max combo', lastStats.maxCombo + '×'],
+  ['Sweets sliced', lastStats.targetsHit],
+  ['Sweets missed', lastStats.targetsMissed],
+  ['Hazards hit', lastStats.hazardsHit],
+  ['Difficulty', difficulty]
+ ];
+ for (const [label, value] of summaryRows) {
+  const row = document.createElement('div');
+  const valueElement = document.createElement('b');
+  row.textContent = label;
+  valueElement.textContent = value;
+  row.append(valueElement);
+  root.append(row);
+ }
+
+ if (canRevive) {
+  text('#save', 'Watch an ad to continue this run.');
+  return;
+ }
+ if (practice || clock < DURATION) {
+  text('#save', window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Practice complete · this run was not submitted.');
+  return;
+ }
+ const savedStats = { ...lastStats };
+ delete savedStats.consecutiveFailures;
+ savedPayload = { ...versionBody, sessionId: run.sessionId, sessionToken: run.sessionToken, durationMs: DURATION, events, stats: savedStats };
+ await save();
+}
+reviveButton.addEventListener('click', function () {
+ if (!pendingGameOver || revivesLeft <= 0) return;
+ reviveButton.disabled = true;
+ reviveButton.textContent = 'WAITING FOR AD...';
+ postNative({ type: 'requestRevive', gameId: 'bini-sugar-rush', score: pendingScore });
+});
+function resumeAfterRevive() {
+ if (!pendingGameOver || revivesLeft <= 0) return;
+ revivesLeft--;
+ pendingGameOver = false;
+ reviveTimes.push(clock);
+ resetRevivePrompt();
+ $('#result').hidden = true;
+ $('#game').hidden = false;
+ document.body.classList.add('playing');
+ text('#save', '');
+ lastStats = replay(run.list, events, clock, reviveTimes);
+ if (mediaStarted && !mediaError) {
+  try { backgroundMusic.currentTime = (clock + audioOffset) / 1000; } catch (error) {}
+  phase = 'resuming';
+  const playPromise = playBackgroundMusic();
+  if (playPromise && playPromise.catch) playPromise.catch(function () { mediaStarted = false; practice = true; begin(); });
+ } else {
+  mediaStarted = false;
+  practice = true;
+  begin();
+ }
+}
+window.dispatchRevive = function (granted) {
+ if (!pendingGameOver) return;
+ if (granted && revivesLeft > 0) {
+  resumeAfterRevive();
+  return;
+ }
+ reviveButton.hidden = true;
+ reviveStatus.textContent = 'Ad unavailable.';
+ reviveStatus.hidden = false;
+ finalizePendingGameOver();
+};
 async function save(){if(!savedPayload)return;$('#retry').hidden=true;text('#save','Saving your score…');const resultEpoch=epoch;try{const result=await api('runs',savedPayload);if(resultEpoch!==epoch)return;text('#save','Score saved');text('#best',result.personalBest?'NEW PERSONAL BEST!':'');savedPayload=null;sfx('saved')}catch(e){if(resultEpoch!==epoch)return;if(e.code==='SESSION_ALREADY_USED'){text('#save','This run was already submitted. Check My history for your saved result.');savedPayload=null}else{text('#save','Your score could not be saved. '+e.message);$('#retry').hidden=false}}}
 function currentScore(){return lastStats?lastStats.score:0}
-function leave(notifyNative=true){const score=currentScore();epoch++;musicPause();reset();phase='start';$('#start').hidden=false;$('#game').hidden=true;$('#result').hidden=true;$('#play').disabled=!assetsReady;$('#again').disabled=false;document.body.classList.remove('playing');text('#startMessage','');if(notifyNative)postNative({type:'goBack',score:score})}
+function leave(notifyNative=true){finalizePendingGameOver();const score=currentScore();epoch++;musicPause();reset();phase='start';$('#start').hidden=false;$('#game').hidden=true;$('#result').hidden=true;$('#play').disabled=!assetsReady;$('#again').disabled=false;document.body.classList.remove('playing');text('#startMessage','');if(notifyNative)postNative({type:'goBack',score:score})}
 function ask(action){pending=action;pauseGame();text('#confirmTitle',action==='restart'?'Restart this game?':'Exit this game?');$('#confirm').showModal()}
 $('#setup').onsubmit=e=>{e.preventDefault();start()};$('#again').onclick=start;$('#restart').onclick=()=>ask('restart');$('#exit').onclick=()=>ask('exit');$('#pause').onclick=()=>pauseGame();$('#retry').onclick=save;$('#cancel').onclick=()=>{$('#confirm').close()};$('#confirmGo').onclick=()=>{$('#confirm').close();const action=pending;leave(action!=='restart');if(action==='restart')start()};$('#help').onclick=()=>$('#helpDialog').showModal();$$('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());$('#sound').onclick=()=>{audioUnlock();muted=!muted;store.set('sugarRushMuted',String(muted));soundUI()};soundUI();
-$$('[data-native-action]').forEach(button=>button.addEventListener('click',()=>{if(button.dataset.nativeAction==='back'){leave();return}if(['playing','waiting'].includes(phase))pauseGame('Paused while viewing Trophies.');postNative({type:'viewLeaderboard',score:currentScore()})}));
+$$('[data-native-action]').forEach(button=>button.addEventListener('click',()=>{finalizePendingGameOver();if(button.dataset.nativeAction==='back'){leave();return}if(['playing','waiting'].includes(phase))pauseGame('Paused while viewing Trophies.');postNative({type:'viewLeaderboard',score:currentScore()})}));
 postNative({type:'orientation',orientation:'portrait'});
 var resumeWhenVisible=false;
 document.addEventListener('visibilitychange',function(){if(document.hidden){resumeWhenVisible=['playing','waiting'].includes(phase);if(resumeWhenVisible)pauseGame('You left the game. Resume when you’re ready.');else if(['countdown','preparing','resuming'].includes(phase))leave(false)}else if(resumeWhenVisible&&musicStarted){resumeWhenVisible=false;$('#resume').click()}else resumeWhenVisible=false});
