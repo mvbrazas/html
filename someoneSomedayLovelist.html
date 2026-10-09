@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#073c49" />
+    <title>Someone, Someday: LoveList</title>
+    <style>
+        :root { color-scheme: dark; --night:#073c49; --deep:#062f3a; --panel:#0e4c58; --panel-raised:#145d67; --paper:#fff9ef; --muted:#c0d8d8; --teal:#8de6e8; --yellow:#f5d86c; --pink:#f0a9ba; --line:#ffffff35; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px); font-family:Arial,Helvetica,sans-serif; background:var(--night); color:var(--paper); }
+        * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        html,body { min-height:100%; margin:0; background:var(--night); }
+        body { min-height:100vh; min-height:100svh; background:radial-gradient(ellipse at 80% 0%,#1a7c83 0,transparent 38%),linear-gradient(155deg,#0d5964,#073c49 66%,#062f3a); }
+        button,input { font:inherit; }
+        button { color:inherit; cursor:pointer; touch-action:manipulation; }
+        button:disabled { cursor:default; opacity:.6; }
+        button:focus-visible,a:focus-visible { outline:3px solid var(--yellow); outline-offset:3px; }
+        [hidden] { display:none !important; }
+        #app { width:min(100%,1120px); min-height:100vh; min-height:100svh; margin:0 auto; padding:max(8px,var(--safe-top)) 18px max(8px,var(--safe-bottom)); display:flex; flex-direction:column; }
+        header { min-height:48px; display:flex; align-items:center; gap:9px; padding-bottom:8px; border-bottom:1px solid #ffffff22; }
+        .brand { display:block; flex:0 0 auto; }
+        .brand img { display:block; width:88px; height:36px; object-fit:contain; }
+        .brand-label { color:#d5eeee; font-size:10px; font-weight:800; letter-spacing:1.2px; }
+        .header-actions { display:flex; align-items:center; gap:6px; margin-left:auto; }
+        .icon-button { width:36px; height:36px; min-height:36px; padding:0; display:grid; place-items:center; border:1px solid #398b8c; border-radius:50%; background:linear-gradient(145deg,#176b74,#0b4b57); color:var(--yellow); box-shadow:inset 0 1px 0 #ffffff24; transition:background .15s,border-color .15s,color .15s,transform .15s; }
+        .icon-button svg { width:19px; height:19px; fill:currentColor; }
+        .icon-button:hover,.icon-button:focus-visible { border-color:var(--yellow); background:#1b7178; color:#fff0a2; }
+        .icon-button:active { transform:scale(.96); }
+        main { flex:1; }
+        .eyebrow { margin:0 0 7px; color:var(--yellow); font-size:10px; font-weight:800; letter-spacing:1.5px; }
+        h1,h2,h3,p { margin-top:0; }
+        h1 { margin-bottom:8px; font-size:clamp(30px,7vw,46px); line-height:1; letter-spacing:0; }
+        h1 span { color:var(--teal); }
+        h2 { margin-bottom:8px; font-size:22px; line-height:1.15; }
+        p { color:var(--muted); line-height:1.45; }
+        .home-layout { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(310px,.95fr); gap:16px; align-items:stretch; margin:14px 0; }
+        .hero-art { position:relative; min-width:0; min-height:480px; overflow:hidden; border:1px solid #8de6e833; border-radius:12px; background:#0d5964; }
+        .hero-art img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 35%; }
+        .hero-art::after { position:absolute; inset:0; content:""; background:linear-gradient(180deg,rgba(5,40,50,.02) 20%,rgba(5,40,50,.83) 100%); }
+        .hero-copy { position:absolute; z-index:1; right:18px; bottom:17px; left:18px; }
+        .hero-copy p { margin:7px 0 0; color:#f2ffff; font-size:14px; }
+        .mission-panel { min-width:0; padding:16px; border:1px solid #8de6e83b; border-radius:12px; background:rgba(10,68,79,.94); }
+        .mission-panel .subhead { margin:0 0 10px; font-size:13px; }
+        .brief { margin:13px 0; padding:10px 11px; border-left:3px solid var(--yellow); background:#ffffff0a; }
+        .brief strong { color:var(--yellow); font-size:9px; letter-spacing:1.3px; }
+        .brief p { margin:4px 0 0; color:#d4e8e8; font-size:12px; line-height:1.4; }
+        .primary,.secondary { min-height:44px; padding:10px 14px; display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid transparent; border-radius:7px; font-weight:800; }
+        .primary { width:100%; background:var(--yellow); color:#193d42; }
+        .primary:disabled { opacity:.55; }
+        .secondary { background:transparent; border-color:var(--line); color:var(--paper); }
+        .text-button { min-height:38px; padding:7px 2px; border:0; background:none; color:#bcebed; font-size:12px; text-decoration:underline; text-underline-offset:3px; }
+        .home-status { min-height:18px; margin:7px 0 0; color:var(--yellow); font-size:11px; line-height:1.35; }
+        .disclaimer { margin:8px 0 0; color:#9fbfc1; font-size:10px; line-height:1.35; }
+        .play-screen { max-width:780px; margin:10px auto; }
+        .play-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .play-top h2 { margin:0; }
+        .progress-copy { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+        .heart-row { margin-top:9px; display:flex; justify-content:space-between; gap:10px; color:#d9eeee; font-size:11px; }
+        .heart-fill { height:5px; margin-top:5px; overflow:hidden; border-radius:4px; background:#ffffff25; }
+        .heart-fill span { display:block; width:0; height:100%; background:linear-gradient(90deg,var(--teal),var(--yellow)); transition:width .2s; }
+        .play-card { position:relative; width:min(100%,580px); min-height:280px; margin:11px auto 0; padding:18px; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; border:1px solid #ffffff40; border-radius:12px; background:linear-gradient(150deg,#fefaf1,#e9eeea); color:#183b43; box-shadow:0 14px 35px #001e2635; touch-action:pan-y; user-select:none; }
+        .play-card h2 { position:relative; z-index:1; margin:12px 0; color:#1d3338; font-size:clamp(20px,5.2vw,27px); line-height:1.22; }
+        .card-category { position:relative; z-index:1; color:#527a7e; font-size:10px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; }
+        .card-prompt { position:relative; z-index:1; flex:1; display:flex; align-items:center; }
+        .card-art { position:absolute; top:0; right:0; left:0; height:96px; overflow:hidden; opacity:.2; }
+        .card-art img { width:100%; height:100%; object-fit:cover; object-position:50% 35%; }
+        .clues { position:relative; z-index:1; display:grid; gap:7px; margin-top:8px; }
+        .clue { margin:0; padding:8px 9px; border:1px solid #517b7f45; border-radius:6px; background:#ffffffd9; color:#31585e; font-size:12px; line-height:1.35; }
+        .clue b { display:block; margin-bottom:3px; color:#9a5262; font-size:9px; letter-spacing:1px; }
+        .reveal-clue { justify-self:start; min-height:34px; padding:6px 9px; border:1px solid #49777d77; border-radius:6px; background:#f9ffff; color:#24515a; font-size:11px; font-weight:700; }
+        .choice-grid { width:min(100%,580px); margin:10px auto 0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+        .choice { min-width:0; min-height:54px; padding:8px 5px; display:grid; grid-template-rows:20px auto; justify-items:center; align-content:center; gap:3px; border:1px solid #ffffff45; border-radius:7px; background:#114b56; color:var(--paper); font-size:11px; font-weight:800; }
+        .choice .choice-icon { color:var(--teal); font-size:17px; line-height:20px; }
+        .choice.red .choice-icon { color:#ffabb2; }
+        .choice.complicated .choice-icon { color:var(--yellow); }
+        .choice:disabled { opacity:.52; }
+        .feedback { width:min(100%,580px); min-height:36px; margin:7px auto 0; display:flex; flex-direction:column; gap:3px; color:#e1eeee; font-size:11px; line-height:1.35; text-align:center; }
+        .feedback strong { color:var(--yellow); font-size:12px; }
+        .play-actions { display:flex; justify-content:center; gap:8px; margin-top:7px; }
+        .play-actions .secondary { min-height:36px; padding:6px 11px; font-size:11px; }
+        .result-panel { max-width:600px; margin:18px auto; padding:22px; border:1px solid #8de6e83b; border-radius:12px; background:#0c4551; text-align:center; }
+        .result-panel h2 { color:var(--teal); font-size:24px; }
+        .result-score { margin:8px 0; color:var(--yellow); font-size:48px; font-weight:900; }
+        .result-score small { display:block; color:var(--muted); font-size:10px; letter-spacing:2px; }
+        .result-detail { color:#d0e2e2; font-size:13px; line-height:1.5; }
+        .vibe-line { margin:8px 0 16px; color:var(--paper); font:italic 17px/1.4 Georgia,serif; }
+        .result-actions { display:grid; gap:7px; }
+        .legal { padding:9px 0 2px; color:#94b1b4; font-size:9px; line-height:1.4; text-align:center; }
+        dialog { width:min(520px,calc(100% - 24px)); max-height:85dvh; padding:19px; overflow:auto; border:1px solid #72b8bc66; border-radius:10px; background:#0c4551; color:var(--paper); }
+        dialog::backdrop { background:rgba(3,21,27,.82); }
+        dialog h2 { color:var(--teal); }
+        dialog p { color:#d0e2e2; font-size:12px; line-height:1.5; }
+        @media(max-width:760px) {
+            #app { padding: max(5px,var(--safe-top)) 12px max(5px,var(--safe-bottom)); }
+            header { min-height:42px; }
+            .brand img { width:78px; height:32px; }
+            .brand-label { display:none; }
+            main { min-height:0; }
+            .home-layout { grid-template-columns:1fr; gap:9px; margin:9px 0; }
+            .hero-art { width:min(100%,420px); min-height:0; aspect-ratio:5 / 6; margin-inline:auto; }
+            .art-copy { right:13px; bottom:11px; left:13px; }
+            h1 { font-size:36px; }
+            .art-copy p { margin-top:5px; font-size:12px; }
+            .mission-panel { padding:12px; }
+            .panel-top { margin-bottom:3px; }
+            .mission-panel h2 { margin:3px 0 5px; font-size:19px; }
+            .mission-panel .subhead { margin-bottom:6px; font-size:11px; }
+            .show-link { margin:5px 0; font-size:10px; }
+            .choices { gap:6px; margin:8px 0; }
+            .choice { min-height:49px; padding:6px 8px; gap:7px; }
+            .choice[aria-pressed="true"] { padding:5px 7px; }
+            .choice-copy b { font-size:12px; }
+            .choice-copy small { margin-top:2px; font-size:9px; }
+            .brief { margin:7px 0; padding:7px 8px; }
+            .brief p { font-size:10px; }
+            .start-button { min-height:42px; padding:8px 12px; font-size:13px; }
+            .home-secondary { margin-top:4px; }
+            .home-secondary .text-button { min-height:32px; }
+            .home-status { min-height:0; margin:3px 0 0; font-size:10px; }
+            .disclaimer { display:none; }
+            .game-screen { min-height:0; }
+            .game-top { gap:6px; }
+            .game-top h1 { margin:0; font-size:21px; }
+            .game-top-copy { font-size:9px; }
+            .card { font-size:12px; }
+            .play-screen { margin:4px auto; }
+            .play-top h2 { font-size:18px; }
+            .progress-copy { font-size:10px; }
+            .heart-row { margin-top:5px; font-size:10px; }
+            .play-card { min-height:250px; margin-top:7px; padding:14px; }
+            .play-card h2 { margin:9px 0; font-size:21px; }
+            .clue { padding:7px; font-size:11px; }
+            .choice-grid { gap:5px; margin-top:7px; }
+            .choice { min-height:50px; font-size:10px; }
+            .feedback { min-height:32px; margin-top:5px; font-size:10px; }
+            .play-actions { margin-top:4px; }
+            .result-panel { margin:10px auto; padding:16px; }
+            .result-score { font-size:40px; }
+            .legal { padding-top:5px; font-size:8px; }
+        }
+        @media(max-width:360px) {
+            #app { padding-right:9px; padding-left:9px; }
+            .play-card { min-height:230px; padding:12px; }
+            .choice { font-size:9px; }
+            .choice .choice-icon { font-size:15px; }
+        }
+        @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; animation:none!important; } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header>
+        <div class="brand"><img id="joinnowLogo" alt="JoinNow"></div>
+        <span class="brand-label">SOMEONE, SOMEDAY</span>
+        <div class="header-actions">
+            <button type="button" class="icon-button" data-native-action="back" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
+            <button type="button" class="icon-button" data-native-action="trophy" title="Trophies" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
+        </div>
+    </header>
+    <main>
+        <section id="homeScreen" class="screen home-screen">
+            <div class="home-layout">
+                <section class="hero-art"><img id="posterArt" alt="Someone, Someday campaign artwork"><div class="art-copy"><p class="eyebrow">SOMEONE, SOMEDAY</p><h1>LoveList</h1><p>Follow the feeling.<br>Read the signs.</p></div></section>
+                <section class="mission-panel">
+                    <div class="panel-top"><span class="eyebrow">JOINNOW · SHOWS</span></div>
+                    <h2>Every sign tells a story.</h2>
+                    <p class="subhead">Sixteen decisions. One LoveList vibe.</p>
+                    <div class="brief"><strong>YOUR MISSION</strong><p>Read each story, trust your instincts, and follow the clues when the details get complicated.</p></div>
+                    <button type="button" class="primary" id="startButton"><span>Start LoveList</span><span aria-hidden="true">→</span></button>
+                    <button type="button" class="text-button" id="practiceButton">Play for fun · practice round</button>
+                    <button type="button" class="text-button" id="helpButton">How to play</button>
+                    <p class="home-status" id="homeStatus" role="status"></p>
+                    <p class="disclaimer">A playful game result, not a relationship assessment.</p>
+                </section>
+            </div>
+        </section>
+        <section id="countdownScreen" class="screen countdown-screen" hidden><p class="eyebrow">TRUST YOUR INSTINCTS</p><strong id="countdownValue">3</strong><p>Your next story is waiting.</p></section>
+        <section id="playScreen" class="screen play-screen" hidden>
+            <div class="play-top"><h1>LoveList</h1><span class="progress-copy"><b id="cardIndex">01</b> / 16 · <span id="elapsed">00:00</span></span></div>
+            <div class="heart-row"><span id="heartText">♥ Heart meter · 0%</span><b id="multiplier">1×</b></div>
+            <div class="heart-fill"><span id="heartFill"></span></div>
+            <article class="play-card" id="playCard">
+                <div class="card-art" id="cardArt" hidden><img id="ensembleArt" alt="" /></div>
+                <div class="card-category" id="cardCategory"></div>
+                <div class="card-prompt"><h2 id="cardPrompt"></h2></div>
+                <div class="clues" id="clues" hidden><p class="clue"><b>CLUE 01</b><span id="clueOne"></span></p><p class="clue" id="clueTwoBox" hidden><b>CLUE 02</b><span id="clueTwo"></span></p><button type="button" class="reveal-clue" id="revealClue">Reveal another clue</button></div>
+                <p class="card-micro" id="cardMicro"></p>
+                <div class="swipe-label" id="swipeLabel" hidden></div>
+            </article>
+            <div class="choice-grid" id="choiceGrid"></div>
+            <div class="feedback" id="feedback" aria-live="polite"><span>Take a moment. Make your call.</span></div>
+            <div class="play-actions"><button type="button" class="secondary" id="pauseButton">Pause</button><button type="button" class="secondary" id="restartButton">Restart</button><button type="button" class="secondary" id="exitButton">Exit</button></div>
+        </section>
+        <section id="resultScreen" class="screen result-screen" hidden>
+            <p class="eyebrow">YOUR LOVELIST VIBE</p>
+            <h2 id="resultVibe">LoveList Pro</h2><p class="vibe-line" id="resultLine"></p>
+            <div class="result-score"><span id="resultScore">0</span><small>POINTS</small></div>
+            <div class="score-row"><div class="score-box"><small>ACCURACY</small><b id="resultAccuracy">0%</b></div><div class="score-box"><small>BEST STREAK</small><b id="resultBest">0</b></div><div class="score-box"><small>PERFECT</small><b id="resultPerfect">0</b></div></div>
+            <p class="result-detail" id="resultStatus"></p>
+            <p class="result-detail" id="reviveStatus" role="status" hidden></p>
+            <button type="button" class="primary" id="reviveButton" hidden>Watch an ad to play again</button>
+            <div class="result-actions"><button type="button" class="primary" id="shareButton">Share your vibe</button><button type="button" class="secondary" id="playAgain">Play again</button><button type="button" class="text-button" data-native-action="trophy">Trophies</button><button type="button" class="text-button" data-native-action="back">Back</button></div>
+        </section>
+    </main>
+</div>
+<dialog id="helpDialog"><p class="eyebrow">MISSION GUIDE</p><h2>Follow the feeling. Read the signs.</h2><p>Swipe right for Green Flag, left for Red Flag, or tap Complicated for more context. You can also tap the labeled choices.</p><p>LoveList includes sixteen decisions and three mysteries. Reveal the second clue on a mystery before making your call.</p><p>Correct answers build your streak and heart meter; a full heart doubles your next correct answer. There is no hard time limit.</p><button type="button" class="primary" id="closeHelp">Got it</button></dialog>
+<dialog id="pauseDialog"><p class="eyebrow">ROUND PAUSED</p><h2>Take your time.</h2><p>Your story will be here when you return.</p><button type="button" class="primary" id="resumeButton">Keep playing</button></dialog>
+<script>
+(function () {
+    'use strict';
+    var PACK = {"relationships":[{"id":"REL-1-1","type":"relationship","difficulty":1,"prompt":"They remember the little detail you mentioned weeks ago.","correctResponse":"GREEN","category":"communication","explanation":"Remembering details can show attention and care.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-2","type":"relationship","difficulty":1,"prompt":"They make fun of your interests every time you mention them.","correctResponse":"RED","category":"friendship","explanation":"Respect should include the things you enjoy.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-3","type":"relationship","difficulty":1,"prompt":"Their reply is shorter than usual today.","correctResponse":"COMPLICATED","category":"digital life","explanation":"One short reply does not tell the whole story.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-4","type":"relationship","difficulty":1,"prompt":"They ask before sharing your photo online.","correctResponse":"GREEN","category":"boundaries","explanation":"Asking first respects your choice.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-5","type":"relationship","difficulty":1,"prompt":"They read your private messages without asking.","correctResponse":"RED","category":"boundaries","explanation":"Privacy still matters in close relationships.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-6","type":"relationship","difficulty":1,"prompt":"They take a few hours to reply while at work.","correctResponse":"COMPLICATED","category":"communication","explanation":"Availability varies. Agree on expectations together.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-7","type":"relationship","difficulty":1,"prompt":"They celebrate your good news without making it about themselves.","correctResponse":"GREEN","category":"friendship","explanation":"Sharing your joy is a caring response.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-8","type":"relationship","difficulty":1,"prompt":"They insist you cancel every plan with your friends.","correctResponse":"RED","category":"friendship","explanation":"A relationship should leave room for friendships.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-9","type":"relationship","difficulty":1,"prompt":"They prefer quiet dates over big parties.","correctResponse":"COMPLICATED","category":"dating","explanation":"A preference is not a measure of care.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-10","type":"relationship","difficulty":1,"prompt":"They apologize and change the behavior they apologized for.","correctResponse":"GREEN","category":"trust","explanation":"Follow-through gives an apology meaning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-11","type":"relationship","difficulty":1,"prompt":"They promise to call, repeatedly forget, and dismiss your concern.","correctResponse":"RED","category":"communication","explanation":"The repeated dismissal is the concerning part.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-12","type":"relationship","difficulty":1,"prompt":"They do not post about your first date.","correctResponse":"COMPLICATED","category":"digital life","explanation":"People have different comfort levels with posting.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-13","type":"relationship","difficulty":1,"prompt":"They accept your no without trying to change your mind.","correctResponse":"GREEN","category":"boundaries","explanation":"Respecting a no supports healthy boundaries.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-14","type":"relationship","difficulty":1,"prompt":"They share your secret as a funny story with friends.","correctResponse":"RED","category":"trust","explanation":"A private confidence deserves respect.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-15","type":"relationship","difficulty":1,"prompt":"They like different music from you.","correctResponse":"COMPLICATED","category":"dating","explanation":"Different tastes do not determine compatibility.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-16","type":"relationship","difficulty":1,"prompt":"They ask what would help when you have a difficult day.","correctResponse":"GREEN","category":"communication","explanation":"Checking your needs avoids assumptions.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-17","type":"relationship","difficulty":1,"prompt":"They always turn your accomplishments into a competition.","correctResponse":"RED","category":"friendship","explanation":"Constant competition can undermine support.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-18","type":"relationship","difficulty":1,"prompt":"They want to plan the date a week ahead.","correctResponse":"COMPLICATED","category":"dating","explanation":"Planning styles differ. Talk about what works.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-19","type":"relationship","difficulty":1,"prompt":"They arrive late and honestly explain, then apologize.","correctResponse":"GREEN","category":"trust","explanation":"Taking responsibility shows consideration.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-20","type":"relationship","difficulty":1,"prompt":"They mock you for asking a sincere question.","correctResponse":"RED","category":"communication","explanation":"Questions deserve a respectful response.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-1","type":"relationship","difficulty":2,"prompt":"They cancel dinner because a family member unexpectedly needs help.","correctResponse":"COMPLICATED","category":"family","explanation":"Context and follow-up matter more than a single cancellation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-2","type":"relationship","difficulty":2,"prompt":"They tell you they need rest and suggest another day to meet.","correctResponse":"GREEN","category":"boundaries","explanation":"Clear limits plus a new plan show care.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-3","type":"relationship","difficulty":2,"prompt":"They say your boundaries are proof you do not care.","correctResponse":"RED","category":"boundaries","explanation":"Care should not require abandoning your limits.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-4","type":"relationship","difficulty":2,"prompt":"They are close friends with someone they once dated.","correctResponse":"COMPLICATED","category":"trust","explanation":"Openness and agreed boundaries matter, not assumptions.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-5","type":"relationship","difficulty":2,"prompt":"They ask how you prefer to resolve disagreements.","correctResponse":"GREEN","category":"communication","explanation":"Discussing conflict styles creates shared expectations.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-6","type":"relationship","difficulty":2,"prompt":"They repeatedly use private jokes to embarrass you in public.","correctResponse":"RED","category":"friendship","explanation":"Repeated embarrassment is not considerate humor.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-7","type":"relationship","difficulty":2,"prompt":"They want to split the bill on your first date.","correctResponse":"COMPLICATED","category":"dating","explanation":"Money customs differ; clarify expectations.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-8","type":"relationship","difficulty":2,"prompt":"They check in after you said an important presentation was coming.","correctResponse":"GREEN","category":"communication","explanation":"Remembering what matters to you shows attention.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-9","type":"relationship","difficulty":2,"prompt":"They demand immediate replies even after you explain your schedule.","correctResponse":"RED","category":"digital life","explanation":"Ignoring reasonable limits is concerning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-10","type":"relationship","difficulty":2,"prompt":"They are less talkative around your family than around friends.","correctResponse":"COMPLICATED","category":"family","explanation":"New settings can change how comfortable someone feels.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-11","type":"relationship","difficulty":2,"prompt":"They disagree with you while still listening carefully.","correctResponse":"GREEN","category":"communication","explanation":"Respect does not require agreement.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-12","type":"relationship","difficulty":2,"prompt":"They change a shared plan without telling you, again.","correctResponse":"RED","category":"trust","explanation":"Repeated unilateral changes ignore your time.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-13","type":"relationship","difficulty":2,"prompt":"They prefer to keep their relationship status off social media.","correctResponse":"COMPLICATED","category":"digital life","explanation":"Discuss privacy preferences before assuming motives.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-14","type":"relationship","difficulty":2,"prompt":"They admit they misunderstood and ask you to explain again.","correctResponse":"GREEN","category":"communication","explanation":"Curiosity can repair a misunderstanding.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-15","type":"relationship","difficulty":2,"prompt":"They compare you unfavorably with their ex on every date.","correctResponse":"RED","category":"dating","explanation":"Repeated comparisons can be hurtful.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-16","type":"relationship","difficulty":2,"prompt":"They suggest meeting their friends earlier than you expected.","correctResponse":"COMPLICATED","category":"friendship","explanation":"Different pacing calls for a conversation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-17","type":"relationship","difficulty":2,"prompt":"They respect that you want to move more slowly.","correctResponse":"GREEN","category":"dating","explanation":"Shared pacing should include both people.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-18","type":"relationship","difficulty":2,"prompt":"They keep borrowing your things after you asked them to stop.","correctResponse":"RED","category":"boundaries","explanation":"Repeatedly ignoring a clear request is concerning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-19","type":"relationship","difficulty":2,"prompt":"They suggest a different way to celebrate your anniversary.","correctResponse":"COMPLICATED","category":"dating","explanation":"Ask what the alternative means to them.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-20","type":"relationship","difficulty":2,"prompt":"They tell you privately when something you said hurt them.","correctResponse":"GREEN","category":"trust","explanation":"Honest, respectful feedback can strengthen trust.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-1","type":"relationship","difficulty":3,"prompt":"They need time alone after an argument before continuing.","correctResponse":"COMPLICATED","category":"communication","explanation":"A pause can help; agree on when to reconnect.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-2","type":"relationship","difficulty":3,"prompt":"They acknowledge your concern, name their limit, and seek a compromise.","correctResponse":"GREEN","category":"boundaries","explanation":"Both peoples needs have room in the conversation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-3","type":"relationship","difficulty":3,"prompt":"They use a past favor to insist you agree with every decision.","correctResponse":"RED","category":"trust","explanation":"Care should not become a debt used to control decisions.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-4","type":"relationship","difficulty":3,"prompt":"They keep a family matter private until they understand it better.","correctResponse":"COMPLICATED","category":"family","explanation":"Privacy and secrecy need context before judgment.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-5","type":"relationship","difficulty":3,"prompt":"They correct a mistaken impression even though it makes them look less impressive.","correctResponse":"GREEN","category":"trust","explanation":"Honesty can matter more than appearances.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-6","type":"relationship","difficulty":3,"prompt":"They claim every disagreement means you are disloyal.","correctResponse":"RED","category":"communication","explanation":"Disagreement is not automatically disloyalty.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-7","type":"relationship","difficulty":3,"prompt":"They express affection through practical help more than words.","correctResponse":"COMPLICATED","category":"dating","explanation":"Different ways of expressing care need discussion.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-8","type":"relationship","difficulty":3,"prompt":"They ask for feedback, listen, and make a specific change.","correctResponse":"GREEN","category":"communication","explanation":"Action makes openness meaningful.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-9","type":"relationship","difficulty":3,"prompt":"They repeatedly reveal your plans to others after agreeing to keep them private.","correctResponse":"RED","category":"boundaries","explanation":"A repeated broken agreement affects trust.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-10","type":"relationship","difficulty":3,"prompt":"They are uncertain about a big shared future decision.","correctResponse":"COMPLICATED","category":"dating","explanation":"Uncertainty deserves an honest conversation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-11","type":"relationship","difficulty":3,"prompt":"They encourage your independent goal even when it changes your routine together.","correctResponse":"GREEN","category":"friendship","explanation":"Supporting growth can coexist with connection.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-12","type":"relationship","difficulty":3,"prompt":"They only acknowledge your feelings if you first agree they are right.","correctResponse":"RED","category":"communication","explanation":"Listening should not depend on winning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-13","type":"relationship","difficulty":3,"prompt":"They want separate hobbies as well as shared activities.","correctResponse":"COMPLICATED","category":"boundaries","explanation":"Balance depends on both peoples needs.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-14","type":"relationship","difficulty":3,"prompt":"They ask whether you want advice or simply someone to listen.","correctResponse":"GREEN","category":"communication","explanation":"Checking first respects the support you want.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-15","type":"relationship","difficulty":3,"prompt":"They repeatedly blame you for choices they made without consulting you.","correctResponse":"RED","category":"trust","explanation":"Responsibility belongs with the person making the choice.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-16","type":"relationship","difficulty":3,"prompt":"They decide not to attend a family gathering after a difficult week.","correctResponse":"COMPLICATED","category":"family","explanation":"Energy, expectations, and communication all matter.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-17","type":"relationship","difficulty":3,"prompt":"They explain a change of mind before it affects your shared plan.","correctResponse":"GREEN","category":"trust","explanation":"Early communication gives you space to respond.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-18","type":"relationship","difficulty":3,"prompt":"They dismiss every request for clarity as you being too sensitive.","correctResponse":"RED","category":"communication","explanation":"Repeated dismissal closes down understanding.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-19","type":"relationship","difficulty":3,"prompt":"They prefer discussing important things in person rather than text.","correctResponse":"COMPLICATED","category":"digital life","explanation":"Communication preferences need a practical agreement.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-20","type":"relationship","difficulty":3,"prompt":"They want to revisit an agreement because their circumstances changed.","correctResponse":"COMPLICATED","category":"boundaries","explanation":"Revisiting agreements can be reasonable; how it happens matters.","enabled":true,"spoilerLevel":"none"}],"mysteryCards":[{"id":"MYS-1","type":"mystery","category":"mystery","difficulty":2,"prompt":"A surprise invitation arrives from your friend.","clues":["It uses your usual group-chat nickname.","Your friend confirms the plan in your existing chat."],"correctResponse":"TRUST","explanation":"The invitation was confirmed through a familiar channel.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-2","type":"mystery","category":"mystery","difficulty":2,"prompt":"Two friends remember the same conversation differently.","clues":["Both heard only part of the conversation.","A third friend was there from the beginning."],"correctResponse":"INVESTIGATE","explanation":"More context can clear up an incomplete account.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-3","type":"mystery","category":"mystery","difficulty":2,"prompt":"A new account keeps sending unwanted promotional messages.","clues":["You already asked it to stop.","It continues with identical messages."],"correctResponse":"BLOCK","explanation":"You can end unwanted contact after a clear request.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-4","type":"mystery","category":"mystery","difficulty":2,"prompt":"A calendar invite shows two different meeting times.","clues":["One message was sent before a schedule change.","The host has not confirmed which time is current."],"correctResponse":"INVESTIGATE","explanation":"Check the current plan with the host.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-5","type":"mystery","category":"mystery","difficulty":2,"prompt":"Someone says your friend is avoiding you.","clues":["Your friend mentioned a busy exam week.","The claim comes from a guess, not a conversation."],"correctResponse":"INVESTIGATE","explanation":"Ask your friend instead of treating a guess as fact.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-6","type":"mystery","category":"mystery","difficulty":2,"prompt":"Your usual book-club host sends a new venue.","clues":["The old cafe is closed for repairs.","The change is also posted in the established group."],"correctResponse":"TRUST","explanation":"Independent confirmation supports the update.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-7","type":"mystery","category":"mystery","difficulty":2,"prompt":"A stranger keeps tagging you in fake giveaway posts.","clues":["You do not know the account.","The tags continue after you requested no contact."],"correctResponse":"BLOCK","explanation":"Blocking is a reasonable way to stop repeated unwanted tags.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-8","type":"mystery","category":"mystery","difficulty":2,"prompt":"A screenshot seems to show a canceled plan.","clues":["The screenshot has no date.","Your current chat still shows the plan as confirmed."],"correctResponse":"INVESTIGATE","explanation":"Check the date and ask before drawing a conclusion.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-9","type":"mystery","category":"mystery","difficulty":2,"prompt":"Your friend says they left a note in your borrowed book.","clues":["You find the note exactly where they described.","It mentions the discussion you had yesterday."],"correctResponse":"TRUST","explanation":"The details match a known conversation.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-10","type":"mystery","category":"mystery","difficulty":2,"prompt":"An account copies a classmates profile and starts sending ads.","clues":["Your classmate says it is not theirs.","The copied account keeps contacting you after being asked to stop."],"correctResponse":"BLOCK","explanation":"The real person has confirmed the impersonation.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-11","type":"mystery","category":"mystery","difficulty":2,"prompt":"A gift arrives with only your initials on the card.","clues":["Two people mentioned sending you something.","Neither described the gift."],"correctResponse":"INVESTIGATE","explanation":"Ask before attributing the gesture to someone.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-12","type":"mystery","category":"mystery","difficulty":2,"prompt":"A friend says they cannot attend your event.","clues":["They told you earlier about a conflicting commitment.","Their explanation matches the dates you already discussed."],"correctResponse":"TRUST","explanation":"Consistent information supports their explanation.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-13","type":"mystery","category":"mystery","difficulty":2,"prompt":"A rumor says your group trip has been canceled.","clues":["The organizer has not announced any cancellation.","The rumor started from a partial message about one activity."],"correctResponse":"INVESTIGATE","explanation":"A change to one activity may not cancel the trip.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-14","type":"mystery","category":"mystery","difficulty":2,"prompt":"An unknown account sends repeated insulting comments.","clues":["You have no shared conversation to resolve.","Muting it has not stopped direct messages."],"correctResponse":"BLOCK","explanation":"You do not need to continue unwanted insulting contact.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-15","type":"mystery","category":"mystery","difficulty":2,"prompt":"Your friend shares a corrected version of a story.","clues":["They explain exactly what they got wrong.","The original source confirms the correction."],"correctResponse":"TRUST","explanation":"A transparent, verified correction earns credibility.","enabled":true,"spoilerLevel":"none"}],"allCards":[{"id":"REL-1-1","type":"relationship","difficulty":1,"prompt":"They remember the little detail you mentioned weeks ago.","correctResponse":"GREEN","category":"communication","explanation":"Remembering details can show attention and care.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-2","type":"relationship","difficulty":1,"prompt":"They make fun of your interests every time you mention them.","correctResponse":"RED","category":"friendship","explanation":"Respect should include the things you enjoy.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-3","type":"relationship","difficulty":1,"prompt":"Their reply is shorter than usual today.","correctResponse":"COMPLICATED","category":"digital life","explanation":"One short reply does not tell the whole story.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-4","type":"relationship","difficulty":1,"prompt":"They ask before sharing your photo online.","correctResponse":"GREEN","category":"boundaries","explanation":"Asking first respects your choice.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-5","type":"relationship","difficulty":1,"prompt":"They read your private messages without asking.","correctResponse":"RED","category":"boundaries","explanation":"Privacy still matters in close relationships.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-6","type":"relationship","difficulty":1,"prompt":"They take a few hours to reply while at work.","correctResponse":"COMPLICATED","category":"communication","explanation":"Availability varies. Agree on expectations together.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-7","type":"relationship","difficulty":1,"prompt":"They celebrate your good news without making it about themselves.","correctResponse":"GREEN","category":"friendship","explanation":"Sharing your joy is a caring response.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-8","type":"relationship","difficulty":1,"prompt":"They insist you cancel every plan with your friends.","correctResponse":"RED","category":"friendship","explanation":"A relationship should leave room for friendships.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-9","type":"relationship","difficulty":1,"prompt":"They prefer quiet dates over big parties.","correctResponse":"COMPLICATED","category":"dating","explanation":"A preference is not a measure of care.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-10","type":"relationship","difficulty":1,"prompt":"They apologize and change the behavior they apologized for.","correctResponse":"GREEN","category":"trust","explanation":"Follow-through gives an apology meaning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-11","type":"relationship","difficulty":1,"prompt":"They promise to call, repeatedly forget, and dismiss your concern.","correctResponse":"RED","category":"communication","explanation":"The repeated dismissal is the concerning part.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-12","type":"relationship","difficulty":1,"prompt":"They do not post about your first date.","correctResponse":"COMPLICATED","category":"digital life","explanation":"People have different comfort levels with posting.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-13","type":"relationship","difficulty":1,"prompt":"They accept your no without trying to change your mind.","correctResponse":"GREEN","category":"boundaries","explanation":"Respecting a no supports healthy boundaries.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-14","type":"relationship","difficulty":1,"prompt":"They share your secret as a funny story with friends.","correctResponse":"RED","category":"trust","explanation":"A private confidence deserves respect.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-15","type":"relationship","difficulty":1,"prompt":"They like different music from you.","correctResponse":"COMPLICATED","category":"dating","explanation":"Different tastes do not determine compatibility.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-16","type":"relationship","difficulty":1,"prompt":"They ask what would help when you have a difficult day.","correctResponse":"GREEN","category":"communication","explanation":"Checking your needs avoids assumptions.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-17","type":"relationship","difficulty":1,"prompt":"They always turn your accomplishments into a competition.","correctResponse":"RED","category":"friendship","explanation":"Constant competition can undermine support.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-18","type":"relationship","difficulty":1,"prompt":"They want to plan the date a week ahead.","correctResponse":"COMPLICATED","category":"dating","explanation":"Planning styles differ. Talk about what works.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-19","type":"relationship","difficulty":1,"prompt":"They arrive late and honestly explain, then apologize.","correctResponse":"GREEN","category":"trust","explanation":"Taking responsibility shows consideration.","enabled":true,"spoilerLevel":"none"},{"id":"REL-1-20","type":"relationship","difficulty":1,"prompt":"They mock you for asking a sincere question.","correctResponse":"RED","category":"communication","explanation":"Questions deserve a respectful response.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-1","type":"relationship","difficulty":2,"prompt":"They cancel dinner because a family member unexpectedly needs help.","correctResponse":"COMPLICATED","category":"family","explanation":"Context and follow-up matter more than a single cancellation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-2","type":"relationship","difficulty":2,"prompt":"They tell you they need rest and suggest another day to meet.","correctResponse":"GREEN","category":"boundaries","explanation":"Clear limits plus a new plan show care.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-3","type":"relationship","difficulty":2,"prompt":"They say your boundaries are proof you do not care.","correctResponse":"RED","category":"boundaries","explanation":"Care should not require abandoning your limits.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-4","type":"relationship","difficulty":2,"prompt":"They are close friends with someone they once dated.","correctResponse":"COMPLICATED","category":"trust","explanation":"Openness and agreed boundaries matter, not assumptions.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-5","type":"relationship","difficulty":2,"prompt":"They ask how you prefer to resolve disagreements.","correctResponse":"GREEN","category":"communication","explanation":"Discussing conflict styles creates shared expectations.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-6","type":"relationship","difficulty":2,"prompt":"They repeatedly use private jokes to embarrass you in public.","correctResponse":"RED","category":"friendship","explanation":"Repeated embarrassment is not considerate humor.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-7","type":"relationship","difficulty":2,"prompt":"They want to split the bill on your first date.","correctResponse":"COMPLICATED","category":"dating","explanation":"Money customs differ; clarify expectations.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-8","type":"relationship","difficulty":2,"prompt":"They check in after you said an important presentation was coming.","correctResponse":"GREEN","category":"communication","explanation":"Remembering what matters to you shows attention.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-9","type":"relationship","difficulty":2,"prompt":"They demand immediate replies even after you explain your schedule.","correctResponse":"RED","category":"digital life","explanation":"Ignoring reasonable limits is concerning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-10","type":"relationship","difficulty":2,"prompt":"They are less talkative around your family than around friends.","correctResponse":"COMPLICATED","category":"family","explanation":"New settings can change how comfortable someone feels.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-11","type":"relationship","difficulty":2,"prompt":"They disagree with you while still listening carefully.","correctResponse":"GREEN","category":"communication","explanation":"Respect does not require agreement.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-12","type":"relationship","difficulty":2,"prompt":"They change a shared plan without telling you, again.","correctResponse":"RED","category":"trust","explanation":"Repeated unilateral changes ignore your time.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-13","type":"relationship","difficulty":2,"prompt":"They prefer to keep their relationship status off social media.","correctResponse":"COMPLICATED","category":"digital life","explanation":"Discuss privacy preferences before assuming motives.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-14","type":"relationship","difficulty":2,"prompt":"They admit they misunderstood and ask you to explain again.","correctResponse":"GREEN","category":"communication","explanation":"Curiosity can repair a misunderstanding.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-15","type":"relationship","difficulty":2,"prompt":"They compare you unfavorably with their ex on every date.","correctResponse":"RED","category":"dating","explanation":"Repeated comparisons can be hurtful.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-16","type":"relationship","difficulty":2,"prompt":"They suggest meeting their friends earlier than you expected.","correctResponse":"COMPLICATED","category":"friendship","explanation":"Different pacing calls for a conversation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-17","type":"relationship","difficulty":2,"prompt":"They respect that you want to move more slowly.","correctResponse":"GREEN","category":"dating","explanation":"Shared pacing should include both people.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-18","type":"relationship","difficulty":2,"prompt":"They keep borrowing your things after you asked them to stop.","correctResponse":"RED","category":"boundaries","explanation":"Repeatedly ignoring a clear request is concerning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-19","type":"relationship","difficulty":2,"prompt":"They suggest a different way to celebrate your anniversary.","correctResponse":"COMPLICATED","category":"dating","explanation":"Ask what the alternative means to them.","enabled":true,"spoilerLevel":"none"},{"id":"REL-2-20","type":"relationship","difficulty":2,"prompt":"They tell you privately when something you said hurt them.","correctResponse":"GREEN","category":"trust","explanation":"Honest, respectful feedback can strengthen trust.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-1","type":"relationship","difficulty":3,"prompt":"They need time alone after an argument before continuing.","correctResponse":"COMPLICATED","category":"communication","explanation":"A pause can help; agree on when to reconnect.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-2","type":"relationship","difficulty":3,"prompt":"They acknowledge your concern, name their limit, and seek a compromise.","correctResponse":"GREEN","category":"boundaries","explanation":"Both peoples needs have room in the conversation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-3","type":"relationship","difficulty":3,"prompt":"They use a past favor to insist you agree with every decision.","correctResponse":"RED","category":"trust","explanation":"Care should not become a debt used to control decisions.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-4","type":"relationship","difficulty":3,"prompt":"They keep a family matter private until they understand it better.","correctResponse":"COMPLICATED","category":"family","explanation":"Privacy and secrecy need context before judgment.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-5","type":"relationship","difficulty":3,"prompt":"They correct a mistaken impression even though it makes them look less impressive.","correctResponse":"GREEN","category":"trust","explanation":"Honesty can matter more than appearances.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-6","type":"relationship","difficulty":3,"prompt":"They claim every disagreement means you are disloyal.","correctResponse":"RED","category":"communication","explanation":"Disagreement is not automatically disloyalty.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-7","type":"relationship","difficulty":3,"prompt":"They express affection through practical help more than words.","correctResponse":"COMPLICATED","category":"dating","explanation":"Different ways of expressing care need discussion.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-8","type":"relationship","difficulty":3,"prompt":"They ask for feedback, listen, and make a specific change.","correctResponse":"GREEN","category":"communication","explanation":"Action makes openness meaningful.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-9","type":"relationship","difficulty":3,"prompt":"They repeatedly reveal your plans to others after agreeing to keep them private.","correctResponse":"RED","category":"boundaries","explanation":"A repeated broken agreement affects trust.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-10","type":"relationship","difficulty":3,"prompt":"They are uncertain about a big shared future decision.","correctResponse":"COMPLICATED","category":"dating","explanation":"Uncertainty deserves an honest conversation.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-11","type":"relationship","difficulty":3,"prompt":"They encourage your independent goal even when it changes your routine together.","correctResponse":"GREEN","category":"friendship","explanation":"Supporting growth can coexist with connection.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-12","type":"relationship","difficulty":3,"prompt":"They only acknowledge your feelings if you first agree they are right.","correctResponse":"RED","category":"communication","explanation":"Listening should not depend on winning.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-13","type":"relationship","difficulty":3,"prompt":"They want separate hobbies as well as shared activities.","correctResponse":"COMPLICATED","category":"boundaries","explanation":"Balance depends on both peoples needs.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-14","type":"relationship","difficulty":3,"prompt":"They ask whether you want advice or simply someone to listen.","correctResponse":"GREEN","category":"communication","explanation":"Checking first respects the support you want.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-15","type":"relationship","difficulty":3,"prompt":"They repeatedly blame you for choices they made without consulting you.","correctResponse":"RED","category":"trust","explanation":"Responsibility belongs with the person making the choice.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-16","type":"relationship","difficulty":3,"prompt":"They decide not to attend a family gathering after a difficult week.","correctResponse":"COMPLICATED","category":"family","explanation":"Energy, expectations, and communication all matter.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-17","type":"relationship","difficulty":3,"prompt":"They explain a change of mind before it affects your shared plan.","correctResponse":"GREEN","category":"trust","explanation":"Early communication gives you space to respond.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-18","type":"relationship","difficulty":3,"prompt":"They dismiss every request for clarity as you being too sensitive.","correctResponse":"RED","category":"communication","explanation":"Repeated dismissal closes down understanding.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-19","type":"relationship","difficulty":3,"prompt":"They prefer discussing important things in person rather than text.","correctResponse":"COMPLICATED","category":"digital life","explanation":"Communication preferences need a practical agreement.","enabled":true,"spoilerLevel":"none"},{"id":"REL-3-20","type":"relationship","difficulty":3,"prompt":"They want to revisit an agreement because their circumstances changed.","correctResponse":"COMPLICATED","category":"boundaries","explanation":"Revisiting agreements can be reasonable; how it happens matters.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-1","type":"mystery","category":"mystery","difficulty":2,"prompt":"A surprise invitation arrives from your friend.","clues":["It uses your usual group-chat nickname.","Your friend confirms the plan in your existing chat."],"correctResponse":"TRUST","explanation":"The invitation was confirmed through a familiar channel.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-2","type":"mystery","category":"mystery","difficulty":2,"prompt":"Two friends remember the same conversation differently.","clues":["Both heard only part of the conversation.","A third friend was there from the beginning."],"correctResponse":"INVESTIGATE","explanation":"More context can clear up an incomplete account.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-3","type":"mystery","category":"mystery","difficulty":2,"prompt":"A new account keeps sending unwanted promotional messages.","clues":["You already asked it to stop.","It continues with identical messages."],"correctResponse":"BLOCK","explanation":"You can end unwanted contact after a clear request.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-4","type":"mystery","category":"mystery","difficulty":2,"prompt":"A calendar invite shows two different meeting times.","clues":["One message was sent before a schedule change.","The host has not confirmed which time is current."],"correctResponse":"INVESTIGATE","explanation":"Check the current plan with the host.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-5","type":"mystery","category":"mystery","difficulty":2,"prompt":"Someone says your friend is avoiding you.","clues":["Your friend mentioned a busy exam week.","The claim comes from a guess, not a conversation."],"correctResponse":"INVESTIGATE","explanation":"Ask your friend instead of treating a guess as fact.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-6","type":"mystery","category":"mystery","difficulty":2,"prompt":"Your usual book-club host sends a new venue.","clues":["The old cafe is closed for repairs.","The change is also posted in the established group."],"correctResponse":"TRUST","explanation":"Independent confirmation supports the update.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-7","type":"mystery","category":"mystery","difficulty":2,"prompt":"A stranger keeps tagging you in fake giveaway posts.","clues":["You do not know the account.","The tags continue after you requested no contact."],"correctResponse":"BLOCK","explanation":"Blocking is a reasonable way to stop repeated unwanted tags.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-8","type":"mystery","category":"mystery","difficulty":2,"prompt":"A screenshot seems to show a canceled plan.","clues":["The screenshot has no date.","Your current chat still shows the plan as confirmed."],"correctResponse":"INVESTIGATE","explanation":"Check the date and ask before drawing a conclusion.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-9","type":"mystery","category":"mystery","difficulty":2,"prompt":"Your friend says they left a note in your borrowed book.","clues":["You find the note exactly where they described.","It mentions the discussion you had yesterday."],"correctResponse":"TRUST","explanation":"The details match a known conversation.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-10","type":"mystery","category":"mystery","difficulty":2,"prompt":"An account copies a classmates profile and starts sending ads.","clues":["Your classmate says it is not theirs.","The copied account keeps contacting you after being asked to stop."],"correctResponse":"BLOCK","explanation":"The real person has confirmed the impersonation.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-11","type":"mystery","category":"mystery","difficulty":2,"prompt":"A gift arrives with only your initials on the card.","clues":["Two people mentioned sending you something.","Neither described the gift."],"correctResponse":"INVESTIGATE","explanation":"Ask before attributing the gesture to someone.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-12","type":"mystery","category":"mystery","difficulty":2,"prompt":"A friend says they cannot attend your event.","clues":["They told you earlier about a conflicting commitment.","Their explanation matches the dates you already discussed."],"correctResponse":"TRUST","explanation":"Consistent information supports their explanation.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-13","type":"mystery","category":"mystery","difficulty":2,"prompt":"A rumor says your group trip has been canceled.","clues":["The organizer has not announced any cancellation.","The rumor started from a partial message about one activity."],"correctResponse":"INVESTIGATE","explanation":"A change to one activity may not cancel the trip.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-14","type":"mystery","category":"mystery","difficulty":2,"prompt":"An unknown account sends repeated insulting comments.","clues":["You have no shared conversation to resolve.","Muting it has not stopped direct messages."],"correctResponse":"BLOCK","explanation":"You do not need to continue unwanted insulting contact.","enabled":true,"spoilerLevel":"none"},{"id":"MYS-15","type":"mystery","category":"mystery","difficulty":2,"prompt":"Your friend shares a corrected version of a story.","clues":["They explain exactly what they got wrong.","The original source confirms the correction."],"correctResponse":"TRUST","explanation":"A transparent, verified correction earns credibility.","enabled":true,"spoilerLevel":"none"}],"vibes":[["LoveList Pro","Your instincts were on point this round."],["Mystery Solver","You do not stop at the first clue."],["Green Flag Detective","You notice the details other people miss."],["Romantic Realist","Heart on. Rose-colored glasses off."],["Slow Burn","You take time to understand the story."],["Best Friend Energy","Showing up matters to you."],["Context Collector","You leave room for the bigger picture."],["Boundary Believer","You make space for what matters."],["Heart & Head","You bring a little feeling and a little logic."],["Plot Twist Finder","You are open to an unexpected turn."],["Thoughtful Romantic","Small gestures catch your attention."],["Curious Heart","Every story deserves a second look."]],"microcopy":["Checking the vibes…","A new story awaits.","Trust your reading.","Look a little closer.","Small details matter.","What happens next?","A little context helps.","Follow the clues.","Your next instinct.","Take a breath.","The story continues.","Read between the lines.","New card, fresh start.","Stay curious.","See the whole picture.","Listen to the little things.","Make your call.","Notice the pattern.","A plot twist awaits.","One last feeling."],"celebrations":["Good read!","On your wavelength.","You caught that.","Instincts in sync.","A little clarity.","Nicely spotted.","Connecting the dots.","Your streak is glowing.","Strong intuition.","Perfectly in tune."]};
+    var RELATIONSHIPS = PACK.relationships;
+    var MYSTERIES = PACK.mysteryCards;
+    var ALL_CARDS = PACK.allCards;
+    var VIBES = PACK.vibes;
+    var MICROCOPY = PACK.microcopy;
+    var CELEBRATIONS = PACK.celebrations;
+    var storage = {
+        get: function (key) { try { return localStorage.getItem(key); } catch (error) { return null; } },
+        set: function (key, value) { try { localStorage.setItem(key, value); } catch (error) {} }
+    };
+    var MAX_REVIVES = 2, revivesLeft = MAX_REVIVES, pendingGameOver = false, pendingScore = 0;
+    var state = { screen: 'home', round: null, summary: null, card: null, practice: false, busy: false, paused: false, pauseStarted: 0, clue: false, feedback: null, seconds: 0, cardStarted: 0, timer: null, pending: null, finished: false, audio: null, pointer: null, dragX: 0, dragY: 0 };
+    var $ = function (selector) { return document.querySelector(selector); };
+    var query = $;
+    var $$ = function (selector) { return Array.prototype.slice.call(document.querySelectorAll(selector)); };
+    var all = $$;
+    var post = function (message) { try { if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') window.ReactNativeWebView.postMessage(JSON.stringify(message)); } catch (error) {} };
+    function resetRevivePrompt() {
+        var button = $('#reviveButton');
+        button.hidden = true;
+        button.disabled = false;
+        button.textContent = 'Watch an ad to play again';
+        $('#reviveStatus').hidden = true;
+        $('#reviveStatus').textContent = '';
+    }
+    function finalizePendingGameOver() {
+        if (!pendingGameOver) return;
+        pendingGameOver = false;
+        $('#reviveButton').hidden = true;
+        $('#reviveButton').disabled = false;
+        post({ type: 'gameOver', gameId: 'someone-someday-lovelist', score: pendingScore, final: true });
+        pendingScore = 0;
+    }
+    $('#joinnowLogo').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
+    $('#posterArt').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/someone-someday-lovelist/campaign/poster-960.webp';
+    $('#ensembleArt').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/someone-someday-lovelist/campaign/ensemble-1080.webp';
+    $('#posterArt').addEventListener('error', function () { $('#posterArt').style.display = 'none'; });
+    $('#ensembleArt').addEventListener('error', function () { $('#cardArt').hidden = true; });
+    post({ type: 'orientation', orientation: 'portrait' });
+
+    function randomIndex(length) { return crypto.getRandomValues(new Uint32Array(1))[0] % length; }
+    function shuffle(items) { var result = items.slice(); for (var i = result.length - 1; i > 0; i--) { var j = randomIndex(i + 1); var t = result[i]; result[i] = result[j]; result[j] = t; } return result; }
+    function makeRound(recent) {
+        recent = recent || [];
+        var cards = [];
+        [[1, 4], [2, 5], [3, 4]].forEach(function (tier) {
+            var pool = shuffle(RELATIONSHIPS.filter(function (card) { return card.difficulty === tier[0] && card.enabled && card.spoilerLevel === 'none'; }));
+            pool.sort(function (a, b) { return Number(recent.indexOf(a.id) >= 0) - Number(recent.indexOf(b.id) >= 0); });
+            for (var count = 0; count < tier[1]; count++) {
+                var answerCounts = { GREEN: 0, RED: 0, COMPLICATED: 0 };
+                cards.forEach(function (card) { answerCounts[card.correctResponse]++; });
+                var ordered = pool.slice().sort(function (a, b) { return answerCounts[a.correctResponse] - answerCounts[b.correctResponse]; });
+                var next = ordered.find(function (card) { return !cards.length || card.category !== cards[cards.length - 1].category; }) || ordered[0];
+                cards.push(next);
+                pool.splice(pool.indexOf(next), 1);
+            }
+        });
+        var mysteries = shuffle(MYSTERIES).sort(function (a, b) { return Number(recent.indexOf(a.id) >= 0) - Number(recent.indexOf(b.id) >= 0); }).slice(0, 3);
+        cards.splice(4, 0, mysteries[0]);
+        cards.splice(10, 0, mysteries[1]);
+        cards.push(mysteries[2]);
+        return { ids: cards.map(function (card) { return card.id; }), index: 0, score: 0, correct: 0, streak: 0, failureStreak: 0, best: 0, heart: 0, perfect: false, mystery: 0, green: 0, red: 0, neutral: 0, fast: 0 };
+    }
+    function currentCard() { return state.round && ALL_CARDS.find(function (card) { return card.id === state.round.ids[state.round.index]; }); }
+    function multiplier(streak) { return streak >= 10 ? 2.5 : streak >= 8 ? 2 : streak >= 5 ? 1.5 : streak >= 3 ? 1.25 : streak >= 2 ? 1.1 : 1; }
+    function answer(round, choice, milliseconds) {
+        var card = currentCard();
+        if (!card) throw new Error('Round already complete.');
+        var allowed = card.type === 'mystery' ? ['TRUST', 'INVESTIGATE', 'BLOCK'] : ['GREEN', 'RED', 'COMPLICATED'];
+        if (allowed.indexOf(choice) < 0 || !Number.isFinite(milliseconds) || milliseconds < 0) throw new Error('Invalid decision.');
+        var correct = choice === card.correctResponse;
+        var next = Object.assign({}, round, { index: round.index + 1 });
+        next.streak = correct ? round.streak + 1 : 0;
+        next.failureStreak = correct ? 0 : (round.failureStreak || 0) + 1;
+        next.best = Math.max(round.best, next.streak);
+        next.correct = round.correct + Number(correct);
+        next.mystery = round.mystery + Number(correct && card.type === 'mystery');
+        next.green = round.green + Number(choice === 'GREEN');
+        next.red = round.red + Number(choice === 'RED');
+        next.neutral = round.neutral + Number(choice === 'COMPLICATED');
+        next.fast = round.fast + Number(milliseconds < 250);
+        var speed = milliseconds < 350 ? 0 : Math.max(0, Math.round(100 * (1 - milliseconds / 6000)));
+        var points = correct ? Math.round(((card.type === 'mystery' ? 300 : choice === 'COMPLICATED' ? 150 : 100) + speed) * multiplier(next.streak) * (round.perfect ? 2 : 1)) : 0;
+        next.score = round.score + points;
+        next.heart = Math.max(0, (round.perfect ? 0 : round.heart) + (correct ? card.type === 'mystery' ? 30 : 18 : -15));
+        next.perfect = next.heart >= 100;
+        next.heart = Math.min(100, next.heart);
+        return { state: next, correct: correct, points: points, explanation: card.explanation, expected: card.correctResponse };
+    }
+    function roundResult(round) {
+        var accuracy = Math.round(round.correct / round.ids.length * 100), index = 11;
+        if (accuracy >= 94) index = 0;
+        else if (round.mystery === 3) index = 1;
+        else if (round.best >= 6) index = 2;
+        else if (accuracy >= 75) index = 3;
+        else if (round.neutral >= 5) index = 6;
+        else if (round.red >= 6) index = 7;
+        else if (round.green >= 6) index = 10;
+        else if (round.correct >= 9) index = 8;
+        else if (round.mystery >= 2) index = 9;
+        else if (round.neutral >= 3) index = 4;
+        else if (round.green >= 3) index = 5;
+        return { score: round.score, accuracy: accuracy, best: round.best, vibe: VIBES[index][0], line: VIBES[index][1] };
+    }
+    function showScreen(screen) { state.screen = screen; $('#homeScreen').hidden = screen !== 'home'; $('#countdownScreen').hidden = screen !== 'countdown'; $('#playScreen').hidden = screen !== 'play'; $('#resultScreen').hidden = screen !== 'result'; }
+    function playTone(correct) {
+        try { state.audio = state.audio || new (window.AudioContext || window.webkitAudioContext)(); state.audio.resume(); var oscillator = state.audio.createOscillator(), gain = state.audio.createGain(); oscillator.type = 'sine'; oscillator.frequency.value = correct ? 660 : 260; oscillator.connect(gain); gain.connect(state.audio.destination); gain.gain.setValueAtTime(.055, state.audio.currentTime); gain.gain.exponentialRampToValueAtTime(.001, state.audio.currentTime + .2); oscillator.start(); oscillator.stop(state.audio.currentTime + .2); } catch (error) {}
+    }
+    function showNotice(message) { $('#homeStatus').textContent = message || ''; }
+    function updateMenu() { showNotice(window.ReactNativeWebView ? 'Completed scores are sent to JoinNow Trophies.' : 'Practice rounds are not submitted from this preview.'); }
+    function renderProgress() {
+        if (!state.round) return;
+        var index = Math.min(state.round.index + 1, 16);
+        $('#cardIndex').textContent = String(index).padStart(2, '0');
+        $('#elapsed').textContent = String(Math.floor(state.seconds / 60)).padStart(2, '0') + ':' + String(state.seconds % 60).padStart(2, '0');
+        $('#heartText').textContent = state.round.perfect ? '♥ Perfect match · next card ×2' : '♥ Heart meter · ' + state.round.heart + '%';
+        $('#heartFill').style.width = state.round.heart + '%';
+        $('#multiplier').textContent = multiplier(state.round.streak) + '×';
+    }
+    function renderCard() {
+        var card = currentCard();
+        if (!card) return;
+        state.card = card;
+        $('#cardCategory').textContent = card.type === 'mystery' ? '✦ SOMETHING DOESN’T ADD UP…' : card.category.toUpperCase();
+        $('#cardPrompt').textContent = card.prompt;
+        $('#cardArt').hidden = card.type !== 'mystery';
+        $('#clues').hidden = card.type !== 'mystery';
+        $('#clueOne').textContent = card.clues ? card.clues[0] : '';
+        $('#clueTwoBox').hidden = card.type !== 'mystery' || !state.clue;
+        $('#clueTwo').textContent = card.clues ? card.clues[1] : '';
+        $('#revealClue').hidden = card.type !== 'mystery' || state.clue;
+        $('#cardMicro').textContent = card.type === 'mystery' ? 'Read the evidence. Make your call.' : MICROCOPY[state.round.index % MICROCOPY.length];
+        $('#choiceGrid').replaceChildren();
+        var choices = card.type === 'mystery' ? [['BLOCK', 'Block', '⊘'], ['INVESTIGATE', 'Investigate', '⌕'], ['TRUST', 'Trust', '✓']] : [['RED', 'Red flag', '×'], ['COMPLICATED', 'Complicated', '…'], ['GREEN', 'Green flag', '♥']];
+        choices.forEach(function (choice) {
+            var button = document.createElement('button');
+            button.type = 'button'; button.className = 'choice ' + choice[0].toLowerCase(); button.dataset.choice = choice[0];
+            button.disabled = state.busy || state.paused;
+            button.innerHTML = '<span class="choice-icon" aria-hidden="true">' + choice[2] + '</span><span>' + choice[1] + '</span>';
+            button.addEventListener('click', function () { decide(choice[0]); });
+            $('#choiceGrid').appendChild(button);
+        });
+        $('#feedback').className = 'feedback' + (state.feedback ? state.feedback.correct ? ' correct' : ' incorrect' : '');
+        $('#feedback').replaceChildren();
+        if (state.feedback) {
+            var title = document.createElement('strong');
+            title.textContent = state.feedback.correct ? CELEBRATIONS[state.round.streak % CELEBRATIONS.length] + ' +' + state.feedback.points : 'A little more context…';
+            $('#feedback').appendChild(title);
+            if (!state.feedback.correct) { var explanation = document.createElement('span'); explanation.textContent = state.feedback.explanation; $('#feedback').appendChild(explanation); }
+        } else {
+            var idle = document.createElement('span'); idle.textContent = card.type === 'mystery' ? 'Follow the evidence. Make your call.' : 'Take a moment. Make your call.'; $('#feedback').appendChild(idle);
+        }
+        renderProgress();
+    }
+    function finishRound(failed) {
+        if (state.finished) return;
+        state.finished = true; state.busy = false;
+        if (state.timer) clearInterval(state.timer);
+        var summary = roundResult(state.round);
+        state.summary = summary;
+        var canRevive = !!(failed && !state.practice && revivesLeft > 0);
+        pendingScore = summary.score;
+        pendingGameOver = canRevive;
+        resetRevivePrompt();
+        $('#resultVibe').textContent = failed ? 'Round over' : summary.vibe;
+        $('#resultLine').textContent = failed ? 'Three consecutive wrong choices ended this round.' : summary.line;
+        $('#resultScore').textContent = summary.score.toLocaleString();
+        $('#resultAccuracy').textContent = summary.accuracy + '%';
+        $('#resultBest').textContent = String(summary.best);
+        $('#resultPerfect').textContent = String(state.round.perfect ? 1 : 0);
+        if (canRevive) {
+            $('#reviveButton').hidden = false;
+            $('#resultStatus').textContent = 'Watch an ad to retry this round.';
+            post({ type: 'gameOver', gameId: 'someone-someday-lovelist', score: pendingScore, final: false });
+        } else {
+            $('#resultStatus').textContent = state.practice ? 'Practice result · not submitted to Trophies.' : 'Final score sent to JoinNow Trophies.';
+            if (!state.practice) post({ type: 'gameOver', gameId: 'someone-someday-lovelist', score: summary.score, final: true });
+        }
+        try { localStorage.setItem('lovelistRecentIds', JSON.stringify(state.round.ids)); } catch (error) {}
+        showScreen('result');
+    }
+    function answerChoice(choice) {
+        if (state.busy || state.paused || state.screen !== 'play' || !state.round || state.feedback) return;
+        state.busy = true;
+        var result = answer(state.round, choice, performance.now() - state.cardStarted);
+        state.round = result.state;
+        state.feedback = result;
+        playTone(result.correct);
+        renderCard();
+        setTimeout(function () {
+            state.feedback = null; state.clue = false; state.busy = false;
+            if (state.round.failureStreak >= 3) { finishRound(true); return; }
+            if (state.round.index === 16) { finishRound(); return; }
+            state.cardStarted = performance.now(); renderCard();
+        }, result.correct ? 700 : 1500);
+    }
+    function decide(choice) { answerChoice(choice); }
+    function startRound(practice, fromRevive) {
+        if (state.busy) return;
+        if (fromRevive !== true) { finalizePendingGameOver(); revivesLeft = MAX_REVIVES; }
+        resetRevivePrompt();
+        if (state.timer) clearInterval(state.timer);
+        state.practice = !!practice;
+        state.round = makeRound(storage.get('lovelistRecentIds') ? JSON.parse(storage.get('lovelistRecentIds')) : []);
+        state.cardStarted = performance.now(); state.seconds = 0; state.busy = false; state.paused = false; state.pauseStarted = 0; state.clue = false; state.feedback = null; state.summary = null; state.finished = false;
+        state.card = currentCard();
+        showScreen('play'); post({ type: 'ready' }); renderCard();
+        state.timer = setInterval(function () { if (!state.paused && state.screen === 'play') { state.seconds++; renderProgress(); } }, 1000);
+    }
+    function exitGame() {
+        finalizePendingGameOver();
+        if (state.timer) clearInterval(state.timer);
+        state.paused = false; state.pauseStarted = 0;
+        state.paused = false; state.busy = false; state.feedback = null;
+        if (window.ReactNativeWebView) post({ type: 'goBack', gameId: 'someone-someday-lovelist', score: state.round ? state.round.score : 0 });
+        else { showScreen('home'); updateMenu(); }
+    }
+    $('#reviveButton').addEventListener('click', function () {
+        if (!pendingGameOver || revivesLeft <= 0) return;
+        var button = $('#reviveButton');
+        button.disabled = true;
+        button.textContent = 'Waiting for ad…';
+        post({ type: 'requestRevive', gameId: 'someone-someday-lovelist', score: pendingScore });
+    });
+    window.dispatchRevive = function (granted) {
+        if (!pendingGameOver) return;
+        if (granted && revivesLeft > 0) {
+            revivesLeft--;
+            pendingGameOver = false;
+            pendingScore = 0;
+            var practice = state.practice;
+            resetRevivePrompt();
+            startRound(practice, true);
+            return;
+        }
+        $('#reviveButton').hidden = true;
+        $('#reviveStatus').textContent = 'Ad unavailable.';
+        $('#reviveStatus').hidden = false;
+        finalizePendingGameOver();
+    };
+    function pauseGame() {
+        if (state.screen !== 'play' || state.paused || state.busy) return;
+        state.paused = true;
+        state.pauseStarted = performance.now();
+        $('#pauseDialog').showModal();
+    }
+    function resumeGame() {
+        if (!state.paused) return;
+        state.cardStarted += performance.now() - state.pauseStarted;
+        state.pauseStarted = 0;
+        state.paused = false;
+        $('#pauseDialog').close();
+        renderCard();
+    }
+    async function shareResult() {
+        var summary = state.summary;
+        if (!summary) return;
+        var text = summary.vibe + '\n' + summary.score.toLocaleString() + ' points · ' + summary.accuracy + '% accuracy\nSomeone, Someday: LoveList';
+        try {
+            if (navigator.share) await navigator.share({ title: 'My LoveList vibe', text: text });
+            else if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); $('#resultStatus').textContent = 'Result copied. Share your vibe!'; }
+            else $('#resultStatus').textContent = text;
+        } catch (error) { if (error.name !== 'AbortError') $('#resultStatus').textContent = 'Unable to share this result right now.'; }
+    }
+
+    $('#startButton').addEventListener('click', function () { startRound(!window.ReactNativeWebView); });
+    $('#practiceButton').addEventListener('click', function () { startRound(true); });
+    $('#playAgain').addEventListener('click', function () { startRound(state.practice); });
+    $('#restartButton').addEventListener('click', function () { startRound(state.practice); });
+    $('#exitButton').addEventListener('click', exitGame);
+    $('#pauseButton').addEventListener('click', pauseGame);
+    $('#resumeButton').addEventListener('click', resumeGame);
+    $('#pauseDialog').addEventListener('cancel', function (event) { event.preventDefault(); resumeGame(); });
+    $('#revealClue').addEventListener('click', function () { state.clue = true; renderCard(); });
+    $('#shareButton').addEventListener('click', shareResult);
+    $('#closeHelp').addEventListener('click', function () { $('#helpDialog').close(); });
+    all('[data-native-action="back"]').forEach(function (button) { button.addEventListener('click', exitGame); });
+    all('[data-native-action="trophy"]').forEach(function (button) { button.addEventListener('click', function () { finalizePendingGameOver(); post({ type: 'viewLeaderboard', gameId: 'someone-someday-lovelist', score: state.round ? state.round.score : 0 }); }); });
+    $('#helpButton').addEventListener('click', function () { $('#helpDialog').showModal(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden && state.screen === 'play') pauseGame(); });
+    window.addEventListener('pagehide', function () { if (state.timer) clearInterval(state.timer); if (state.audio) state.audio.close(); });
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && $('#helpDialog').open) $('#helpDialog').close(); });
+
+    var poster = window.ReactNativeWebView ? ASSET_RAW + 'campaign/poster-960.webp' : ASSET_LOCAL + 'campaign/poster-960.webp';
+    var ensemble = window.ReactNativeWebView ? ASSET_RAW + 'campaign/ensemble-1080.webp' : ASSET_LOCAL + 'campaign/ensemble-1080.webp';
+    var logo = window.ReactNativeWebView ? ASSET_RAW + 'joinnow-logo.webp' : ASSET_LOCAL + 'joinnow-logo.webp';
+    query('#joinnowLogo').src = logo;
+    query('#posterArt').src = poster;
+    query('#ensembleArt').src = ensemble;
+    query('#posterArt').addEventListener('error', function () { query('#posterArt').style.display = 'none'; });
+    query('#ensembleArt').addEventListener('error', function () { query('#cardArt').hidden = true; });
+    updateMenu();
+    post({ type: 'orientation', orientation: 'portrait' });
+})();
+</script>
+</body>
+</html>
