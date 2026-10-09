@@ -81,9 +81,14 @@
         .result-panel h2 { color:var(--teal); font-size:24px; }
         .result-score { margin:8px 0; color:var(--yellow); font-size:48px; font-weight:900; }
         .result-score small { display:block; color:var(--muted); font-size:10px; letter-spacing:2px; }
+        #resultScreen .score-row { width:min(100%,460px); margin:16px auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+        #resultScreen .score-box { min-width:0; padding:10px 5px; display:flex; flex-direction:column; align-items:center; gap:5px; border:1px solid #ffffff22; border-radius:7px; background:#ffffff08; }
+        #resultScreen .score-box small { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.4px; text-align:center; }
+        #resultScreen .score-box b { color:var(--yellow); font-size:18px; font-variant-numeric:tabular-nums; line-height:1; }
+        #resultScreen #reviveButton { margin:0 auto 12px; }
         .result-detail { color:#d0e2e2; font-size:13px; line-height:1.5; }
         .vibe-line { margin:8px 0 16px; color:var(--paper); font:italic 17px/1.4 Georgia,serif; }
-        .result-actions { display:grid; gap:7px; }
+        .result-actions { display:grid; gap:10px; }
         .legal { padding:9px 0 2px; color:#94b1b4; font-size:9px; line-height:1.4; text-align:center; }
         dialog { width:min(520px,calc(100% - 24px)); max-height:85dvh; padding:19px; overflow:auto; border:1px solid #72b8bc66; border-radius:10px; background:#0c4551; color:var(--paper); }
         dialog::backdrop { background:rgba(3,21,27,.82); }
@@ -198,7 +203,7 @@
             <p class="result-detail" id="resultStatus"></p>
             <p class="result-detail" id="reviveStatus" role="status" hidden></p>
             <button type="button" class="primary" id="reviveButton" hidden>Watch an ad to play again</button>
-            <div class="result-actions"><button type="button" class="primary" id="shareButton">Share your vibe</button><button type="button" class="secondary" id="playAgain">Play again</button><button type="button" class="text-button" data-native-action="trophy">Trophies</button><button type="button" class="text-button" data-native-action="back">Back</button></div>
+            <div class="result-actions"><button type="button" class="primary" id="shareButton">Share your vibe</button><button type="button" class="secondary" id="playAgain">Play again</button><button type="button" class="secondary" data-native-action="trophy">Trophies</button><button type="button" class="secondary" data-native-action="back">Back</button></div>
         </section>
     </main>
 </div>
@@ -225,6 +230,7 @@
     var $$ = function (selector) { return Array.prototype.slice.call(document.querySelectorAll(selector)); };
     var all = $$;
     var post = function (message) { try { if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') window.ReactNativeWebView.postMessage(JSON.stringify(message)); } catch (error) {} };
+    function scoreForJoinNow(score) { return window.ReactNativeWebView ? Math.floor(score / 10) : score; }
     function resetRevivePrompt() {
         var button = $('#reviveButton');
         button.hidden = true;
@@ -369,12 +375,12 @@
         var summary = roundResult(state.round);
         state.summary = summary;
         var canRevive = !!(failed && !state.practice && revivesLeft > 0);
-        pendingScore = summary.score;
+        pendingScore = scoreForJoinNow(summary.score);
         pendingGameOver = canRevive;
         resetRevivePrompt();
         $('#resultVibe').textContent = failed ? 'Round over' : summary.vibe;
         $('#resultLine').textContent = failed ? 'Three consecutive wrong choices ended this round.' : summary.line;
-        $('#resultScore').textContent = summary.score.toLocaleString();
+        $('#resultScore').textContent = scoreForJoinNow(summary.score).toLocaleString();
         $('#resultAccuracy').textContent = summary.accuracy + '%';
         $('#resultBest').textContent = String(summary.best);
         $('#resultPerfect').textContent = String(state.round.perfect ? 1 : 0);
@@ -384,7 +390,7 @@
             post({ type: 'gameOver', gameId: 'someone-someday-lovelist', score: pendingScore, final: false });
         } else {
             $('#resultStatus').textContent = state.practice ? 'Practice result · not submitted to Trophies.' : 'Final score sent to JoinNow Trophies.';
-            if (!state.practice) post({ type: 'gameOver', gameId: 'someone-someday-lovelist', score: summary.score, final: true });
+            if (!state.practice) post({ type: 'gameOver', gameId: 'someone-someday-lovelist', score: pendingScore, final: true });
         }
         try { localStorage.setItem('lovelistRecentIds', JSON.stringify(state.round.ids)); } catch (error) {}
         showScreen('result');
@@ -422,7 +428,7 @@
         if (state.timer) clearInterval(state.timer);
         state.paused = false; state.pauseStarted = 0;
         state.paused = false; state.busy = false; state.feedback = null;
-        if (window.ReactNativeWebView) post({ type: 'goBack', gameId: 'someone-someday-lovelist', score: state.round ? state.round.score : 0 });
+        if (window.ReactNativeWebView) post({ type: 'goBack', gameId: 'someone-someday-lovelist', score: scoreForJoinNow(state.round ? state.round.score : 0) });
         else { showScreen('home'); updateMenu(); }
     }
     $('#reviveButton').addEventListener('click', function () {
@@ -465,7 +471,7 @@
     async function shareResult() {
         var summary = state.summary;
         if (!summary) return;
-        var text = summary.vibe + '\n' + summary.score.toLocaleString() + ' points · ' + summary.accuracy + '% accuracy\nSomeone, Someday: LoveList';
+        var text = summary.vibe + '\n' + scoreForJoinNow(summary.score).toLocaleString() + ' points · ' + summary.accuracy + '% accuracy\nSomeone, Someday: LoveList';
         try {
             if (navigator.share) await navigator.share({ title: 'My LoveList vibe', text: text });
             else if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); $('#resultStatus').textContent = 'Result copied. Share your vibe!'; }
@@ -485,7 +491,7 @@
     $('#shareButton').addEventListener('click', shareResult);
     $('#closeHelp').addEventListener('click', function () { $('#helpDialog').close(); });
     all('[data-native-action="back"]').forEach(function (button) { button.addEventListener('click', exitGame); });
-    all('[data-native-action="trophy"]').forEach(function (button) { button.addEventListener('click', function () { finalizePendingGameOver(); post({ type: 'viewLeaderboard', gameId: 'someone-someday-lovelist', score: state.round ? state.round.score : 0 }); }); });
+    all('[data-native-action="trophy"]').forEach(function (button) { button.addEventListener('click', function () { finalizePendingGameOver(); post({ type: 'viewLeaderboard', gameId: 'someone-someday-lovelist', score: scoreForJoinNow(state.round ? state.round.score : 0) }); }); });
     $('#helpButton').addEventListener('click', function () { $('#helpDialog').showModal(); });
     document.addEventListener('visibilitychange', function () { if (document.hidden && state.screen === 'play') pauseGame(); });
     window.addEventListener('pagehide', function () { if (state.timer) clearInterval(state.timer); if (state.audio) state.audio.close(); });
