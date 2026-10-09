@@ -20,8 +20,14 @@
         .brand img { display: block; width: 104px; height: 38px; object-fit: contain; }
         .brand-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
         .header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-        .icon-button { width: 40px; height: 40px; min-height: 40px; padding: 8px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--paper); }
+        .icon-button { width: 40px; height: 40px; min-height: 40px; padding: 8px; display: grid; place-items: center; border: 1px solid rgba(247,167,210,.3); border-radius: 50%; background: linear-gradient(145deg, #28242c, #1b191f); color: var(--pink); transition: background .15s, border-color .15s, color .15s, transform .15s; }
         .icon-button svg { width: 20px; height: 20px; fill: currentColor; }
+        .icon-button:hover { border-color: var(--lime); background: #303622; color: var(--lime); }
+        #soundButton .sound-muted { display: none; }
+        #soundButton[aria-pressed="false"] { border-color: var(--line); color: var(--muted); }
+        #soundButton[aria-pressed="false"] .sound-waves { display: none; }
+        #soundButton[aria-pressed="false"] .sound-muted { display: block; }
+        #soundButton[aria-pressed="false"]:hover { border-color: var(--lime); color: var(--lime); }
         .icon-button:active, .action:active, .mode-option:active { transform: scale(.97); }
         main { flex: 1; }
         .screen { padding-top: 18px; animation: arrive .28s ease-out both; }
@@ -160,7 +166,7 @@
         <div class="brand"><img id="joinnowLogo" alt="JoinNow" width="104" height="38" /></div>
         <span class="brand-label">BINI GAMES</span>
         <div class="header-actions">
-            <button type="button" class="icon-button" id="soundButton" title="Toggle sound" aria-label="Toggle sound" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg></button>
+            <button type="button" class="icon-button" id="soundButton" title="Turn sound off" aria-label="Sound" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path class="sound-waves" d="M14 8.5a5 5 0 0 1 0 7l1.4 1.4a7 7 0 0 0 0-9.8L14 8.5zm3-3.2v2a7 7 0 0 1 0 9.4v2a9 9 0 0 0 0-13.4z"/><path class="sound-muted" d="m16.6 9.2-1.4 1.4 1.8 1.8-1.8 1.8 1.4 1.4 1.8-1.8 1.8 1.8 1.4-1.4-1.8-1.8 1.8-1.8-1.4-1.4-1.8 1.8z"/></svg></button>
             <button type="button" class="icon-button" data-native-action="back" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
             <button type="button" class="icon-button" data-native-action="trophy" title="Trophies" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
         </div>
@@ -237,6 +243,8 @@
             </div>
             <p id="resultDetails"></p>
             <p class="notice" id="resultNotice" role="status"></p>
+            <p class="notice" id="reviveNotice" role="status" aria-live="polite" hidden></p>
+            <button type="button" class="action primary" id="reviveButton" hidden>Watch Ad to Play Again</button>
             <button type="button" class="action primary" id="againButton">Play again <span aria-hidden="true">↻</span></button>
             <div class="action-row"><button type="button" class="action secondary" data-native-action="trophy">Trophies</button><button type="button" class="action secondary" id="changeModeButton">Change mode</button><button type="button" class="action secondary" data-native-action="back">Back</button></div>
         </section>
@@ -262,6 +270,11 @@
 
     var VERSION = '1.0.1';
     var SCORING_VERSION = '1.0';
+    var MAX_REVIVES = 2;
+    var revivesLeft = MAX_REVIVES;
+    var pendingGameOver = false;
+    var pendingScore = 0;
+    var reviveMusicTime = null;
     var TIMING = { version: 'guide-1.0', period: 600, offset: 1200, perfect: 70, great: 140, good: 220 };
     var MODES = ['quick-play', 'beat-challenge', 'bini-eight', 'local-two-player'];
     var LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -281,6 +294,22 @@
                 window.ReactNativeWebView.postMessage(JSON.stringify(message));
             }
         } catch (error) {}
+    }
+    function resetRevivePrompt() {
+        var button = query('#reviveButton');
+        button.hidden = true;
+        button.disabled = false;
+        button.textContent = 'Watch Ad to Play Again';
+        query('#reviveNotice').hidden = true;
+        query('#reviveNotice').textContent = '';
+    }
+    function finalizePendingGameOver() {
+        if (!pendingGameOver) return;
+        pendingGameOver = false;
+        query('#reviveButton').hidden = true;
+        query('#reviveButton').disabled = false;
+        post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: pendingScore, final: true });
+        pendingScore = 0;
     }
     function emptyBoard() { return [null,null,null,null,null,null,null,null,null]; }
     function emptyStats() { return { score:0, wins:0, draws:0, losses:0, streak:0, bestStreak:0, perfect:0, great:0, good:0, normal:0, fast:0, power:0, rounds:0 }; }
@@ -434,8 +463,8 @@
     state.player.volume = 0.32;
     state.player.muted = state.muted;
     state.reduced = storage.get('bloomReduced') === 'true' || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    query('#soundButton').setAttribute('aria-pressed', String(state.muted));
-    query('#soundButton').title = state.muted ? 'Sound off' : 'Sound on';
+    query('#soundButton').setAttribute('aria-pressed', String(!state.muted));
+    query('#soundButton').title = state.muted ? 'Turn sound on' : 'Turn sound off';
 
     function makeBoardButtons(container) {
         container.replaceChildren();
@@ -577,6 +606,7 @@
             else state.stats.draws = 1;
         } else state.stats = calcStats();
         updateBoardState();
+        if (state.mode !== 'local-two-player' && result.winner === 2) finishGame(true);
     }
     function moveTime() {
         if (state.run.timing && state.player) return Math.round(state.player.currentTime * 1000);
@@ -618,6 +648,10 @@
     function stopAI() { if (state.aiTimer) { clearTimeout(state.aiTimer); state.aiTimer = null; } }
     function startGame(audioAlreadyPlaying) {
         if (state.audioStartPending) return;
+        finalizePendingGameOver();
+        resetRevivePrompt();
+        revivesLeft = MAX_REVIVES;
+        reviveMusicTime = null;
         var hasMusic = !!(state.player && Number.isFinite(state.player.duration) && state.player.duration > 0 && state.mediaState !== 'error');
         if (state.mode === 'beat-challenge' && !hasMusic) {
             state.audioStartPending = true;
@@ -712,27 +746,97 @@
         state.run.rounds.push({ moves: [] });
         updateBoardState();
     }
-    function finishGame() {
+    function finishGame(failed) {
         if (state.finished) return;
         stopAI();
         state.finished = true;
         state.paused = false;
+        reviveMusicTime = failed && state.run.timing && state.player ? state.player.currentTime : null;
         state.stats = state.mode === 'local-two-player' ? state.stats : calcStats();
+        var canRevive = !!(failed && state.mode !== 'local-two-player' && revivesLeft > 0);
+        pendingScore = state.stats.score;
+        pendingGameOver = canRevive;
+        resetRevivePrompt();
         showScreen('result');
         query('#resultScore').textContent = state.stats.score.toLocaleString();
         query('#resultWins').textContent = String(state.stats.wins);
         query('#resultDraws').textContent = String(state.stats.draws);
         query('#resultLosses').textContent = String(state.stats.losses);
         query('#resultScoreLabel').textContent = state.mode === 'local-two-player' ? 'COMBINED SCORE' : 'TOTAL SCORE';
-        query('#resultEyebrow').textContent = state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BINI EIGHT COMPLETE' : 'THAT’S A WRAP';
-        query('#resultTitle').textContent = state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BLOOM MASTER' : state.outcome || 'Nice play, Bloom!';
+        query('#resultEyebrow').textContent = failed ? 'CHALLENGE FAILED' : state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BINI EIGHT COMPLETE' : 'THAT’S A WRAP';
+        query('#resultTitle').textContent = failed ? 'BINI WINS THIS RUN' : state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BLOOM MASTER' : state.outcome || 'Nice play, Bloom!';
         query('#resultDetails').textContent = 'Best streak ' + state.stats.bestStreak + ' · Perfect ' + state.stats.perfect + ' · Great ' + state.stats.great + ' · Good ' + state.stats.good;
         var submitsScore = state.mode !== 'local-two-player';
-        query('#resultNotice').textContent = submitsScore ? window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.' : 'Local two-player is just for fun.';
-        if (submitsScore) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: state.stats.score, final: true });
+        if (canRevive) {
+            query('#reviveButton').hidden = false;
+            query('#resultNotice').textContent = 'Watch an ad to retry this board. The BINI track will resume where it paused.';
+            post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: pendingScore, final: false });
+        } else {
+            query('#resultNotice').textContent = submitsScore ? window.ReactNativeWebView ? 'Final score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.' : 'Local two-player is just for fun.';
+            if (submitsScore) post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: state.stats.score, final: true });
+        }
         if (state.player) state.player.pause();
     }
+    function resumeAfterRevive() {
+        if (!pendingGameOver || revivesLeft <= 0) return;
+        revivesLeft--;
+        pendingGameOver = false;
+        pendingScore = 0;
+        var resumeTime = reviveMusicTime;
+        reviveMusicTime = null;
+        state.finished = false;
+        state.paused = false;
+        state.roundDone = false;
+        state.outcome = '';
+        state.board = emptyBoard();
+        state.turn = 1;
+        state.notice = '';
+        state.run.rounds[state.round] = { moves: [] };
+        state.stats = calcStats();
+        state.usedBeats = new Set();
+        state.run.rounds.forEach(function (round) {
+            round.moves.forEach(function (move) {
+                var timingGrade = grade(move.time, state.usedBeats, state.run.timing);
+                if (timingGrade.beat >= 0) state.usedBeats.add(timingGrade.beat);
+            });
+        });
+        resetRevivePrompt();
+        showScreen('play');
+        updateBoardState();
+
+        if (state.run.timing && state.player && Number.isFinite(resumeTime)) {
+            try { state.player.currentTime = resumeTime; } catch (error) {}
+            state.mediaState = 'paused';
+            var playPromise = state.player.play();
+            if (playPromise && playPromise.catch) playPromise.catch(function () {
+                state.run.timing = false;
+                state.run.valid = false;
+                state.practice = modeIsArcade();
+                state.notice = 'The BINI track could not resume. Timing bonuses are off.';
+                updateBoardState();
+            });
+        }
+    }
+    query('#reviveButton').addEventListener('click', function () {
+        if (!pendingGameOver || revivesLeft <= 0) return;
+        var button = query('#reviveButton');
+        button.disabled = true;
+        button.textContent = 'Waiting for ad…';
+        post({ type: 'requestRevive', gameId: 'bini-tic-tac-beat', mode: state.mode, score: pendingScore });
+    });
+    window.dispatchRevive = function (granted) {
+        if (!pendingGameOver) return;
+        if (granted && revivesLeft > 0) {
+            resumeAfterRevive();
+            return;
+        }
+        query('#reviveButton').hidden = true;
+        query('#reviveNotice').textContent = 'Ad unavailable.';
+        query('#reviveNotice').hidden = false;
+        finalizePendingGameOver();
+    };
     function exitToStart() {
+        finalizePendingGameOver();
         stopAI();
         state.run.timing = false;
         state.paused = false;
@@ -757,8 +861,8 @@
         }
         updateBoardState();
     }
-    function openTrophies() { post({ type: 'viewLeaderboard', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
-    function leaveGame() { post({ type: 'goBack', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
+    function openTrophies() { finalizePendingGameOver(); post({ type: 'viewLeaderboard', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
+    function leaveGame() { finalizePendingGameOver(); post({ type: 'goBack', gameId: 'bini-tic-tac-beat', score: scoreNow() }); }
     function showMusicStatus(message) {
         var target = state.screen === 'play' ? query('#playNotice') : query('#notice');
         if (target) target.textContent = message;
@@ -857,8 +961,8 @@
     query('#soundButton').addEventListener('click', function () {
         state.muted = !state.muted;
         storage.set('bloomMuted', String(state.muted));
-        query('#soundButton').setAttribute('aria-pressed', String(state.muted));
-        query('#soundButton').title = state.muted ? 'Sound off' : 'Sound on';
+        query('#soundButton').setAttribute('aria-pressed', String(!state.muted));
+        query('#soundButton').title = state.muted ? 'Turn sound on' : 'Turn sound off';
         if (state.player) state.player.muted = state.muted;
     });
     all('[data-native-action="back"]').forEach(function (button) { button.addEventListener('click', leaveGame); });
