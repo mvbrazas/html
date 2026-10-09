@@ -112,7 +112,7 @@
 
     <section id="resultScreen" class="overlay">
       <div class="card resultCard">
-        <h2>RESULT</h2>
+        <h2 id="resultTitle">RESULT</h2>
         <div class="resultScore" id="resultScore">0</div><div class="resultDifficulty">Difficulty: <b id="resultDifficulty">NORMAL</b></div>
         <div class="stats">
           <div><span>Perfect</span><b id="perfectCount">0</b></div>
@@ -122,7 +122,9 @@
           <div><span>Max Combo</span><b id="maxCombo">0</b></div>
           <div><span>Accuracy</span><b id="accuracy">0%</b></div>
         </div>
-        <button id="retryBtn" class="primary">PLAY AGAIN</button>
+        <button id="reviveBtn" class="primary" hidden>WATCH AD TO PLAY AGAIN</button>
+        <p id="reviveStatus" class="tiny" hidden></p>
+        <button id="retryBtn" class="secondary">PLAY AGAIN</button>
         <button class="secondary" data-action="back">BACK</button>
         <button class="secondary" data-action="leaderboard">TROPHIES</button>
       </div>
@@ -206,11 +208,12 @@
       var perfectScore = 10;
       var greatScore = 7;
       var goodScore = 4;
+      var maxConsecutiveMisses = 3;
       var travelTime = 1.55;
       var hitPosition = 78;
       var state = {
         running: false, score: 0, combo: 0, maxCombo: 0,
-        perfect: 0, great: 0, good: 0, miss: 0, notes: [],
+        perfect: 0, great: 0, good: 0, miss: 0, consecutiveMisses: 0, resumeTime: 0, notes: [],
         calibrationMs: Number(localStorage.getItem('biniTapCalibration') || 0),
         lastBackground: -1, animationFrame: 0, simulatedStart: 0,
         audioReady: false, difficulty: localStorage.getItem('biniTapDifficulty') || 'normal'
@@ -321,7 +324,7 @@
       function reset() {
         cancelAnimationFrame(state.animationFrame);
         document.querySelectorAll('.note').forEach(function (note) { note.remove(); });
-        Object.assign(state, { running: false, score: 0, combo: 0, maxCombo: 0, perfect: 0, great: 0, good: 0, miss: 0 });
+        Object.assign(state, { running: false, score: 0, combo: 0, maxCombo: 0, perfect: 0, great: 0, good: 0, miss: 0, consecutiveMisses: 0, resumeTime: 0 });
         state.notes = window.makeGeneratedBeatmap(cfg, state.difficulty).map(function (note, index) {
           return Object.assign({}, note, { id: index, hit: false, missed: false, soundPlayed: false, node: null });
         });
@@ -365,7 +368,7 @@
         var time = currentTime();
         playBeatSounds(time);
         state.notes.forEach(function (note) {
-          if (note.hit || note.missed) return;
+          if (!state.running || note.hit || note.missed) return;
           var delta = note.time - time;
           if (!note.node && delta <= travelTime && delta >= -missWindow) createNote(note);
           if (note.node) {
@@ -378,6 +381,7 @@
           }
           if (delta < -missWindow) missNote(note);
         });
+        if (!state.running) return;
         updateBackground(time);
         var duration = state.audioReady && Number.isFinite(musicAudio.duration) ? musicAudio.duration : cfg.durationSeconds;
         if (duration > 1 && time > duration + 0.5 && state.running) finish();
@@ -409,8 +413,9 @@
           if (note.time > time + goodWindow) break;
         }
         pulseLane(lane);
-        if (!candidate || best > goodWindow) { flash('MISS', 'miss'); state.combo = 0; combo.textContent = '0'; return; }
+        if (!candidate || best > goodWindow) { registerMiss(); return; }
         candidate.hit = true;
+        state.consecutiveMisses = 0;
         if (candidate.node) { candidate.node.remove(); candidate.node = null; }
         state.combo += 1;
         state.maxCombo = Math.max(state.maxCombo, state.combo);
@@ -424,11 +429,17 @@
 
       function missNote(note) {
         note.missed = true;
+        if (note.node) { note.node.remove(); note.node = null; }
+        registerMiss();
+      }
+
+      function registerMiss() {
         state.miss += 1;
+        state.consecutiveMisses += 1;
         state.combo = 0;
         combo.textContent = '0';
-        if (note.node) { note.node.remove(); note.node = null; }
         flash('MISS', 'miss');
+        if (state.consecutiveMisses >= maxConsecutiveMisses) finish(true);
       }
 
       function pulseLane(lane) {
@@ -460,12 +471,14 @@
         render();
       }
 
-      function finish() {
+      function finish(failed) {
         if (!state.running) return;
+        if (failed) state.resumeTime = currentTime();
         state.running = false;
         cancelAnimationFrame(state.animationFrame);
         musicAudio.pause();
         musicAudio.currentTime = 0;
+        getElement('resultTitle').textContent = failed ? 'FAILED' : 'RESULT';
         var weighted = state.perfect + state.great * 0.7 + state.good * 0.4;
         var total = Math.max(1, state.perfect + state.great + state.good + state.miss);
         getElement('resultScore').textContent = state.score.toLocaleString();
@@ -478,6 +491,22 @@
         getElement('resultDifficulty').textContent = state.difficulty.toUpperCase();
         resultScreen.classList.add('visible');
       }
+
+      function resumeAfterRevive() {
+        if (state.running) return;
+        state.consecutiveMisses = 0;
+        var resumeTime = Math.max(0, state.resumeTime - state.calibrationMs / 1000);
+        if (state.audioReady) musicAudio.currentTime = resumeTime;
+        state.simulatedStart = performance.now() - resumeTime * 1000;
+        resultScreen.classList.remove('visible');
+        state.running = true;
+        state.lastBackground = -1;
+        ensureAudio();
+        playBackgroundMusic();
+        render();
+      }
+
+      window.resumeBiniAfterRevive = resumeAfterRevive;
 
       document.querySelectorAll('.tap').forEach(function (button) {
         var lane = Number(button.dataset.lane);
@@ -516,13 +545,40 @@
     (function () {
       'use strict';
 
+      var MAX_REVIVES = 2;
+      var revivesLeft = MAX_REVIVES;
+      var pendingGameOver = false;
+      var pendingScore = 0;
+      var reviveButton = document.getElementById('reviveBtn');
+      var reviveStatus = document.getElementById('reviveStatus');
+      var retryButton = document.getElementById('retryBtn');
+
       function post(message) {
         if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
           window.ReactNativeWebView.postMessage(JSON.stringify(message));
         }
       }
 
+      function getResultScore() {
+        return Number((document.getElementById('resultScore').textContent || '0').replace(/,/g, '')) || 0;
+      }
+
+      function finalizeGameOver() {
+        if (!pendingGameOver) return;
+        pendingGameOver = false;
+        post({ type: 'gameOver', gameId: 'biniTapGame', final: true, score: pendingScore });
+      }
+
+      function resetRevivePrompt() {
+        reviveButton.hidden = true;
+        reviveButton.disabled = false;
+        reviveButton.textContent = 'WATCH AD TO PLAY AGAIN';
+        reviveStatus.hidden = true;
+        reviveStatus.textContent = '';
+      }
+
       function sendAction(action) {
+        if (action === 'back' || action === 'leaderboard') finalizeGameOver();
         if (action === 'back') post({ type: 'goBack' });
         if (action === 'leaderboard') post({ type: 'viewLeaderboard', gameId: 'biniTapGame' });
       }
@@ -532,29 +588,62 @@
       document.querySelectorAll('[data-native-action], [data-action]').forEach(function (button) {
         button.addEventListener('click', function () {
           var action = button.getAttribute('data-native-action') || button.getAttribute('data-action');
-          if (action === 'trophy') post({ type: 'viewLeaderboard', gameId: 'biniTapGame' });
+          if (action === 'trophy') {
+            finalizeGameOver();
+            post({ type: 'viewLeaderboard', gameId: 'biniTapGame' });
+          }
           else sendAction(action);
         });
       });
 
+      reviveButton.addEventListener('click', function () {
+        if (!pendingGameOver || revivesLeft <= 0) return;
+        reviveButton.disabled = true;
+        reviveButton.textContent = 'WAITING FOR AD...';
+        post({ type: 'requestRevive', gameId: 'biniTapGame', score: pendingScore });
+      });
+
       document.getElementById('startBtn').addEventListener('click', function () {
+        if (pendingGameOver) finalizeGameOver();
+        revivesLeft = MAX_REVIVES;
+        resetRevivePrompt();
         post({ type: 'gameStart', gameId: 'biniTapGame' });
+      });
+
+      retryButton.addEventListener('click', function () {
+        finalizeGameOver();
+        revivesLeft = MAX_REVIVES;
+        resetRevivePrompt();
       });
 
       var resultScreen = document.getElementById('resultScreen');
       new MutationObserver(function () {
-        if (resultScreen.classList.contains('visible')) {
-          post({
-            type: 'gameOver',
-            gameId: 'biniTapGame',
-            final: true,
-            score: Number((document.getElementById('resultScore').textContent || '0').replace(/,/g, '')) || 0
-          });
+        if (!resultScreen.classList.contains('visible') || pendingGameOver) return;
+        pendingScore = getResultScore();
+        pendingGameOver = true;
+        var canRevive = document.getElementById('resultTitle').textContent === 'FAILED' && revivesLeft > 0;
+        resetRevivePrompt();
+        if (canRevive) {
+          reviveButton.hidden = false;
+          post({ type: 'gameOver', gameId: 'biniTapGame', final: false, score: pendingScore });
+        } else {
+          finalizeGameOver();
         }
       }).observe(resultScreen, { attributes: true, attributeFilter: ['class'] });
 
-      window.dispatchRevive = function () {
-        document.getElementById('retryBtn').click();
+      window.dispatchRevive = function (granted) {
+        if (!pendingGameOver) return;
+        if (granted && revivesLeft > 0) {
+          revivesLeft -= 1;
+          pendingGameOver = false;
+          resetRevivePrompt();
+          window.resumeBiniAfterRevive();
+          return;
+        }
+        reviveButton.hidden = true;
+        reviveStatus.textContent = 'Ad unavailable.';
+        reviveStatus.hidden = false;
+        finalizeGameOver();
       };
     }());
   </script>
