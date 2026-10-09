@@ -202,6 +202,42 @@ function intersects(a,b,o){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;const p=l?M
 function targetPosition(o,t,w,h){const u=(t-o.t)/o.life;return{x:Math.max(45,Math.min(w-45,w*(o.x+o.dx*u))),y:h+55-(h*.72+110)*4*u*(1-u),r:Math.max(20,Math.min(36,w*.056))*o.size,angle:o.phase+o.spin*u};}
 
 const MUSIC_URL='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/assets/BINI-Sugar-Rush.mp3';
+const SUGAR_RUSH_ASSET_BASES=[
+  'https://cdn.jsdelivr.net/gh/mvbrazas/images@main/joinnow-app/bini/sugar-rush/',
+  'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/'
+];
+function loadSugarRushImage(fileName) {
+  return new Promise(function (resolve, reject) {
+    var sourceIndex = 0;
+    function loadNext() {
+      if (sourceIndex >= SUGAR_RUSH_ASSET_BASES.length) {
+        reject(new Error('Unable to load ' + fileName));
+        return;
+      }
+      var image = new Image();
+      var settled = false;
+      var timeout = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        loadNext();
+      }, 7000);
+      image.onload = function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve(image);
+      };
+      image.onerror = function () {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        loadNext();
+      };
+      image.src = SUGAR_RUSH_ASSET_BASES[sourceIndex++] + fileName;
+    }
+    loadNext();
+  });
+}
 const backgroundMusic=new Audio(MUSIC_URL);
 backgroundMusic.loop=false;
 backgroundMusic.preload='auto';
@@ -214,14 +250,15 @@ const reviveButton=$('#reviveButton'),reviveStatus=$('#reviveStatus');
 function resetRevivePrompt(){reviveButton.hidden=true;reviveButton.disabled=false;reviveButton.textContent='Watch Ad to Play Again';reviveStatus.hidden=true;reviveStatus.textContent=''}
 function finalizePendingGameOver(){if(!pendingGameOver)return;pendingGameOver=false;reviveButton.hidden=true;reviveButton.disabled=false;postNative({type:'gameOver',gameId:'bini-sugar-rush',score:pendingScore,final:true});pendingScore=0}
 const store={get(k){try{return localStorage.getItem(k)}catch{return null}},set(k,v){try{localStorage.setItem(k,v)}catch{text('#startMessage','Private storage is unavailable. Your identity lasts for this visit.')}}};
+const uid=()=>crypto.randomUUID?.()||"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16)),bloom=()=>`Bloom${String(crypto.getRandomValues(new Uint32Array(1))[0]%100000000).padStart(8,'0')}`;
 const playerNickname=store.get('joinnowBiniNickname')||bloom();
 store.set('joinnowBiniNickname',playerNickname);
-const uid=()=>crypto.randomUUID?.()||"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16)),bloom=()=>`Bloom${String(crypto.getRandomValues(new Uint32Array(1))[0]%100000000).padStart(8,'0')}`;
 let playerId=store.get('joinnowBiniPlayerId')||uid(),secret=store.get('sugarRushPlayerSecret')||uid()+uid();store.set('joinnowBiniPlayerId',playerId);store.set('sugarRushPlayerSecret',secret);
 let difficulty=store.get('sugarRushDifficulty')||'normal';if(!DIFFICULTIES[difficulty])difficulty='normal';$(`input[value="${difficulty}"]`).checked=true;
 let muted=store.get('sugarRushMuted')==='true',phase='start',run=null,raf=0,clock=0,previous=0,spawnIndex=0,targets=[],pieces=[],particles=[],trail=[],pointer=null,events=[],lastStats=null,mediaStarted=false,practice=false,epoch=0,pending='',savedPayload=null,boardView='overall',page=0,voices=0,context=null,lastSlash=0,lastRush=false,lastMusicClock=0,audioOffset=0,mediaError=false,musicStarted=false;
-$('#joinnow-logo').src='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
-const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,atlas=new Image();let boxes=[],assetsReady=false;
+const joinNowLogo=$('#joinnow-logo');
+loadSugarRushImage('joinnowlogo.webp').then(function(image){joinNowLogo.src=image.src}).catch(function(){joinNowLogo.hidden=true;var wordmark=document.createElement('span');wordmark.className='brand-fallback';wordmark.textContent='JoinNow';wordmark.style.cssText='display:block;color:#efffff;font-size:16px;font-weight:900';joinNowLogo.parentNode.appendChild(wordmark)});
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;let atlas,boxes=[],assetsReady=false;
 document.querySelector('main').style.gridTemplateColumns='minmax(0,1fr)';
 const canvas=$('#canvas'),ctx=canvas.getContext('2d');let w=600,h=510;
 function musicPause(){backgroundMusic.pause()}
@@ -236,7 +273,7 @@ const versionBody={gameId:'bini-sugar-rush',gameVersion:VERSION,timingMapVersion
 function resize(){const r=canvas.getBoundingClientRect();w=r.width||600;h=r.height||510;const d=Math.min(devicePixelRatio||1,2);canvas.width=w*d;canvas.height=h*d;ctx.setTransform(d,0,0,d,0,0)}new ResizeObserver(resize).observe(canvas);
 function sprite(context,o,clip){const b=boxes[o.kind];if(!b)return;const size=o.r*2.5,sw=b[2],sh=b[3],dw=size*sw/Math.max(sw,sh),dh=size*sh/Math.max(sw,sh);context.save();context.translate(o.x,o.y);context.rotate(o.angle||0);context.globalAlpha=o.opacity??1;if(clip!==undefined){context.rotate(o.cut||0);context.beginPath();context.rect(-size*2,clip<0?-size*2:0,size*4,size*2);context.clip();context.rotate(-(o.cut||0))}context.drawImage(atlas,...b,-dw/2,-dh/2,dw,dh);context.restore()}
 function showcase(){const c=$('#showcase'),cx=c.getContext('2d');cx.clearRect(0,0,640,150);[0,2,3,1,4].forEach((kind,i)=>sprite(cx,{kind,x:76+i*122,y:78,r:48,angle:(i%2?1:-1)*.16}))}
-Promise.all([new Promise((resolve,reject)=>{atlas.onload=resolve;atlas.onerror=reject;atlas.src='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/candy-atlas.png'}),Promise.resolve([[57,97,347,474],[421,27,415,562],[839,45,375,488],[33,650,371,530],[429,630,407,624],[837,708,396,546]])]).then(([,b])=>{boxes=b;assetsReady=true;showcase();$('#play').disabled=false;text('#play','Let’s slice!')}).catch(()=>text('#startMessage','The sweets could not load. Reload to try again.'));
+loadSugarRushImage('candy-atlas.png').then(function(image){atlas=image;boxes=[[57,97,347,474],[421,27,415,562],[839,45,375,488],[33,650,371,530],[429,630,407,624],[837,708,396,546]];assetsReady=true;showcase();$('#play').disabled=false;text('#play','Let’s slice!')}).catch(function(){text('#play','Sweets unavailable');text('#startMessage','Could not load the sweets. Check your connection and reload to try again.')});
 backgroundMusic.addEventListener('playing',function(){mediaError=false;musicStarted=true;if(phase==='waiting')startMusicClock();else if(phase==='resuming'){phase='playing';previous=performance.now();lastMusicClock=backgroundMusic.currentTime*1000;run.lastMusicAdvance=previous;raf=requestAnimationFrame(frame)}});
 backgroundMusic.addEventListener('pause',function(){if(mediaStarted&&phase==='playing'&&!backgroundMusic.ended)pauseGame('Music paused. Resume when ready.')});
 backgroundMusic.addEventListener('error',function(){mediaError=true;mediaStarted=false;musicStarted=false;if(phase==='waiting')startPractice();else if(phase==='playing'){practice=true;pauseGame('Music unavailable. Resume in practice mode.')}});
