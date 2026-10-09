@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#101b20" />
+    <title>SIGABO: The Mission Arcade</title>
+    <style>
+        :root { color-scheme: dark; --ink:#101b20; --panel:#17262b; --raised:#20373e; --paper:#f6f4ea; --muted:#bac9cc; --amber:#ffc04b; --mint:#65c7a1; --line:#3b4d52; --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px); font-family:Arial,Helvetica,sans-serif; background:var(--ink); color:var(--paper); }
+        * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+        html,body { min-height:100%; margin:0; background:#101b20; }
+        body { background:radial-gradient(ellipse at 80% 0%,#1a343a 0,transparent 42%),#101b20; }
+        button { font:inherit; color:inherit; cursor:pointer; touch-action:manipulation; }
+        button:disabled { cursor:default; opacity:.55; }
+        button:focus-visible,a:focus-visible { outline:3px solid #ffd373; outline-offset:3px; }
+        [hidden] { display:none !important; }
+        #app { width:min(100%,1260px); min-height:100vh; min-height:100svh; margin:0 auto; padding:0 28px max(10px,var(--safe-bottom)); display:flex; flex-direction:column; }
+        header { min-height:64px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #ffffff19; }
+        .brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
+        .brand img { width:104px; height:42px; object-fit:contain; }
+        .brand span { padding-left:10px; border-left:1px solid #546164; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:1.5px; }
+        .header-actions { display:flex; gap:8px; margin-left:auto; }
+        .icon-button { width:38px; height:38px; padding:0; display:grid; place-items:center; border:1px solid #52605e; border-radius:50%; background:linear-gradient(145deg,var(--raised),var(--panel)); color:var(--amber); transition:background .15s,border-color .15s,color .15s,transform .15s; }
+        .icon-button svg { width:19px; height:19px; fill:currentColor; }
+        .icon-button:hover,.icon-button:focus-visible { border-color:var(--mint); background:var(--raised); color:var(--mint); }
+        .icon-button:active { transform:scale(.96); }
+        #soundButton .sound-on { display:none; }
+        #soundButton[aria-pressed="true"] { border-color:rgba(255,192,75,.58); }
+        #soundButton[aria-pressed="true"] .sound-on { display:block; }
+        #soundButton[aria-pressed="true"] .sound-off { display:none; }
+        #soundButton[aria-pressed="false"] { border-color:var(--line); color:var(--muted); }
+        #soundButton[aria-pressed="false"] .sound-off { display:block; }
+        #soundButton[aria-pressed="false"]:hover { border-color:var(--mint); color:var(--mint); }
+        main { flex:1; padding:24px 0; }
+        .mission { min-height:560px; display:grid; grid-template-columns:minmax(0,1.05fr) minmax(340px,.95fr); overflow:hidden; border:1px solid #405054; border-radius:14px; background:var(--panel); }
+        .mission-art { position:relative; min-width:0; min-height:560px; overflow:hidden; background:#17262b; }
+        .mission-art img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:60% center; }
+        .mission-art::after { position:absolute; inset:0; content:""; background:linear-gradient(180deg,rgba(4,15,20,.1) 0%,rgba(4,15,20,.12) 34%,rgba(4,15,20,.94) 100%); }
+        .art-copy { position:absolute; z-index:1; right:28px; bottom:24px; left:28px; }
+        .eyebrow { margin:0 0 8px; color:var(--amber); font-size:11px; font-weight:800; letter-spacing:1.6px; }
+        h1 { margin:8px 0 0; color:var(--amber); font-size:clamp(42px,5vw,68px); font-style:italic; font-weight:900; line-height:.98; }
+        h1 span { display:block; margin-top:8px; color:var(--paper); font-size:12px; font-style:normal; letter-spacing:2.4px; }
+        .art-copy p { margin:12px 0 16px; color:var(--paper); font-size:20px; font-weight:700; line-height:1.25; }
+        .tag { display:inline-block; padding:7px 9px; border:1px solid #93a09f; border-radius:3px; color:var(--paper); font-size:10px; font-weight:700; letter-spacing:.8px; }
+        .play-panel { min-width:0; padding:22px; display:flex; flex-direction:column; }
+        .panel-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+        .panel-top .icon-button { flex:0 0 auto; }
+        h2 { margin:5px 0 7px; font-size:26px; line-height:1.12; }
+        p { line-height:1.5; }
+        .muted { margin:0; color:var(--muted); font-size:14px; }
+        .show-link { margin:10px 0; color:var(--muted); font-size:12px; line-height:1.45; }
+        .show-link a { color:#ffd176; text-underline-offset:3px; }
+        .choices { display:grid; gap:8px; margin:16px 0; }
+        .choice { width:100%; min-height:62px; padding:10px 12px; display:flex; align-items:center; gap:12px; border:1px solid #45565b; border-radius:8px; background:#1a2c32; text-align:left; }
+        .choice[aria-pressed="true"] { padding:9px 11px; border:2px solid var(--amber); background:#30332a; }
+        .choice-icon { width:28px; flex:0 0 28px; color:var(--muted); font-size:22px; text-align:center; }
+        .choice[aria-pressed="true"] .choice-icon { color:var(--amber); }
+        .choice-copy { min-width:0; flex:1; }
+        .choice-copy b { display:block; font-size:14px; }
+        .choice-copy small { display:block; margin-top:4px; color:var(--muted); font-size:10px; letter-spacing:.6px; }
+        .choice-number { color:#9aa5a4; font-size:15px; }
+        .brief { margin:2px 0 13px; padding-left:12px; border-left:3px solid #e6aa40; }
+        .brief strong { color:var(--amber); font-size:10px; letter-spacing:1.5px; }
+        .brief p { margin:4px 0 0; color:#c9d2d3; font-size:13px; line-height:1.45; }
+        .start-button,.action-button { min-height:44px; padding:10px 15px; display:flex; align-items:center; justify-content:space-between; gap:10px; border:0; border-radius:7px; background:var(--amber); color:#122128; font-weight:800; }
+        .start-button { margin-top:auto; }
+        .start-button:disabled { opacity:.65; }
+        .status { min-height:18px; margin:8px 0 0; color:#ffd176; font-size:11px; line-height:1.35; }
+        .score-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:12px 0; }
+        .score-box { min-width:0; padding:9px 6px; border:1px solid #34474d; border-radius:6px; background:#1a2c32; text-align:center; }
+        .score-box small { display:block; color:var(--muted); font-size:9px; font-weight:800; letter-spacing:.7px; }
+        .score-box b { display:block; margin-top:3px; color:var(--amber); font-size:21px; font-variant-numeric:tabular-nums; }
+        .time-track { height:4px; margin:12px 0; overflow:hidden; background:#30494e; }
+        .time-track span { display:block; width:100%; height:100%; background:var(--amber); transform-origin:left; }
+        .game-head { display:flex; align-items:end; justify-content:space-between; gap:12px; margin-bottom:4px; }
+        .game-head h2 { margin:0; }
+        .mission-status { color:var(--muted); font-size:11px; font-weight:800; letter-spacing:1px; }
+        #gameBoard { width:min(100%,390px); margin:12px auto; display:grid; gap:9px; }
+        #gameBoard.signal { grid-template-columns:repeat(3,minmax(0,1fr)); }
+        #gameBoard.memory { grid-template-columns:repeat(4,minmax(0,1fr)); }
+        .tile { min-width:0; aspect-ratio:1; padding:0; display:grid; place-items:center; border:1px solid #415960; border-radius:8px; background:#20373e; color:#90a7ad; touch-action:manipulation; transition:background .12s,border-color .12s,transform .12s; }
+        .tile svg { width:36%; height:36%; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+        .tile.signal-target { border-color:#ffeab5; background:var(--amber); color:#16282c; box-shadow:0 0 22px #ffb83045; }
+        .tile.signal-hit { border-color:var(--mint); background:#1b5048; color:#b5ffe2; }
+        .tile.signal-miss { border-color:#df7580; background:#4a2931; color:#ffd5d5; }
+        .tile.memory-open { border-color:var(--amber); background:#e4d7b5; color:#13292d; }
+        .tile.memory-match { border-color:var(--mint); background:#1b6660; color:#b5ffe2; }
+        .tile:disabled { cursor:default; }
+        .card-back { color:#c49849; font-size:25px; font-style:italic; font-weight:900; }
+        .feedback { min-height:24px; margin:6px 0 10px; color:#ffc765; font-size:13px; text-align:center; }
+        .play-actions { display:flex; justify-content:center; gap:8px; }
+        .action-button { min-height:38px; justify-content:center; border:1px solid #45565b; background:#1a2c32; color:var(--paper); font-size:12px; }
+        .result-view { max-width:540px; margin:25px auto; padding:20px; border:1px solid #405054; border-radius:10px; background:var(--panel); text-align:center; }
+        .result-view h2 { margin:6px 0; }
+        .result-view #playAgain,.result-view #reviveButton { margin:12px auto; }
+        .result-score { margin:8px 0; color:var(--amber); font-size:48px; font-weight:900; }
+        .result-detail { color:var(--muted); font-size:13px; }
+        dialog { width:min(520px,calc(100% - 24px)); max-height:85dvh; padding:20px; overflow:auto; border:1px solid #405054; border-radius:10px; background:var(--panel); color:var(--paper); }
+        dialog::backdrop { background:rgba(4,15,20,.82); }
+        dialog h2 { color:var(--amber); }
+        dialog p,dialog li { color:#c9d2d3; font-size:13px; line-height:1.5; }
+        @media(max-width:760px) {
+            #app { padding:0 14px max(8px,var(--safe-bottom)); }
+            header { min-height:56px; }
+            .brand img { width:90px; }
+            .brand span { display:none; }
+            main { padding:14px 0; }
+            .mission { grid-template-columns:1fr; min-height:0; }
+            .mission-art { min-height:190px; }
+            .art-copy { right:18px; bottom:14px; left:18px; }
+            h1 { font-size:42px; }
+            .art-copy p { margin:6px 0 0; font-size:15px; }
+            .tag { display:none; }
+            .play-panel { padding:15px; }
+            .choices { gap:7px; margin:12px 0; }
+            .choice { min-height:55px; padding:8px 10px; }
+            .choice[aria-pressed="true"] { padding:7px 9px; }
+            .show-link { margin:8px 0; }
+            #gameBoard { width:min(100%,360px); margin:10px auto; gap:7px; }
+            .tile { border-radius:6px; }
+            .score-row { margin:8px 0; }
+            .score-box { padding:7px 4px; }
+            .score-box b { font-size:18px; }
+            .feedback { min-height:21px; margin:4px 0 8px; }
+            .result-view { margin:12px auto; padding:16px; }
+        }
+        @media(max-width:360px) {
+            #app { padding-right:10px; padding-left:10px; }
+            .mission-art { min-height:165px; }
+            h1 { font-size:36px; }
+            .play-panel { padding:12px; }
+            .choice-copy b { font-size:12px; }
+            .choice-copy small { font-size:9px; }
+        }
+        @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header>
+        <div class="brand"><img id="joinnowLogo" alt="JoinNow"><span>GAMES</span></div>
+        <div class="header-actions">
+            <button type="button" class="icon-button" id="soundButton" title="Enable sound" aria-label="Sound" aria-pressed="false"><svg id="soundIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l5 4V6l-5 4H4z"/><path class="sound-on" d="M15 9a4 4 0 0 1 0 6l1.4 1.4a6 6 0 0 0 0-8.8L15 9zm3-3v2a7 7 0 0 1 0 8v2a9 9 0 0 0 0-12z"/><path class="sound-off" d="m15.5 9.5 1.4-1.4 2.1 2.1 2.1-2.1 1.4 1.4-2.1 2.1 2.1 2.1-1.4 1.4-2.1-2.1-2.1 2.1-1.4-1.4 2.1-2.1z"/></svg></button>
+            <button type="button" class="icon-button" data-native-action="back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
+            <button type="button" class="icon-button" data-native-action="trophy" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
+        </div>
+    </header>
+    <main>
+        <section class="mission screen" id="menuScreen">
+            <div class="mission-art"><img id="sigaboArt" alt="A night-time Manila street scene from Sigabo"><div class="art-copy"><p class="eyebrow">JOINNOW · SHOWS</p><h1>SIGABO<span>THE MISSION ARCADE</span></h1><p>Bilisan ang isip.<br>Tibayan ang diskarte.</p><span class="tag">2 GAMES. YOUR NEXT MISSION.</span></div></div>
+            <section class="play-panel">
+                <div class="panel-top"><span class="eyebrow">CHOOSE YOUR MISSION</span></div>
+                <h2>Handa ka na?</h2>
+                <p class="muted">Two quick challenges. One sharp mind.</p>
+                <p class="show-link">Check out more details and episodes in: <a href="https://www.abs-cbn.com/entertainment/studios/tv/sigabo" target="_blank" rel="noopener noreferrer">Sigabo ↗</a></p>
+                <div class="choices" id="modeGrid">
+                    <button class="choice" type="button" data-mode="signal" aria-pressed="true"><span class="choice-icon" aria-hidden="true">◉</span><span class="choice-copy"><b>Misyon: Signal Rush</b><small>REACTION · 30 SECONDS</small></span><span class="choice-number">01</span></button>
+                    <button class="choice" type="button" data-mode="memory" aria-pressed="false"><span class="choice-icon" aria-hidden="true">✦</span><span class="choice-copy"><b>Operation: Memory</b><small>MATCHING · 60 SECONDS</small></span><span class="choice-number">02</span></button>
+                </div>
+                <div class="brief"><strong>YOUR BRIEF</strong><p id="briefText">Tap the radio signal before it moves. One choice each second. Avoid the decoys and build your streak.</p></div>
+                <button type="button" class="start-button" id="startButton"><span>Start mission</span><span aria-hidden="true">→</span></button>
+                <div class="play-actions"><button type="button" class="action-button" id="helpButton">How to play</button></div>
+                <p class="status" id="menuStatus" role="status" aria-live="polite"></p>
+            </section>
+        </section>
+        <section id="playScreen" class="screen" hidden>
+            <div class="game-head"><div><p class="eyebrow" id="gameEyebrow">MISSION 01 / SIGNAL RUSH</p><h2 id="gameTitle">Misyon: Signal Rush</h2></div><span class="mission-status" id="missionStatus">30 SECONDS</span></div>
+            <div class="score-row"><div class="score-box"><small>SCORE</small><b id="scoreValue">0</b></div><div class="score-box"><small id="hitLabel">SIGNALS</small><b id="hitValue">0</b></div><div class="score-box"><small>TIME</small><b id="timeValue">30s</b></div></div>
+            <div class="time-track"><span id="timeFill"></span></div>
+            <div class="board signal" id="gameBoard" role="group" aria-label="Signal Rush mission board"></div>
+            <p class="feedback" id="feedback" aria-live="polite">Your mission starts now.</p>
+            <div class="play-actions"><button type="button" class="action-button" id="exitMission">Exit mission</button></div>
+        </section>
+        <section class="result-view" id="resultScreen" hidden>
+            <p class="eyebrow">MISSION REPORT</p><span class="result-icon" aria-hidden="true">✦</span><h2 id="resultTitle">Mission complete.</h2>
+            <div class="result-score"><span id="resultScore">0</span><small>POINTS</small></div>
+            <p class="result-detail" id="resultDetail"></p><p class="status" id="resultStatus" role="status"></p>
+            <p class="status" id="reviveStatus" role="status" aria-live="polite" hidden></p>
+            <button type="button" class="start-button" id="reviveButton" hidden><span>Watch ad to play again</span><span aria-hidden="true">↻</span></button>
+            <button type="button" class="start-button" id="playAgain"><span>Play again</span><span aria-hidden="true">↻</span></button>
+            <div class="play-actions"><button type="button" class="action-button" data-native-action="trophy">Trophies</button><button type="button" class="action-button" id="chooseMission">Choose another mission</button></div>
+        </section>
+    </main>
+</div>
+<dialog id="helpDialog"><p class="eyebrow">MISSION GUIDE</p><h2>Two ways to play.</h2><p><b>Signal Rush:</b> Find the highlighted radio tile and tap once per second for 30 seconds. Correct hits build a streak; decoys cost points.</p><p><b>Operation: Memory:</b> Flip cards to match all eight pairs before the 60-second timer runs out. Fewer misses and a quicker finish increase your score.</p><button type="button" class="start-button" id="closeHelp">Got it</button></dialog>
+<script>
+(function () {
+    'use strict';
+
+    var MODES = ['signal', 'memory'];
+    var MODE_NAMES = { signal: 'Misyon: Signal Rush', memory: 'Operation: Memory' };
+    var CARD_NAMES = ['Key', 'Location', 'Dossier', 'Flashlight', 'Compass', 'Fingerprint', 'Radio', 'Shield'];
+    var CARD_MARKS = ['⌑', '⌖', '▤', '◉', '✧', '✦', '◌', '⬡'];
+    var DURATIONS = { signal: 30000, memory: 60000 };
+    var MAX_REVIVES = 2;
+    var revivesLeft = MAX_REVIVES, pendingGameOver = false, pendingScore = 0;
+    var MAX_CONSECUTIVE_FAILURES = 3;
+    var storage = {
+        get: function (key) { try { return localStorage.getItem(key); } catch (error) { return null; } },
+        set: function (key, value) { try { localStorage.setItem(key, value); } catch (error) {} }
+    };
+    var state = {
+        mode: 'signal', phase: 'menu', seed: 1, started: 0, clock: 0, moves: [], open: [], matched: [],
+        locked: false, playedSlots: {}, failureStreak: 0, lastProcessedSignalSlot: -1, feedback: '', sound: false, timer: null, mismatchTimer: null, ended: false, stats: { score: 0, hits: 0, accuracy: 0, complete: false, best: 0 }
+    };
+
+    function query(selector) { return document.querySelector(selector); }
+    function all(selector) { return Array.prototype.slice.call(document.querySelectorAll(selector)); }
+    function post(message) {
+        try {
+            if (window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === 'function') {
+                window.ReactNativeWebView.postMessage(JSON.stringify(message));
+            }
+        } catch (error) {}
+    }
+    function scoreForJoinNow(score) { return window.ReactNativeWebView ? Math.floor(score / 10) : score; }
+    function resetRevivePrompt() {
+        var button = query('#reviveButton');
+        button.hidden = true;
+        button.disabled = false;
+        button.innerHTML = '<span>Watch ad to play again</span><span aria-hidden="true">↻</span>';
+        query('#reviveStatus').hidden = true;
+        query('#reviveStatus').textContent = '';
+    }
+    function finalizePendingGameOver() {
+        if (!pendingGameOver) return;
+        pendingGameOver = false;
+        query('#reviveButton').hidden = true;
+        query('#reviveButton').disabled = false;
+        post({ type: 'gameOver', gameId: 'sigabo-games', mode: state.mode, score: pendingScore, final: true });
+        pendingScore = 0;
+    }
+    function randomSeed() {
+        return window.crypto && crypto.getRandomValues ? crypto.getRandomValues(new Uint32Array(1))[0] || 1 : Date.now() % 4294967295 || 1;
+    }
+    function deck(seed) {
+        var value = seed >>> 0;
+        function random() { value ^= value << 13; value ^= value >>> 17; value ^= value << 5; return (value >>> 0) / 4294967296; }
+        var cards = [];
+        for (var i = 0; i < 16; i++) cards.push(i % 8);
+        for (var index = 15; index > 0; index--) { var swap = Math.floor(random() * (index + 1)); var temp = cards[index]; cards[index] = cards[swap]; cards[swap] = temp; }
+        return cards;
+    }
+    function target(seed, slot) { return ((Math.imul(seed ^ (slot + 1), 1664525) + 1013904223) >>> 0) % 9; }
+    function evaluate(mode, seed, moves) {
+        var last = -1;
+        for (var i = 0; i < moves.length; i++) {
+            var move = moves[i];
+            if (!Number.isInteger(move.i) || !Number.isInteger(move.t) || move.t < 0 || move.t < last || move.t > 60000 || move.i < 0 || move.i >= (mode === 'signal' ? 9 : 16)) throw new Error('Invalid move');
+            last = move.t;
+        }
+        if (mode === 'signal') {
+            var slots = {}, hits = 0, combo = 0, best = 0, score = 0;
+            for (var signalIndex = 0; signalIndex < moves.length; signalIndex++) {
+                var signalMove = moves[signalIndex], signalSlot = Math.floor(signalMove.t / 1000);
+                if (signalSlot >= 30 || slots[signalSlot]) throw new Error('Repeated signal');
+                slots[signalSlot] = true;
+                if (signalMove.i === target(seed, signalSlot)) { hits++; combo++; best = Math.max(best, combo); score += 100 + Math.min(combo, 5) * 20; }
+                else { combo = 0; score = Math.max(0, score - 50); }
+            }
+            return { score: score, hits: hits, accuracy: moves.length ? Math.round(hits / moves.length * 100) : 0, complete: true, best: best };
+        }
+        var cards = deck(seed), matched = {}, first = -1, attempts = 0, lockedUntil = 0;
+        for (var cardIndex = 0; cardIndex < moves.length; cardIndex++) {
+            var cardMove = moves[cardIndex];
+            if (cardMove.t < lockedUntil || matched[cardMove.i] || cardMove.i === first) throw new Error('Invalid card');
+            if (first < 0) first = cardMove.i;
+            else { attempts++; if (cards[first] === cards[cardMove.i]) { matched[first] = true; matched[cardMove.i] = true; } else lockedUntil = cardMove.t + 650; first = -1; }
+        }
+        var hits = Object.keys(matched).length / 2;
+        return { score: Math.max(0, hits * 200 - Math.max(0, attempts - hits) * 25) + (hits === 8 ? Math.max(0, 600 - Math.floor(last / 100)) : 0), hits: hits, accuracy: attempts ? Math.round(hits / attempts * 100) : 0, complete: hits === 8, best: hits };
+    }
+    function sound(good) {
+        if (!state.sound) return;
+        try {
+            state.audio = state.audio || new (window.AudioContext || window.webkitAudioContext)();
+            state.audio.resume();
+            var oscillator = state.audio.createOscillator(), gain = state.audio.createGain();
+            oscillator.connect(gain); gain.connect(state.audio.destination); oscillator.frequency.value = good ? 620 : 180;
+            gain.gain.setValueAtTime(.06, state.audio.currentTime); gain.gain.exponentialRampToValueAtTime(.001, state.audio.currentTime + .14);
+            oscillator.start(); oscillator.stop(state.audio.currentTime + .15);
+        } catch (error) {}
+    }
+    function updateSoundButton() {
+        var button = query('#soundButton');
+        button.setAttribute('aria-pressed', String(state.sound));
+        button.setAttribute('aria-label', 'Sound');
+        button.title = state.sound ? 'Mute sound' : 'Enable sound';
+    }
+    function showScreen(phase) {
+        state.phase = phase;
+        query('#menuScreen').hidden = phase !== 'menu';
+        query('#playScreen').hidden = phase !== 'play';
+        query('#resultScreen').hidden = phase !== 'result';
+    }
+    function updateMenu() {
+        all('[data-mode]').forEach(function (button) { button.setAttribute('aria-pressed', String(button.getAttribute('data-mode') === state.mode)); });
+        query('#briefText').textContent = state.mode === 'signal' ? 'Tap the radio signal before it moves. One choice each second. Avoid the decoys and build your streak.' : 'Flip the cards and match all eight pairs of clues. Fewer mistakes and a faster finish earn more points.';
+        query('#startButton').innerHTML = '<span>Start mission</span><span aria-hidden="true">→</span>';
+    }
+    function currentStats() { return evaluate(state.mode, state.seed, state.moves); }
+    function registerFailure(message) {
+        state.failureStreak++;
+        state.feedback = message;
+        if (state.failureStreak >= MAX_CONSECUTIVE_FAILURES) {
+            finish(true);
+            return true;
+        }
+        return false;
+    }
+    function renderBoard() {
+        var board = query('#gameBoard'), slot = Math.min(29, Math.floor(state.clock / 1000)), played = !!state.playedSlots[slot], cards = state.mode === 'memory' ? deck(state.seed) : null;
+        board.className = 'board ' + state.mode;
+        board.setAttribute('aria-label', state.mode === 'signal' ? 'Signal Rush mission board' : 'Operation Memory card board');
+        board.replaceChildren();
+        var count = state.mode === 'signal' ? 9 : 16;
+        for (var i = 0; i < count; i++) {
+            var button = document.createElement('button'), active = state.mode === 'signal' && target(state.seed, slot) === i;
+            button.type = 'button'; button.className = 'tile';
+            if (state.mode === 'signal') {
+                if (active && !played) { button.classList.add('signal-target'); button.innerHTML = '<span aria-hidden="true">◉</span>'; }
+                else button.innerHTML = '<span aria-hidden="true">◇</span>';
+                button.disabled = played;
+                button.setAttribute('aria-label', active ? 'Radio signal' : 'Decoy');
+            } else {
+                var isOpen = state.open.indexOf(i) >= 0, isMatched = state.matched.indexOf(i) >= 0;
+                if (isMatched) { button.classList.add('memory-match'); button.textContent = CARD_MARKS[cards[i]]; }
+                else if (isOpen) { button.classList.add('memory-open'); button.textContent = CARD_MARKS[cards[i]]; }
+                else { button.innerHTML = '<span class="card-back">S</span>'; }
+                button.disabled = isMatched || state.locked;
+                button.setAttribute('aria-label', isOpen || isMatched ? CARD_NAMES[cards[i]] : 'Reveal card ' + (i + 1));
+            }
+            button.addEventListener('click', function () { pick(Number(this.dataset.index)); });
+            button.dataset.index = String(i);
+            board.appendChild(button);
+        }
+    }
+    function updateView() {
+        var stats = currentStats(); state.stats = stats;
+        var duration = DURATIONS[state.mode], slot = Math.min(29, Math.floor(state.clock / 1000));
+        query('#gameEyebrow').textContent = state.mode === 'signal' ? 'MISSION 01 / SIGNAL RUSH' : 'MISSION 02 / OPERATION MEMORY';
+        query('#gameTitle').textContent = MODE_NAMES[state.mode];
+        query('#missionStatus').textContent = state.mode === 'signal' ? '30 SECONDS' : '60 SECONDS';
+        query('#scoreValue').textContent = scoreForJoinNow(stats.score).toLocaleString();
+        query('#hitLabel').textContent = state.mode === 'signal' ? 'SIGNALS' : 'PAIRS';
+        query('#hitValue').textContent = state.mode === 'signal' ? stats.hits + '/30' : stats.hits + '/8';
+        query('#timeValue').textContent = Math.max(0, Math.ceil((duration - state.clock) / 1000)) + 's';
+        query('#timeFill').style.transform = 'scaleX(' + Math.max(0, 1 - state.clock / duration) + ')';
+        query('#feedback').textContent = state.feedback || (state.mode === 'signal' ? 'Tap the radio signal. One choice each second.' : 'Find all eight matching pairs.');
+        query('#gameBoard').classList.toggle('signal', state.mode === 'signal');
+        query('#gameBoard').classList.toggle('memory', state.mode === 'memory');
+        if (state.mode === 'signal' && slot !== state.lastRenderedSlot || state.boardDirty) { renderBoard(); state.lastRenderedSlot = slot; state.boardDirty = false; }
+    }
+    function stopClock() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
+    function finish(failed) {
+        if (state.ended || state.phase !== 'play') return;
+        state.ended = true; stopClock(); var stats = currentStats(); state.stats = stats;
+        var canRevive = !!(failed && revivesLeft > 0);
+        pendingScore = scoreForJoinNow(stats.score);
+        pendingGameOver = canRevive;
+        resetRevivePrompt();
+        query('#resultTitle').textContent = failed ? 'Mission failed.' : state.mode === 'memory' && stats.hits === 8 ? 'Case closed!' : 'Mission complete.';
+        query('#resultScore').textContent = scoreForJoinNow(stats.score).toLocaleString();
+        query('#resultDetail').textContent = stats.accuracy + '% accuracy · ' + stats.hits + (state.mode === 'memory' ? ' pairs matched' : ' signals secured');
+        if (canRevive) {
+            query('#reviveButton').hidden = false;
+            query('#resultStatus').textContent = 'Watch an ad to retry this mission.';
+            post({ type: 'gameOver', gameId: 'sigabo-games', mode: state.mode, score: pendingScore, final: false });
+        } else {
+            query('#resultStatus').textContent = failed ? 'Mission ended after 3 consecutive failures.' : window.ReactNativeWebView ? 'Score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.';
+            post({ type: 'gameOver', gameId: 'sigabo-games', mode: state.mode, score: pendingScore, final: true });
+        }
+        showScreen('result');
+    }
+    function tick() {
+        if (state.phase !== 'play' || state.ended) return;
+        state.clock = Math.min(DURATIONS[state.mode], Math.floor(performance.now() - state.started));
+        if (state.mode === 'signal') {
+            var completedSlot = Math.min(29, Math.floor(state.clock / 1000) - 1);
+            while (state.lastProcessedSignalSlot < completedSlot) {
+                state.lastProcessedSignalSlot++;
+                if (!state.playedSlots[state.lastProcessedSignalSlot] && registerFailure('Signal missed.') ) return;
+            }
+        }
+        updateView();
+        if (state.clock >= DURATIONS[state.mode]) finish();
+    }
+    function pick(index) {
+        if (state.phase !== 'play' || state.ended || state.locked) return;
+        var now = Math.floor(performance.now() - state.started);
+        if (now >= DURATIONS[state.mode]) { finish(); return; }
+        if (state.mode === 'signal') {
+            var slot = Math.min(29, Math.floor(now / 1000));
+            if (state.playedSlots[slot]) return;
+            var hit = index === target(state.seed, slot);
+            state.moves.push({ i: index, t: now }); state.playedSlots[slot] = true;
+            if (hit) { state.failureStreak = 0; state.feedback = 'Signal secured!'; }
+            else if (registerFailure('Decoy! Wait for the next signal.')) return;
+            sound(hit); state.boardDirty = true; updateView(); return;
+        }
+        if (state.matched.indexOf(index) >= 0 || state.open.indexOf(index) >= 0) return;
+        state.moves.push({ i: index, t: now });
+        if (state.open.length === 0) { state.open = [index]; state.boardDirty = true; updateView(); return; }
+        var first = state.open[0], cards = deck(state.seed), hitPair = cards[first] === cards[index];
+        state.open = [first, index]; sound(hitPair);
+        if (hitPair) {
+            state.failureStreak = 0;
+            state.matched = state.matched.concat([first, index]); state.open = []; state.feedback = 'Clue matched!'; state.boardDirty = true; updateView();
+            if (state.matched.length === 16) finish();
+        } else {
+            state.locked = true;
+            if (registerFailure('Mismatch! Remember those clues.')) return;
+            state.boardDirty = true; updateView();
+            state.mismatchTimer = setTimeout(function () { state.open = []; state.locked = false; state.boardDirty = true; updateView(); }, 700);
+        }
+    }
+    function startMission(fromRevive) {
+        var isRevive = fromRevive === true;
+        if (!isRevive) { finalizePendingGameOver(); revivesLeft = MAX_REVIVES; }
+        resetRevivePrompt();
+        if (state.timer) clearInterval(state.timer);
+        if (state.mismatchTimer) clearTimeout(state.mismatchTimer);
+        state.seed = randomSeed(); state.clock = 0; state.moves = []; state.open = []; state.matched = []; state.playedSlots = {}; state.failureStreak = 0; state.lastProcessedSignalSlot = -1; state.locked = false; state.ended = false; state.feedback = ''; state.boardDirty = true; state.lastRenderedSlot = -1; state.started = performance.now();
+        showScreen('play'); renderBoard(); updateView(); post({ type: 'ready' });
+        state.timer = setInterval(tick, 50);
+    }
+    function returnToMenu() {
+        finalizePendingGameOver();
+        stopClock(); if (state.mismatchTimer) clearTimeout(state.mismatchTimer); state.mismatchTimer = null; state.locked = false; state.open = []; showScreen('menu'); updateMenu();
+    }
+
+    query('#reviveButton').addEventListener('click', function () {
+        if (!pendingGameOver || revivesLeft <= 0) return;
+        var button = query('#reviveButton');
+        button.disabled = true;
+        button.textContent = 'Waiting for ad…';
+        post({ type: 'requestRevive', gameId: 'sigabo-games', mode: state.mode, score: pendingScore });
+    });
+    window.dispatchRevive = function (granted) {
+        if (!pendingGameOver) return;
+        if (granted && revivesLeft > 0) {
+            revivesLeft--;
+            pendingGameOver = false;
+            pendingScore = 0;
+            startMission(true);
+            return;
+        }
+        query('#reviveButton').hidden = true;
+        query('#reviveStatus').textContent = 'Ad unavailable.';
+        query('#reviveStatus').hidden = false;
+        finalizePendingGameOver();
+    };
+
+    query('#modeGrid').addEventListener('click', function (event) { var button = event.target.closest('[data-mode]'); if (!button) return; state.mode = button.getAttribute('data-mode'); storage.set('sigaboMissionMode', state.mode); updateMenu(); });
+    query('#startButton').addEventListener('click', startMission);
+    query('#playAgain').addEventListener('click', startMission);
+    query('#chooseMission').addEventListener('click', returnToMenu);
+    query('#exitMission').addEventListener('click', returnToMenu);
+    query('#closeHelp').addEventListener('click', function () { query('#helpDialog').close(); });
+    query('[data-native-action="back"]').addEventListener('click', function () { finalizePendingGameOver(); if (!window.ReactNativeWebView && state.phase !== 'menu') returnToMenu(); post({ type: 'goBack', gameId: 'sigabo-games', score: scoreForJoinNow(state.stats.score || 0) }); });
+    query('[data-native-action="trophy"]').addEventListener('click', function () { finalizePendingGameOver(); post({ type: 'viewLeaderboard', gameId: 'sigabo-games', score: scoreForJoinNow(state.stats.score || 0) }); });
+    query('#soundButton').addEventListener('click', function () { state.sound = !state.sound; storage.set('sigaboSound', String(state.sound)); updateSoundButton(); });
+    query('#helpButton').addEventListener('click', function () { query('#helpDialog').showModal(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden && state.phase === 'play') { stopClock(); state.pausedAt = performance.now(); } else if (state.pausedAt) { state.started += performance.now() - state.pausedAt; state.pausedAt = 0; state.timer = setInterval(tick, 50); } });
+
+    var storedMode = storage.get('sigaboMissionMode');
+    var requestedMode = new URLSearchParams(location.search).get('game');
+    if (requestedMode === 'memory' || storedMode === 'memory') state.mode = 'memory';
+    state.sound = storage.get('sigaboSound') === 'true';
+    updateSoundButton();
+    query('#joinnowLogo').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
+    query('#sigaboArt').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/sigabo-art.webp';
+    query('#joinnowLogo').addEventListener('error', function () { query('#joinnowLogo').style.visibility = 'hidden'; });
+    query('#sigaboArt').addEventListener('error', function () { query('.mission-art').style.background = 'linear-gradient(145deg,#182b31,#263d40)'; });
+    post({ type: 'orientation', orientation: 'portrait' });
+    updateMenu();
+})();
+</script>
+</body>
+</html>
