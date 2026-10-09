@@ -14,7 +14,7 @@
         button:disabled { cursor:default; opacity:.55; }
         button:focus-visible,a:focus-visible { outline:3px solid #ffd373; outline-offset:3px; }
         [hidden] { display:none !important; }
-        #app { width:min(100%,1260px); min-height:100vh; min-height:100svh; margin:0 auto; padding:0 28px max(10px,var(--safe-bottom)); display:flex; flex-direction:column; }
+        #app { width:min(100%,1260px); min-height:100vh; min-height:100svh; margin:0 auto; padding:max(10px,var(--safe-top)) 28px max(10px,var(--safe-bottom)); display:flex; flex-direction:column; }
         header { min-height:64px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #ffffff19; }
         .brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
         .brand img { width:104px; height:42px; object-fit:contain; }
@@ -101,7 +101,7 @@
         dialog h2 { color:var(--amber); }
         dialog p,dialog li { color:#c9d2d3; font-size:13px; line-height:1.5; }
         @media(max-width:760px) {
-            #app { padding:0 14px max(8px,var(--safe-bottom)); }
+            #app { padding:max(10px,var(--safe-top)) 14px max(8px,var(--safe-bottom)); }
             header { min-height:56px; }
             .brand img { width:90px; }
             .brand span { display:none; }
@@ -141,7 +141,7 @@
     <header>
         <div class="brand"><img id="joinnowLogo" alt="JoinNow"><span>GAMES</span></div>
         <div class="header-actions">
-            <button type="button" class="icon-button" id="soundButton" title="Enable sound" aria-label="Sound" aria-pressed="false"><svg id="soundIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l5 4V6l-5 4H4z"/><path class="sound-on" d="M15 9a4 4 0 0 1 0 6l1.4 1.4a6 6 0 0 0 0-8.8L15 9zm3-3v2a7 7 0 0 1 0 8v2a9 9 0 0 0 0-12z"/><path class="sound-off" d="m15.5 9.5 1.4-1.4 2.1 2.1 2.1-2.1 1.4 1.4-2.1 2.1 2.1 2.1-1.4 1.4-2.1-2.1-2.1 2.1-1.4-1.4 2.1-2.1z"/></svg></button>
+            <button type="button" class="icon-button" id="soundButton" title="Mute sound" aria-label="Sound" aria-pressed="true"><svg id="soundIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h3l5 4V6l-5 4H4z"/><path class="sound-on" d="M15 9a4 4 0 0 1 0 6l1.4 1.4a6 6 0 0 0 0-8.8L15 9zm3-3v2a7 7 0 0 1 0 8v2a9 9 0 0 0 0-12z"/><path class="sound-off" d="m15.5 9.5 1.4-1.4 2.1 2.1 2.1-2.1 1.4 1.4-2.1 2.1 2.1 2.1-1.4 1.4-2.1-2.1-2.1 2.1-1.4-1.4 2.1-2.1z"/></svg></button>
             <button type="button" class="icon-button" data-native-action="back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
             <button type="button" class="icon-button" data-native-action="trophy" aria-label="Trophies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
         </div>
@@ -467,7 +467,7 @@
     var storedMode = storage.get('sigaboMissionMode');
     var requestedMode = new URLSearchParams(location.search).get('game');
     if (requestedMode === 'memory' || storedMode === 'memory') state.mode = 'memory';
-    state.sound = storage.get('sigaboSound') === 'true';
+    state.sound = storage.get('sigaboSound') !== 'false';
     updateSoundButton();
     query('#joinnowLogo').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
     query('#sigaboArt').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/sigabo/assets/sigabo-art.webp';
