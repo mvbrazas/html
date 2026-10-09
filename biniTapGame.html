@@ -477,7 +477,7 @@
         state.running = false;
         cancelAnimationFrame(state.animationFrame);
         musicAudio.pause();
-        musicAudio.currentTime = 0;
+        if (!failed) musicAudio.currentTime = 0;
         getElement('resultTitle').textContent = failed ? 'FAILED' : 'RESULT';
         var weighted = state.perfect + state.great * 0.7 + state.good * 0.4;
         var total = Math.max(1, state.perfect + state.great + state.good + state.miss);
@@ -494,9 +494,17 @@
 
       function resumeAfterRevive() {
         if (state.running) return;
-        state.consecutiveMisses = 0;
         var resumeTime = Math.max(0, state.resumeTime - state.calibrationMs / 1000);
-        if (state.audioReady) musicAudio.currentTime = resumeTime;
+        if (state.audioReady && Math.abs(musicAudio.currentTime - resumeTime) > 0.25) {
+          musicAudio.currentTime = resumeTime;
+        }
+        state.notes.forEach(function (note) {
+          if (note.hit || note.missed || note.time >= resumeTime - missWindow) return;
+          note.missed = true;
+          state.miss += 1;
+          if (note.node) { note.node.remove(); note.node = null; }
+        });
+        state.consecutiveMisses = 0;
         state.simulatedStart = performance.now() - resumeTime * 1000;
         resultScreen.classList.remove('visible');
         state.running = true;
