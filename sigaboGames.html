@@ -80,6 +80,7 @@
         #gameBoard.memory { grid-template-columns:repeat(4,minmax(0,1fr)); }
         .tile { min-width:0; aspect-ratio:1; padding:0; display:grid; place-items:center; border:1px solid #415960; border-radius:8px; background:#20373e; color:#90a7ad; touch-action:manipulation; transition:background .12s,border-color .12s,transform .12s; }
         .tile svg { width:36%; height:36%; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+        #gameBoard.memory .tile.memory-open,#gameBoard.memory .tile.memory-match { font-size:clamp(40px,9vw,50px); font-weight:800; line-height:1; }
         .tile.signal-target { border-color:#ffeab5; background:var(--amber); color:#16282c; box-shadow:0 0 22px #ffb83045; }
         .tile.signal-hit { border-color:var(--mint); background:#1b5048; color:#b5ffe2; }
         .tile.signal-miss { border-color:#df7580; background:#4a2931; color:#ffd5d5; }
@@ -194,7 +195,7 @@
     var DURATIONS = { signal: 30000, memory: 60000 };
     var MAX_REVIVES = 2;
     var revivesLeft = MAX_REVIVES, pendingGameOver = false, pendingScore = 0;
-    var MAX_CONSECUTIVE_FAILURES = 3;
+    var MAX_CONSECUTIVE_FAILURES = { signal: 3, memory: 10 };
     var storage = {
         get: function (key) { try { return localStorage.getItem(key); } catch (error) { return null; } },
         set: function (key, value) { try { localStorage.setItem(key, value); } catch (error) {} }
@@ -302,7 +303,7 @@
     function registerFailure(message) {
         state.failureStreak++;
         state.feedback = message;
-        if (state.failureStreak >= MAX_CONSECUTIVE_FAILURES) {
+        if (state.failureStreak >= MAX_CONSECUTIVE_FAILURES[state.mode]) {
             finish(true);
             return true;
         }
@@ -367,7 +368,7 @@
             query('#resultStatus').textContent = 'Watch an ad to retry this mission.';
             post({ type: 'gameOver', gameId: 'sigabo-games', mode: state.mode, score: pendingScore, final: false });
         } else {
-            query('#resultStatus').textContent = failed ? 'Mission ended after 3 consecutive failures.' : window.ReactNativeWebView ? 'Score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.';
+            query('#resultStatus').textContent = failed ? 'Mission ended after ' + MAX_CONSECUTIVE_FAILURES[state.mode] + ' consecutive failures.' : window.ReactNativeWebView ? 'Score sent to JoinNow Trophies.' : 'Open this game in JoinNow to submit your score.';
             post({ type: 'gameOver', gameId: 'sigabo-games', mode: state.mode, score: pendingScore, final: true });
         }
         showScreen('result');
