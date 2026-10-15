@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#142d36">
+<meta name="description" content="Swap neighboring letters to find the target words.">
+<title>Letter Swap</title>
+<style>
+:root{color-scheme:dark;--ink:#f4f6e9;--muted:#b9c9c5;--deep:#142d36;--deep-2:#203f49;--line:#60817f;--lime:#d6f36a;--coral:#ff8f78;--aqua:#6fe0d2;--gold:#ffd66e;--panel:#1c3942;--button:#294b54}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{min-height:100%;background:var(--deep)}
+body{min-height:100dvh;margin:0;color:var(--ink);font-family:"Avenir Next",Avenir,"Trebuchet MS",sans-serif;background:linear-gradient(145deg,#183d48 0%,#142d36 48%,#33273d 100%);background-attachment:fixed;overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+[hidden]{display:none!important}
+.app-header{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(10px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));border-bottom:1px solid #b7e4d52b;background:#102a32cc;backdrop-filter:blur(12px)}
+.brand{display:flex;align-items:baseline;gap:7px;min-width:0;color:var(--ink);text-decoration:none;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+.brand strong{color:var(--lime);font-size:19px}
+.brand small{color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.16em}
+.header-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.icon-button{display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid #b7e4d54a;border-radius:8px;background:#23434c;color:var(--ink)}
+.icon-button svg{width:20px;height:20px;fill:currentColor}
+.icon-button[aria-pressed="true"]{color:var(--lime);border-color:var(--lime)}
+main{width:min(100%,680px);margin:0 auto;padding:20px 14px calc(20px + env(safe-area-inset-bottom,0px))}
+.screen{animation:screen-in .25s ease-out both}
+.panel{border:1px solid #b7e4d535;border-radius:8px;background:linear-gradient(145deg,#254a53f2,#193640f5);box-shadow:0 18px 44px #07171d55}
+.welcome{position:relative;overflow:hidden;padding:clamp(20px,6vw,38px);min-height:390px;display:flex;flex-direction:column;justify-content:center}
+.eyebrow{margin:0 0 10px;color:var(--lime);font-size:11px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+h1,h2,p{margin-top:0}
+.welcome h1{max-width:440px;margin:0;font-size:clamp(34px,10vw,58px);line-height:.98;font-weight:950}
+.welcome h1 span{color:var(--coral)}
+.welcome-copy{max-width:410px;margin:18px 0;color:#d9e4dd;font-size:16px;line-height:1.55}
+.welcome-list{max-width:460px;margin:0 0 22px;padding-left:21px;color:var(--muted);line-height:1.6}
+.welcome-list li+li{margin-top:5px}
+.welcome-art{position:absolute;right:20px;top:26px;display:grid;grid-template-columns:repeat(3,42px);gap:6px;transform:rotate(8deg);opacity:.8;pointer-events:none}
+.welcome-art span{display:grid;place-items:center;width:42px;aspect-ratio:1;border:2px solid #fff9;border-radius:8px;color:#17353a;font-size:20px;font-weight:950;box-shadow:0 4px 0 #071b20}
+.welcome-art span:nth-child(1){background:#ff8f78}.welcome-art span:nth-child(2){background:#6fe0d2}.welcome-art span:nth-child(3){background:#ffd66e}.welcome-art span:nth-child(4){background:#d6f36a}.welcome-art span:nth-child(5){background:#a9a0ff}.welcome-art span:nth-child(6){background:#ffb3cc}
+.primary,.secondary,.quiet{min-height:46px;padding:11px 18px;border:1px solid transparent;border-radius:8px;font-weight:850}
+.primary{background:var(--lime);color:#21342e;box-shadow:0 4px 0 #829a3b}
+.primary:active{transform:translateY(2px);box-shadow:0 2px 0 #829a3b}
+.secondary{background:var(--button);border-color:#8db1ac;color:var(--ink)}
+.quiet{background:transparent;border-color:#789894;color:var(--ink)}
+.welcome .primary{align-self:flex-start;min-width:min(100%,240px)}
+.note{margin:16px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.game-topline{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:0 0 10px}
+.stat{min-width:0;padding:9px 6px;border:1px solid #b7e4d52b;border-radius:8px;background:#17343ddd;text-align:center}
+.stat small{display:block;color:var(--muted);font-size:9px;font-weight:850;letter-spacing:.08em}
+.stat strong{display:block;margin-top:2px;color:var(--lime);font-size:16px;font-variant-numeric:tabular-nums}
+.arena{position:relative;padding:clamp(12px,4vw,22px);border:1px solid #b7e4d55c;border-radius:8px;background:linear-gradient(155deg,#254a53,#19343c);box-shadow:0 16px 35px #07171d55}
+.arena-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.arena-heading h2{margin:0;font-size:17px}
+.revives{color:var(--muted);font-size:11px;font-weight:750;white-space:nowrap}
+.targets{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin:0 0 13px}
+.targets span{min-width:72px;padding:8px 10px;border:1px solid #b7e4d55c;border-radius:8px;background:#122c34;text-align:center;font-size:13px;font-weight:900;letter-spacing:.08em}
+.targets .found{background:#d6f36a;color:#24382b;border-color:#d6f36a;box-shadow:0 3px 0 #829a3b}
+.board-wrap{position:relative;width:min(100%,460px);margin:0 auto}
+.letter-board{display:grid;width:100%;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(4px,2vw,10px);perspective:650px;touch-action:manipulation}
+.letter-board button{display:grid;place-items:center;min-width:0;min-height:0;aspect-ratio:1;padding:0;border:2px solid #ffffffc9;border-bottom-color:#ffffff62;border-radius:9px;color:#203638;font-size:clamp(20px,7.2vw,35px);font-weight:950;line-height:1;text-shadow:0 1px #fff9;background:linear-gradient(145deg,var(--tile-light),var(--tile-color) 68%);box-shadow:0 6px 0 var(--tile-edge),0 9px 12px #07181c88,inset 2px 3px 0 #ffffffa1,inset -2px -3px 0 #00000022;transition:filter .14s ease,transform .14s ease,box-shadow .14s ease;user-select:none}
+.letter-board button:nth-child(5n+1){--tile-light:#ffc3ad;--tile-color:#ff927a;--tile-edge:#a64e42}.letter-board button:nth-child(5n+2){--tile-light:#baf4e7;--tile-color:#6fe0d2;--tile-edge:#358579}.letter-board button:nth-child(5n+3){--tile-light:#fff0ad;--tile-color:#ffd66e;--tile-edge:#a5792e}.letter-board button:nth-child(5n+4){--tile-light:#ddffd0;--tile-color:#b4eb78;--tile-edge:#6b923d}.letter-board button:nth-child(5n+5){--tile-light:#d6d3ff;--tile-color:#a9a0ff;--tile-edge:#6258a8}
+.letter-board button:hover{filter:brightness(1.08)}
+.letter-board button:active{transform:translateY(3px);box-shadow:0 3px 0 var(--tile-edge),0 5px 8px #07181c88,inset 2px 3px 0 #ffffff88}
+.letter-board button.selected{transform:translateY(-5px) rotate(-3deg);filter:saturate(1.18) brightness(1.1);border-color:#fff;box-shadow:0 10px 0 var(--tile-edge),0 14px 18px #07181ca8,0 0 0 3px var(--gold),inset 2px 3px 0 #fff8}
+.letter-board button.hinted{outline:3px solid var(--gold);outline-offset:2px;animation:hint-pulse .75s ease-in-out 3}
+.letter-board button.word-ready{--tile-light:#e8ffc5;--tile-color:#b8ed78;--tile-edge:#6b923d;animation:found-pulse .6s ease-out 2}
+.word-burst{position:absolute;z-index:2;top:34%;left:50%;width:max-content;max-width:88%;padding:10px 16px;border:2px solid #fff;border-radius:8px;background:var(--gold);color:#273b35;font-size:clamp(19px,5vw,29px);font-weight:950;text-align:center;box-shadow:0 6px 0 #a5792e;pointer-events:none;opacity:0;transform:translate(-50%,20px) scale(.8)}
+.word-burst.show{animation:word-pop .95s ease-out forwards}
+.feedback{min-height:42px;margin:12px auto 8px;color:#e1eee5;text-align:center;font-size:13px;line-height:1.45}
+.feedback.good{color:var(--lime)}.feedback.mistake{color:#ffc2ad}
+.matches{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;min-height:35px;margin:0 0 13px}
+.matches button{min-height:38px;padding:8px 11px;border:1px solid var(--gold);border-radius:8px;background:#514b37;color:#fff0bc;font-size:12px;font-weight:850}
+.matches button:active{transform:translateY(2px)}
+.control-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding-top:11px;border-top:1px solid #b7e4d52b}
+.control-bar button{min-width:0;min-height:42px;padding:8px 5px;border:1px solid #8db1ac;border-radius:8px;background:#24454d;color:var(--ink);font-size:12px;font-weight:850}
+.control-bar button:disabled{opacity:.42;cursor:not-allowed}
+.pause-panel{position:absolute;z-index:3;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:22px;border:1px solid #b7e4d5;border-radius:8px;background:#112a32ed;text-align:center}
+.pause-panel h2{margin:0;font-size:24px}.pause-panel p{max-width:300px;margin:0;color:var(--muted);line-height:1.5}
+.result{padding:clamp(20px,6vw,36px);text-align:center}
+.result-mark{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 14px;border:2px solid var(--lime);border-radius:50%;color:var(--lime);font-size:30px;font-weight:900}
+.result h2{margin:0;font-size:clamp(26px,8vw,42px)}
+.result-score{margin:8px 0;color:var(--gold);font-size:22px;font-weight:900}
+.result-copy{max-width:440px;margin:0 auto 18px;color:var(--muted);line-height:1.55}
+.result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.result-actions button{min-width:132px}
+.revive-box{max-width:440px;margin:0 auto 16px;padding:14px;border:1px solid #ffd66e7a;border-radius:8px;background:#3b3726;text-align:left}
+.revive-box p{margin:0 0 10px;color:#fff0bc;font-size:13px;line-height:1.5}
+.revive-box button{width:100%}
+.revive-status{min-height:20px;margin:8px 0 0;color:var(--muted);font-size:12px}
+dialog{width:min(calc(100% - 28px),520px);max-height:min(82dvh,720px);padding:22px;border:1px solid #91b9af;border-radius:8px;background:#17343d;color:var(--ink);box-shadow:0 20px 70px #0009}
+dialog::backdrop{background:#06161bd1;backdrop-filter:blur(3px)}
+dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#d6e2dc;line-height:1.55}
+dialog ol{padding-left:21px}dialog li+li{margin-top:7px}
+dialog details{margin-top:12px;border-top:1px solid #b7e4d52b;padding-top:12px}dialog summary{cursor:pointer;font-weight:850}
+.dictionary-list{max-height:32dvh;overflow:auto;font-size:12px;line-height:1.8;color:var(--muted)}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.ad-demo{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:20px;background:#06161bd9}
+.ad-demo-card{width:min(100%,380px);padding:20px;border:1px solid #ffd66e;border-radius:8px;background:#203f49;box-shadow:0 20px 70px #0009}
+.ad-demo-card h2{margin:0 0 8px;color:var(--gold);font-size:21px}.ad-demo-card p{color:var(--muted);font-size:14px;line-height:1.5}
+.ad-demo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ad-demo-actions button{min-height:44px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:430px){.brand{flex-direction:column;align-items:flex-start;gap:0}.brand small{line-height:1.2}}
+@media(max-width:430px){
+main{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+.game-topline{margin-bottom:8px}
+.game-help.note{margin-top:8px}
+.arena{padding:8px}
+.arena-heading{margin-bottom:6px}
+.targets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.targets span{min-width:0;padding:7px 2px;font-size:11px;letter-spacing:.02em}
+.board-wrap{width:min(100%,320px)}
+.feedback{min-height:32px;margin:8px auto 4px}
+.matches{min-height:0;margin-bottom:8px}
+.control-bar{padding-top:8px}
+}
+@keyframes screen-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes word-pop{18%{opacity:1;transform:translate(-50%,-12px) scale(1.08)}60%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-45px) scale(.95)}}
+@keyframes found-pulse{40%{transform:translateY(-5px) scale(1.04)}}
+@keyframes hint-pulse{50%{filter:brightness(1.35);outline-color:#fff1a8}}
+@media(max-width:430px){main{padding:14px 10px calc(14px + env(safe-area-inset-bottom,0px))}.app-header{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}.brand strong{font-size:17px}.brand small{font-size:8px}.header-actions{gap:5px}.icon-button{width:38px;height:38px}.welcome{min-height:0;padding:20px}.welcome-art{right:12px;top:16px;grid-template-columns:repeat(3,30px);gap:4px;opacity:.55}.welcome-art span{width:30px;font-size:15px}.welcome h1{max-width:250px;font-size:clamp(32px,10vw,42px)}.welcome-copy{max-width:250px;margin:13px 0;font-size:14px}.welcome-list{font-size:13px}.arena{padding:11px}.game-topline{gap:5px}.stat{padding:8px 3px}.stat small{font-size:8px}.stat strong{font-size:14px}.control-bar{gap:5px}.control-bar button{font-size:11px}}
+@media(max-height:680px) and (orientation:landscape){main{width:min(100%,850px);padding-top:10px}.game-layout{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(330px,1.2fr);gap:10px;align-items:start}.game-topline{grid-column:1/-1;margin-bottom:0}.arena{grid-column:2;grid-row:2}.game-help{grid-column:1;grid-row:2}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand" aria-label="Letter Swap"><strong>LETTER SWAP</strong><small>WORD PUZZLE</small></div>
+  <nav class="header-actions" aria-label="Game actions">
+    <button class="icon-button" type="button" data-native-action="back" title="Back to Fandom" aria-label="Back to Fandom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <button class="icon-button" type="button" data-native-action="trophy" title="Trophies" aria-label="Open leaderboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 3H6v3H3v2c0 3.2 2.2 5.8 5.2 6.5A5 5 0 0 0 11 16.8V19H7v2h10v-2h-4v-2.2a5 5 0 0 0 2.8-2.3C18.8 13.8 21 11.2 21 8V6h-3V3zm-2 2v7a3 3 0 0 1-6 0V5h6zM5 8h1v3.7C5.4 11 5 10 5 8zm13 3.7V8h1c0 2-.4 3-1 3.7z"/></svg></button>
+    <button class="icon-button" id="helpButton" type="button" title="How to play" aria-label="How to play">?</button>
+    <button class="icon-button" id="sound" type="button" aria-pressed="false" title="Toggle sound" aria-label="Turn sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg></button>
+  </nav>
+</header>
+<main>
+  <section class="screen panel welcome" id="welcome" aria-labelledby="welcomeTitle">
+    <div class="welcome-art" aria-hidden="true"><span>L</span><span>E</span><span>T</span><span>T</span><span>E</span><span>R</span></div>
+    <p class="eyebrow">Endless puzzles · no timer</p>
+    <h1 id="welcomeTitle">Find the words.<br><span>Make the swap.</span></h1>
+    <p class="welcome-copy">Build target words by swapping letters that touch. Look across or down, claim every target, and collect bonus words along the way.</p>
+    <ol class="welcome-list">
+      <li>Tap a letter, then a neighbor above, below, left, or right.</li>
+      <li>Tap a found word to claim it. Bonus words score too.</li>
+      <li>Three swaps in a row without a new word end the round.</li>
+    </ol>
+    <button class="primary" id="start" type="button">Play Letter Swap</button>
+    <p class="note" id="progressNote"></p>
+  </section>
+
+  <section class="screen" id="playScreen" hidden aria-label="Letter Swap game">
+    <div class="game-layout">
+      <div class="game-topline" aria-label="Game status">
+        <div class="stat"><small>LEVEL</small><strong id="level">1 / ∞</strong></div>
+        <div class="stat"><small>SWAPS</small><strong id="moves">30</strong></div>
+        <div class="stat"><small>POINTS</small><strong id="points">0</strong></div>
+        <div class="stat"><small>MISSES</small><strong id="misses">0 / 3</strong></div>
+      </div>
+      <aside class="game-help note" aria-live="polite">Swap neighboring letters. Build a target word, then claim it.</aside>
+      <section class="arena" aria-label="Letter puzzle board">
+        <div class="arena-heading"><h2>Find these words</h2><span class="revives" id="revives">Continues: 2</span></div>
+        <div class="targets" id="targets" aria-label="Target words"></div>
+        <div class="board-wrap">
+          <div class="letter-board" id="board" role="grid" aria-label="5 by 5 letter board"></div>
+          <div class="word-burst" id="wordBurst" aria-hidden="true"></div>
+          <div class="pause-panel" id="pausePanel" hidden>
+            <h2>Take a breather</h2><p>Your puzzle is paused.</p>
+            <button class="primary" id="resume" type="button">Resume puzzle</button>
+          </div>
+        </div>
+        <p class="feedback" id="guide" role="status" aria-live="polite"></p>
+        <div class="matches" id="matches" aria-label="Words ready to claim"></div>
+        <div class="control-bar" aria-label="Puzzle controls">
+          <button id="hint" type="button">Hint</button>
+          <button id="undo" type="button" disabled>Undo</button>
+          <button id="reset" type="button">Restart</button>
+          <button id="pause" type="button">Pause</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="screen panel result" id="resultScreen" hidden aria-labelledby="resultTitle">
+    <div class="result-mark" id="resultMark" aria-hidden="true">!</div>
+    <p class="eyebrow" id="resultEyebrow">PUZZLE COMPLETE</p>
+    <h2 id="resultTitle">One more try?</h2>
+    <p class="result-score" id="resultScore">0 points</p>
+    <p class="result-copy" id="resultCopy"></p>
+    <div class="revive-box" id="reviveBox" hidden>
+      <p>Continue this board with five extra swaps. A completed rewarded ad is required.</p>
+      <button class="primary" id="reviveButton" type="button">Watch ad to continue</button>
+      <p class="revive-status" id="reviveStatus" role="status" aria-live="polite"></p>
+    </div>
+    <div class="result-actions">
+      <button class="secondary" id="again" type="button">Try this level again</button>
+      <button class="primary" id="next" type="button" hidden>Next level</button>
+      <button class="quiet" type="button" data-native-action="trophy">Trophies</button>
+      <button class="quiet" type="button" data-native-action="back">Back to Fandom</button>
+    </div>
+  </section>
+</main>
+
+<dialog id="helpDialog" aria-labelledby="helpTitle">
+  <p class="eyebrow">HOW TO PLAY</p>
+  <h2 id="helpTitle">A little word-juggling.</h2>
+  <ol>
+    <li>Tap a tile, then a tile directly above, below, left, or right to swap. Diagonals do not count.</li>
+    <li>Words appear horizontally or vertically. Select a Claim button to score them.</li>
+    <li>Find all three target words within 30 swaps. Each word scores once; bonus words remain available until claimed.</li>
+    <li>Three consecutive swaps that form no new word end the round. A rewarded continue clears that streak and adds five swaps.</li>
+  </ol>
+  <details><summary>Offline word bank</summary><p class="dictionary-list" id="dictionaryList"></p></details>
+  <div class="dialog-actions"><button class="primary" id="closeHelp" type="button">Back to puzzle</button></div>
+</dialog>
+
+<div class="ad-demo" id="adDemo" hidden>
+  <section class="ad-demo-card" role="dialog" aria-modal="true" aria-labelledby="adDemoTitle">
+    <p class="eyebrow">REWARDED AD PREVIEW</p>
+    <h2 id="adDemoTitle">Demo placement</h2>
+    <p>This is a placeholder preview. Complete it to continue, or skip to end the run. No live ad is shown.</p>
+    <div class="ad-demo-actions"><button class="primary" id="completeAdDemo" type="button">Complete preview</button><button class="secondary" id="skipAdDemo" type="button">Skip</button></div>
+  </section>
+</div>
+
+<script>
+'use strict';
+(function(){
+  const GAME_ID='letter-swap';
+  const MAX_REVIVES=2;
+  const REVIVE_BONUS_MOVES=5;
+  const MAX_CONSECUTIVE_FAILURES=3;
+  const dictionary=new Set(`
+CAT DOG SUN MAP TEA PEN STAR MOON TREE RAIN WIND SNOW CAKE MILK BEAN BOOK READ PAGE TRAIN PLANE BOAT GREEN BLUE PINK ANT ART ATE BAR BAT BED BEE BET BIG BIT BOX BOY BUN BUS CAN CAP CAR COT COW CUP CUT DAY DEN DIG DOT DRY DUE EAR EAT EGG END FAN FAR FAT FED FEE FIT FIX FLY FOG FOR FOX FUN GAP GAS GET GUM GUN GUT HAD HAM HAT HAY HEN HER HID HIM HIS HIT HOT HOW HUG HUT ICE INK JAM JAR JET JOB JOG JOY KEY KID KIT LAB LAP LAW LAY LED LEG LET LID LIE LIP LOG LOT LOW MAD MAN MAT MAY MET MIX MOP MUD NET NEW NOD NOT NOW NUT OAK OAR ODD OFF OLD ONE OUR OUT OWL OWN PAN PAT PAW PAY PEA PET PIE PIG PIN PIT POT RAN RAT RED RIB RID RIP ROB ROD ROW RUG RUN SAD SAT SAW SAY SEA SEE SET SEW SHE SHY SIP SIT SIX SKI SKY SON SOY SPA SPY SUM TAB TAG TAN TAP TAR TEN THE TIE TIN TIP TOE TOO TOP TOY TRY TUB TWO USE VAN VET VIA WAR WAS WAX WAY WEB WET WHO WIN WIT WON YES YET YOU ZOO BALL BIRD BLOW BOWL CAMP COAT COLD COOL DARK DEAR DESK DOOR DRAW DROP DUCK FARM FAST FEED FISH FIVE FLAG FOOD FOUR FROG GAME GATE GIFT GIRL GLAD GLOW GOAT GOLD GOOD GROW HAND HARD HEAD HEAT HELP HERO HIGH HOME HOPE HOUR IDEA IRON JUMP KIND KING KITE LAKE LAND LEAF LION LIST LIVE LONG LOOK LOVE LUCK MADE MAIL MAIN MAKE MANY MASK MEAL MEET MIND MINT MOVE NAME NEAR NEST NICE NINE NOSE NOTE OPEN OVEN PARK PAST PEAR PICK PLAY PLUS POOL POST RACE RICE RIDE RING RISE ROAD ROCK ROOF ROOM ROSE RULE SAFE SAIL SALT SAME SAND SAVE SEED SHOP SHOW SICK SIDE SING SIZE SLOW SOAP SOCK SOFT SONG SOON SOUP SPIN SPOT STAY STEP STOP SWAP SWIM TAIL TAKE TALK TEAM TELL TENT THAN THEM THEN TIME TINY TONE TOUR TOWN TRIP TRUE TURN TWIN UNIT VERY VIEW WAIT WAKE WALK WALL WARM WASH WAVE WEEK WELL WEST WHAT WHEN WIDE WILD WING WISH WITH WOOD WORD WORK YARD YEAR ZERO APPLE BEACH BREAD BRICK CHAIR CLOUD DANCE DREAM DRINK EARTH FIELD FLAME FLOOR FRUIT GRAPE GRASS HEART HORSE HOUSE LIGHT MATCH MUSIC NIGHT OCEAN PAPER PARTY PEACH PEARL PIZZA PLANT QUIET RIVER SHIRT SLEEP SMILE SOUND SPACE SPOON SPORT STONE STORM SUGAR SWEET TABLE THANK THREE TIGER TOAST TOUCH TOWER TRACK TRUCK WATER WHEAT WHITE WORLD WRITE
+  `.trim().split(/\s+/));
+
+  // Expanded everyday vocabulary keeps the endless random rounds varied.
+  const extraWords=`
+ABOUT ABOVE ACTOR ACUTE ADAPT ADDED ADMIT ADOPT ADULT AFTER AGAIN AGENT AGREE AHEAD ALARM ALBUM ALERT ALIEN ALIKE ALIVE ALLOW ALONE ALONG ALTER AMONG ANGEL ANGER ANGLE ANGLE ANKLE ANNEX ANNOY ANNUAL ANSWER ANTIC ANVIL APART APPEAR APPLY APRIL ARENA ARGUE ARISE ARMOR AROUND ARRAY ARROW ASIDE ASKED ASSET ATLAS ATTIC AUDIO AUDIT AVOID AWAKE AWARD AWARE BADGE BADLY BAKER BASIC BASIL BASIS BATCH BATON BATTY BEACHY BEARD BEAST BEGIN BEING BELLY BELOW BENCH BERRY BIRTH BLACK BLADE BLAME BLANK BLAST BLAZE BLEED BLEND BLESS BLIND BLINK BLOCK BLOOD BLOOM BLOOM BOARD BONUS BOOST BOOTH BORNE BOUND BRAIN BRAND BRASS BRAVE BREAK BREED BRIEF BRING BROAD BROKE BROWN BRUSH BUILD BUILT BUNCH BUNNY BURST CABIN CABLE CADET CAGEY CALMly CALVE CAMEL CANDY CANNY CANOE CANON CARDS CARGO CARRY CASES CASTLE CATCH CAUSE CEDAR CHAIN CHALK CHAMP CHANT CHAOS CHARM CHART CHASE CHEAP CHEAT CHECK CHEEK CHEER CHESS CHEST CHIEF CHILD CHILI CHILL CHIME CHINA CHIPS CHIRP CHOIR CHOKE CHORD CHORE CHOSE CHUNK CIDER CIGAR CINCH CIRCLE CIVIC CIVIL CLAIM CLAMP CLANG CLANK CLASH CLASS CLEAN CLEAR CLERK CLICK CLIFF CLIMB CLING CLINK CLOCK CLONE CLOSE CLOTH CLOUDY CLOVER COACH COAST COCOA COLOR COMET COMIC COMMA CONCH CONDO CONEY CORAL CORNY COUCH COUGH COULD COUNT COURT COVER CRAFT CRANE CRANK CRASH CRATE CRAWL CRAZY CREAM CREEK CREEP CREST CRIME CRISP CROAK CROOK CROSS CROWD CROWN CRUDE CRUEL CRUSH CRUST CUBIC CURVE CYCLE DAILY DAIRY DAISY DANCE DANDY DAREs DATED DEALT DEATH DEBUT DECAL DECAY DECOR DECOY DELAY DELTA DEMON DENSE DEPOT DEPTH DERBY DESERT DEVIL DIARY DIGIT DINER DIRTY DISCO DITCH DIVER DIZZY DOING DOLLY DONOR DOUBT DOUGH DRAFT DRAIN DRAMA DRANK DRAWN DREAD DREAMY DRESS DRIED DRIFT DRILL DROWN DRUMS DRUNK DRYER DUMMY DUSTY DWARF EAGER EAGLE EARLY EARTHY EASEL EATEN EATER EIGHT ELDER ELECT ELITE EMPTY ENACT ENEMY ENJOY ENTER ENTRY EQUAL EQUIP ERROR ESSAY ETHIC EVENT EXACT EXCEL EXIST EXTRA FAITH FALSE FANCY FARCE FATAL FATTY FAULT FAVOR FEAST FENCE FERRY FEVER FIBER FIERY FIFTH FIFTY FIGHT FINAL FINCH FINER FIRST FIXED FLACK FLAIR FLAKE FLANK FLARE FLASH FLEET FLESH FLICK FLING FLINT FLOAT FLOCK FLOOD FLOUR FLOUR FLOWN FLUID FLUSH FOCUS FORCE FORGE FORTH FORTY FOUND FRAME FRANK FRAUD FREAK FRESH FRIED FRILL FRISK FRONT FROST FROWN FUDGE FULLY FUNNY FURRY FUZZY GAILY GAMES GAMMA GASSY GAUGE GAVEL GAZER GEEKY GHOST GIANT GIDDY GIPSY GIVEN GIVER GLARE GLASS GLEAM GLIDE GLINT GLOBE GLOOM GLORY GLOVE GNOME GOING GONER GOOSE GORGE GOURD GRADE GRAIN GRAND GRANT GRAPE GRAPH GRASP GRASSY GRATE GRAVE GRAVY GREAT GREED GREEN GREET GRIEF GRILL GRIME GRIND GRIPE GROAN GROOM GROPE GROSS GROUP GROVE GROWN GUARD GUESS GUEST GUIDE GUILD GUISE GUILT GUSTO GUSTY HABIT HAIKU HAIRY HALVE HANDY HAPPY HASTE HASTY HATCH HATER HAUNT HAVEN HAZEL HEARD HEARTY HEAVY HEDGE HEFTY HELLO HENCE HERBS HERON HIKER HILLS HINGE HIPPO HOBBY HONEY HONOR HORNS HOTEL HOUND HOUSEY HUMAN HUMID HUMOR HURRY HUSKY HYENA IDEAL IDIOM IDIOT IMAGE IMPLY INBOX INDEX INDIA INFER INNER INPUT INTRO IRATE ISSUE ITCHY IVORY JELLY JEWEL JIFFY JOINT JOKER JOLLY JOUST JUDGE JUICE JUICY JUMBO JUROR KAYAK KEBAB KHAKI KNEAD KNEEL KNELT KNIFE KNOCK KNOLL KNOWN LABEL LABOR LANCE LARGE LATER LATHE LATIN LATTE LAUGH LAYER LEACH LEARN LEASE LEAST LEAVE LEGAL LEMON LEVEL LEVER LIGHTY LIMIT LINEN LIVER LOBBY LOCAL LOCUS LODGE LOGIC LOOSE LOSER LOWER LOYAL LUCID LUNAR LUNCH LUNGE LYING MAGIC MAJOR MAKER MANGO MANOR MAPLE MARCH MARRY MARSH MATCHY MAYBE MAYOR MEANT MEDAL MEDIA MELON MERCY MERGE MERIT MERRY METAL METER METRO MICRO MIGHT MINOR MINUS MIRROR MISER MODEL MODEM MOIST MONEY MONTH MORAL MOTOR MOUND MOUNT MOUSE MOUTH MOVIE MOWER MUCUS MURAL MURKY MUSHY MUSICALLY NACHO NAILS NAKED NAMED NANNY NASAL NASTY NAVAL NAVEL NEIGH NERVE NEVER NEWER NEWLY NIGHTY NINTH NOBLE NOISE NOISY NORTH NOVEL NUDGE NURSE OASIS OBESE OBEYED OCCUR ODDLY OFFER OFTEN OLDER OLIVE OMEGA ONION ONSET OPERA ORBIT ORDER ORGAN OTHER OUGHT OUTER OVERT OWNER OXIDE OZONE PAINT PAIRs PALACE PANDA PANEL PANIC PANSY PANTS PARCH PASTA PASTE PATCH PATHS PATIO PAUSE PEACE PEACHY PENAL PENCE PENCIL PERCH PERIL PERKY PETAL PETTY PHASE PHONE PHOTO PIANO PIECE PILOT PINCH PINKY PIOUS PITCH PITHY PLACE PLAIN PLANE PLANK PLANTER PLATE PLAZA PLEAD PLEAT PLUCK PLUMB PLUME PLUMP PLUNK POINT POISE POKER POLAR POLKA POLYP PONCE PONY POPPY PORCH POSER POSIT POUCH POUND POWER PRANK PRAWN PRESS PRICE PRICK PRIDE PRIME PRINT PRIOR PRISM PRIZE PROBE PRONE PROOF PROSE PROUD PROVE PROWL PRUNE PSALM PULSE PUPIL PURGE PURSE PUSHY PUTTY QUACK QUAIL QUAKE QUALM QUART QUASH QUEEN QUEER QUELL QUERY QUEST QUICK QUIET QUILL QUILT QUIRK QUITE QUOTA QUOTE RABBI RABID RACER RADIO RAISE RALLY RANCH RANGE RAPID RATIO RAVEN REACH REACT REALM REBEL RECAP RECUR REFER REIGN RELAX RELAY RELIC REMIT RENEW REPLY RESET RESIN RETRO REUSE REVEL RIDER RIDGE RIFLE RIGHT RIGID RINSE RIOTs RIPEN RISKY RIVAL RIVERY ROAST ROBIN ROBOT ROCKY RODEO ROGUE ROLLS ROMAN ROOST ROTOR ROUGH ROUND ROUTE ROVER ROYAL RUGBY RULER RUMOR RURAL SADLY SAINT SALAD SALON SALSA SALTY SALVE SAMPLE SANDY SANEly SASSY SATIN SAUCE SAUCY SAUNA SAVER SCALE SCALP SCALY SCAMP SCANT SCARE SCARF SCARY SCENE SCENT SCOFF SCOLD SCOPE SCORE SCORN SCOUR SCOUT SCOWL SCRAM SCRAP SCREW SCRUB SEALs SEAMS SEARS SEATS SEIZE SENSE SERUM SERVE SETUP SEVEN SEVER SEWER SHADE SHADY SHAKE SHAKY SHALL SHAME SHANK SHAPE SHARE SHARK SHARP SHAVE SHAWL SHEAR SHEEN SHEEP SHEER SHEET SHELF SHELL SHIFT SHINE SHINY SHIRE SHOCK SHONE SHOOK SHOOT SHORE SHORT SHOUT SHOVE SHOWN SHOWY SHRUB SHRUG SHUCK SHUNT SHUSH SIGHT SIGMA SILKY SILLY SINCE SINEW SIXTY SIZED SKATE SKIER SKILL SKIMP SKIRT SKULL SLACK SLANG SLANT SLASH SLATE SLAVE SLEEK SLEEPY SLEET SLEPT SLICE SLICK SLIDE SLIME SLIMY SLING SLOPE SLOSH SLOTH SLUMP SLUNG SLUNK SLUSH SMART SMASH SMEAR SMELL SMELT SMILEY SMIRK SMITE SMITH SMOCK SMOKE SMOKY SNACK SNAIL SNAKE SNAKY SNARE SNARL SNEAK SNEER SNIDE SNIFF SNIPE SNOOP SNORE SNORT SNOUT SNOWY SNUCK SNUFF SOAKS SOBER SOLAR SOLID SOLVE SONAR SONIC SORRY SORTS SOULS SOUTH SOWER SPARE SPARK SPASM SPAWN SPEAK SPEAR SPECK SPEED SPELL SPEND SPENT SPICE SPICY SPIKE SPIKY SPILL SPILT SPINE SPIRE SPITE SPLIT SPOIL SPOKE SPOOF SPOOK SPOONFUL SPORE SPORTY SPOUT SPRAY SPREE SPRIG SPUNK SQUAD SQUAT SQUIB STACK STAFF STAGE STAIN STAIR STAKE STALE STALK STALL STAMP STAND STARE STARK START STATE STAVE STEAK STEAL STEAM STEEL STEEP STEER STEIN STERN STICK STIFF STILL STILT STING STINK STINT STOCK STOIC STOKE STOLE STOMP STONEW STOOL STORE STORK STORMY STORY STOVE STRAP STRAW STRAY STRIP STRUT STUCK STUDY STUFF STUMP STUNG STUNK STUNT STYLE SUGARPLUM SUITE SUITS SULKY SUNNY SUPER SURGE SUSHI SWAMP SWARM SWATH SWEAR SWEAT SWEEP SWEETLY SWELL SWEPT SWIFT SWILL SWINE SWING SWIPE SWIRL SWISH SWOON SWOOP SWORD SWORE SWORN SWUNG TABLET TACKY TAILS TAKEN TAKER TALES TALLY TALON TANGO TANGY TAPER TARDY TASTE TASTY TAUNT TAUPE TEACH TEARY TEASE TEDDY TEETH TEMPO TENSE TENTH TERMS TERRA TESTS THANKS THEFT THEIR THEME THERE THESE THICK THIEF THIGH THING THINK THIRD THORN THOSE THREE THREW THROB THROW THUMB THUMP THYME TIDAL TIGHT TILDE TIMER TIMID TIPSY TITAN TITLE TOASTY TODAY TOKEN TONIC TOOTH TOPIC TORCH TOTAL TOTEM TOUCHY TOUGH TOWEL TOXIC TRACE TRACK TRADE TRAIL TRAINER TRAIT TRAMP TRASH TREAD TREAT TREND TRIAL TRIBE TRICK TRIED TRIPE TRITE TROOP TROUT TROVE TRUCE TRUCKER TRULY TRUMP TRUNK TRUST TRUTH TUBER TULIP TUMOR TUNER TURBO TUTOR TWANG TWEAK TWEED TWEET TWICE TWINE TWIRL TWIST TWIXT TYING UDDER ULCER ULTRA UNCLE UNDER UNDID UNDUE UNFIT UNIFY UNION UNITY UNITE UNTIL UNZIP UPPER UPSET URBAN USAGE USHER USING USUAL UTTER VAGUE VALID VALUE VALVE VANISH VAPOR VAULT VAUNT VEGAN VENOM VENUE VERGE VERSE VERVE VIDEO VIGOR VILLA VINYL VIOLA VIRAL VIRUS VISIT VISTA VITAL VIVID VOCAL VODKA VOGUE VOICE VOTER VOUCH VOWEL WACKY WAFER WAGER WAGON WAIST WALTZ WASTE WATCH WATERWAY WEARY WEAVE WEDGE WEEDY WEIGH WEIRD WELCH WELSH WHALE WHARF WHEATY WHEEL WHERE WHICH WHIFF WHILE WHINE WHINY WHIRL WHISK WHITEY WHOLE WHOSE WIDEN WIDER WIDOW WIDTH WIELD WIPER WISER WITCH WITTY WOKEN WOMAN WOMEN WOODY WOOLY WORDS WORRY WORSE WORST WORTH WOULD WOUND WRATH WRECK WREST WRING WRIST WRITEY WRONG WROTE YACHT YEARN YEAST YIELD YOUNG YOUTH ZEBRA ZESTY ZONAL
+  `.trim().split(/\s+/).map(word=>word.toUpperCase()).filter(word=>/^[A-Z]{3,5}$/.test(word));
+  extraWords.forEach(word=>dictionary.add(word));
+  ['CALMLY','DANCES','DROPS','FLOUR','LIMITY','MORALY','SPOONFUL','SPOOK','WATERWAY','WEIRD','WORDSY'].forEach(word=>dictionary.delete(word));
+
+  const WordRules={
+    create(level=1){
+      // Pick three different 3–5 letter words at random for every new round.
+      const pool=Array.from(dictionary).filter(word=>word.length>=3&&word.length<=5);
+      for(let i=pool.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [pool[i],pool[j]]=[pool[j],pool[i]];
+      }
+      const targets=pool.slice(0,3);
+      const filler='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const board=Array.from({length:25},()=>filler[Math.floor(Math.random()*filler.length)]);
+      const occupied=new Set();
+      const shuffle=items=>{
+        for(let i=items.length-1;i>0;i--){
+          const j=Math.floor(Math.random()*(i+1));
+          [items[i],items[j]]=[items[j],items[i]];
+        }
+        return items;
+      };
+      // Randomize each word's location, direction, and which neighboring letters
+      // are swapped. Backtracking keeps target words separated and fully on-board.
+      const placeWord=(word,index)=>{
+        if(index===targets.length)return true;
+        const placements=[];
+        for(const vertical of [false,true]){
+          for(let row=0;row<(vertical?6-word.length:5);row++){
+            for(let column=0;column<(vertical?5:6-word.length);column++){
+              const cells=Array.from({length:word.length},(_,i)=>(row+(vertical?i:0))*5+column+(vertical?0:i));
+              if(cells.some(cell=>occupied.has(cell)))continue;
+              for(let swapAt=0;swapAt<word.length-1;swapAt++)placements.push({cells,swapAt});
+            }
+          }
+        }
+        shuffle(placements);
+        for(const placement of placements){
+          const letters=word.split('');
+          const at=placement.swapAt;
+          [letters[at],letters[at+1]]=[letters[at+1],letters[at]];
+          const previous=placement.cells.map(cell=>board[cell]);
+          placement.cells.forEach((cell,i)=>{board[cell]=letters[i];occupied.add(cell);});
+          if(placeWord(targets[index+1],index+1))return true;
+          placement.cells.forEach((cell,i)=>{occupied.delete(cell);board[cell]=previous[i];});
+        }
+        return false;
+      };
+      if(!placeWord(targets[0],0)){
+        // A safe fallback: three separate horizontal rows, each one swap from solved.
+        targets.forEach((word,row)=>{
+          const letters=word.split('');
+          [letters[1],letters[2]]=[letters[2],letters[1]];
+          letters.forEach((letter,column)=>board[row*5+column]=letter);
+        });
+      }
+      return{board,targets,claimed:[],moves:30,score:0,level};
+    },
+    adjacent(firstIndex,secondIndex){
+      return firstIndex>=0&&firstIndex<25&&secondIndex>=0&&secondIndex<25&&(
+        Math.floor(firstIndex/5)===Math.floor(secondIndex/5)&&Math.abs(firstIndex-secondIndex)===1||Math.abs(firstIndex-secondIndex)===5
+      );
+    },
+    swap(state,firstIndex,secondIndex){
+      if(state.moves<=0||!this.adjacent(firstIndex,secondIndex))return false;
+      [state.board[firstIndex],state.board[secondIndex]]=[state.board[secondIndex],state.board[firstIndex]];
+      state.moves--;
+      return true;
+    },
+    matches(state){
+      const found=[];
+      // Scan every legal start cell in both directions. The previous start<3
+      // bound skipped words beginning in columns/rows 3 and 4, so some targets
+      // placed near the right or bottom edge could never be recognized.
+      for(const vertical of [false,true]){
+        for(let line=0;line<5;line++){
+          for(let start=0;start<5;start++){
+            for(let length=3;length<=5-start;length++){
+              const cells=Array.from({length},(_,offset)=>vertical?(start+offset)*5+line:line*5+start+offset);
+              const word=cells.map(index=>state.board[index]).join('');
+              if(dictionary.has(word)&&!state.claimed.includes(word))found.push({word,cells});
+            }
+          }
+        }
+      }
+      return found.filter((match,index,list)=>list.findIndex(other=>other.word===match.word)===index);
+    },
+    claim(state,word){
+      const match=this.matches(state).find(candidate=>candidate.word===word);
+      if(!match)return false;
+      state.claimed.push(word);
+      state.score+=word.length*50;
+      if(state.targets.includes(word))match.cells.forEach((cell,index)=>state.board[cell]='XZQVJ'[(cell+index+state.claimed.length)%5]);
+      return true;
+    },
+    won(state){return state.targets.every(word=>state.claimed.includes(word));},
+    hint(state){
+      for(let firstIndex=0;firstIndex<25;firstIndex++)for(const secondIndex of [firstIndex+1,firstIndex+5]){
+        if(!this.adjacent(firstIndex,secondIndex))continue;
+        const test={...state,board:state.board.slice(),moves:1};
+        this.swap(test,firstIndex,secondIndex);
+        const match=this.matches(test).find(candidate=>state.targets.includes(candidate.word));
+        if(match)return{firstIndex,secondIndex,word:match.word};
+      }
+      return null;
+    }
+  };
+  window.LetterSwapRules=WordRules;
+
+  const byId=id=>document.getElementById(id);
+  const postNative=message=>{
+    try{if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function')window.ReactNativeWebView.postMessage(JSON.stringify(message));}catch(error){}
+  };
+  const readProgress=()=>{
+    try{return JSON.parse(localStorage.getItem('game:words:v1'))||{};}catch(error){return{};}
+  };
+  const writeProgress=value=>{
+    try{localStorage.setItem('game:words:v1',JSON.stringify(value));}catch(error){}
+  };
+  const stored=readProgress();
+  let level=Number.isSafeInteger(stored.level)&&stored.level>=1?stored.level:1;
+  let best=Number.isFinite(stored.best)?stored.best:0;
+  let state=WordRules.create(level);
+  let selected=null,lastSwap=null,hintCells=[],running=false,paused=false,consecutiveMisses=0;
+  let revivesRemaining=MAX_REVIVES,pendingGameOver=false,pendingScore=0,soundEnabled=false,audioContext=null,swapAnimations=[];
+  const boardElement=byId('board');
+  const reducedMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function setFeedback(text,kind=''){
+    const guide=byId('guide');
+    guide.textContent=text;
+    guide.className='feedback'+(kind?' '+kind:'');
+  }
+  function updateProgressNote(){
+    byId('progressNote').textContent='Continue at level '+level+' · Endless random words · Best puzzle: '+best+' points. Progress is saved on this device.';
+  }
+  function updateHud(){
+    byId('level').textContent=level+' / ∞';
+    byId('moves').textContent=state.moves;
+    byId('points').textContent=state.score;
+    byId('misses').textContent=consecutiveMisses+' / '+MAX_CONSECUTIVE_FAILURES;
+    byId('revives').textContent='Continues: '+revivesRemaining;
+  }
+  function render(){
+    swapAnimations.forEach(animation=>animation.cancel());
+    swapAnimations=[];
+    updateHud();
+    const matches=WordRules.matches(state);
+    const readyCells=new Set(matches.flatMap(match=>match.cells));
+    boardElement.replaceChildren(...state.board.map((letter,index)=>{
+      const button=document.createElement('button');
+      const row=Math.floor(index/5)+1,column=index%5+1;
+      button.type='button';
+      button.textContent=letter;
+      button.className=(selected===index?'selected ':'')+(hintCells.includes(index)?'hinted ':'')+(readyCells.has(index)?'word-ready':'');
+      button.setAttribute('aria-label','Row '+row+', column '+column+': '+letter+(readyCells.has(index)?', in a formed word':''));
+      button.setAttribute('aria-pressed',String(selected===index));
+      button.addEventListener('click',()=>pick(index));
+      return button;
+    }));
+    byId('targets').replaceChildren(...state.targets.map(word=>{
+      const chip=document.createElement('span');
+      const found=state.claimed.includes(word);
+      chip.textContent=(found?'Found: ':'Target: ')+word;
+      chip.className=found?'found':'';
+      chip.setAttribute('aria-label',word+(found?', found':', target'));
+      return chip;
+    }));
+    byId('matches').replaceChildren(...matches.map(match=>{
+      const button=document.createElement('button');
+      const isTarget=state.targets.includes(match.word);
+      button.type='button';
+      button.textContent='Claim '+match.word+' · +'+match.word.length*50+(isTarget?' · target':' · bonus');
+      button.addEventListener('click',()=>claim(match.word));
+      return button;
+    }));
+    if(!matches.length){
+      const note=document.createElement('span');
+      note.className='note';
+      note.textContent='Words you form will appear here to claim.';
+      byId('matches').append(note);
+    }
+    byId('undo').disabled=!lastSwap||!running||paused;
+    const remaining=state.targets.filter(word=>!state.claimed.includes(word));
+    if(running&&!paused)setFeedback(matches.length?'A word is ready. Claim it to score points.':'Build a straight-line word. Targets left: '+remaining.join(', ')+'.');
+  }
+  function playTone(good=true){
+    if(!soundEnabled)return;
+    try{
+      audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();
+      const oscillator=audioContext.createOscillator();
+      const gain=audioContext.createGain();
+      oscillator.type=good?'sine':'triangle';
+      oscillator.frequency.value=good?660:210;
+      gain.gain.setValueAtTime(.0001,audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.08,audioContext.currentTime+.015);
+      gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+.16);
+      oscillator.connect(gain);gain.connect(audioContext.destination);
+      oscillator.start();oscillator.stop(audioContext.currentTime+.17);
+    }catch(error){}
+  }
+  function celebrate(text){
+    const burst=byId('wordBurst');
+    burst.textContent=text;
+    burst.classList.remove('show');
+    void burst.offsetWidth;
+    burst.classList.add('show');
+  }
+  function animateSwap(firstIndex,secondIndex){
+    if(reducedMotion||!boardElement.children[firstIndex]?.animate)return;
+    const firstTile=boardElement.children[firstIndex],secondTile=boardElement.children[secondIndex];
+    const firstRect=firstTile.getBoundingClientRect(),secondRect=secondTile.getBoundingClientRect();
+    const offsetX=secondRect.left-firstRect.left,offsetY=secondRect.top-firstRect.top;
+    const options={duration:300,easing:'cubic-bezier(.2,.85,.2,1)'};
+    swapAnimations=[
+      firstTile.animate([{transform:'translate('+offsetX+'px,'+offsetY+'px) rotate(-5deg) scale(1.06)'},{transform:'translate(0,0) rotate(0) scale(1)'}],options),
+      secondTile.animate([{transform:'translate('+(-offsetX)+'px,'+(-offsetY)+'px) rotate(5deg) scale(1.06)'},{transform:'translate(0,0) rotate(0) scale(1)'}],options)
+    ];
+  }
+  function finalizePendingGameOver(){
+    if(!pendingGameOver)return;
+    pendingGameOver=false;
+    byId('reviveBox').hidden=true;
+    byId('reviveButton').disabled=false;
+    postNative({type:'gameOver',gameId:GAME_ID,score:pendingScore,final:true});
+    pendingScore=0;
+  }
+  function endRound(won,reason){
+    if(!running)return;
+    running=false;paused=false;byId('pausePanel').hidden=true;
+    best=Math.max(best,state.score);
+    const nextLevel=won?level+1:level;
+    writeProgress({level:nextLevel,best});
+    updateProgressNote();
+    byId('playScreen').hidden=true;
+    byId('resultScreen').hidden=false;
+    byId('resultMark').textContent=won?'✓':'!';
+    byId('resultTitle').textContent=won?'Targets found!':(revivesRemaining>0?'One more try?':'Round over');
+    byId('resultEyebrow').textContent=won?'PUZZLE COMPLETE':'PUZZLE FAILED';
+    byId('resultScore').textContent=state.score+' points';
+    byId('resultCopy').textContent=reason;
+    byId('again').textContent=won?'Replay this level':'Try this level again';
+    byId('next').textContent='Next level';
+    byId('next').hidden=!won;
+    byId('reviveStatus').textContent='';
+    byId('reviveButton').disabled=false;
+    byId('reviveBox').hidden=won||revivesRemaining<=0;
+    playTone(won);
+    if(won||revivesRemaining<=0){
+      postNative({type:'gameOver',gameId:GAME_ID,score:state.score,final:true});
+      pendingGameOver=false;
+    }else{
+      pendingGameOver=true;pendingScore=state.score;
+      postNative({type:'gameOver',gameId:GAME_ID,score:pendingScore,final:false});
+    }
+  }
+  function startRound(){
+    finalizePendingGameOver();
+    state=WordRules.create(level);
+    selected=null;lastSwap=null;hintCells=[];consecutiveMisses=0;running=true;paused=false;
+    byId('welcome').hidden=true;byId('resultScreen').hidden=true;byId('playScreen').hidden=false;
+    byId('pausePanel').hidden=true;byId('wordBurst').classList.remove('show');
+    render();
+    setFeedback('Tap a letter, then a neighbor to swap. Find all three targets.');
+    boardElement.querySelector('button')?.focus({preventScroll:true});
+  }
+  function finishSwap(firstIndex,secondIndex){
+    const previousWords=new Set(WordRules.matches(state).map(match=>match.word));
+    lastSwap={board:state.board.slice(),moves:state.moves,consecutiveMisses};
+    WordRules.swap(state,firstIndex,secondIndex);
+    selected=null;hintCells=[];
+    render();animateSwap(firstIndex,secondIndex);
+    const freshMatch=WordRules.matches(state).find(match=>!previousWords.has(match.word));
+    if(freshMatch){
+      consecutiveMisses=0;
+      updateHud();
+      celebrate(freshMatch.word+'!');
+      setFeedback(freshMatch.word+' formed. Claim it to score '+freshMatch.word.length*50+' points.','good');
+      playTone(true);
+    }else{
+      consecutiveMisses++;
+      updateHud();
+      playTone(false);
+      if(consecutiveMisses>=MAX_CONSECUTIVE_FAILURES){
+        endRound(false,'Three swaps in a row formed no new word. Continue with a rewarded ad or try this level again.');
+        return;
+      }
+      setFeedback('No new word yet. '+(MAX_CONSECUTIVE_FAILURES-consecutiveMisses)+' clean swap'+(MAX_CONSECUTIVE_FAILURES-consecutiveMisses===1?'':'s')+' before a round-ending streak.','mistake');
+    }
+    if(state.moves===0&&!WordRules.matches(state).length)endRound(false,'No swaps remain and there are no words left to claim.');
+  }
+  function pick(index){
+    if(!running||paused)return;
+    if(selected===null){selected=index;render();return;}
+    if(selected===index){selected=null;render();return;}
+    if(!WordRules.adjacent(selected,index)){
+      setFeedback('Choose a tile directly beside the selected letter. Diagonals do not swap.','mistake');
+      selected=index;render();return;
+    }
+    if(state.moves<=0){setFeedback('No swaps remain. Claim a visible word or undo your last swap.','mistake');return;}
+    finishSwap(selected,index);
+  }
+  function claim(word){
+    if(!running||paused)return;
+    if(!WordRules.claim(state,word)){setFeedback('That word is not available. Each word scores once.','mistake');return;}
+    lastSwap=null;selected=null;hintCells=[];consecutiveMisses=0;
+    render();celebrate('+'+word.length*50+' POINTS');playTone(true);
+    const message=word+' claimed for '+word.length*50+' points.'+(state.targets.includes(word)?'':' Bonus letters stay available for your targets.');
+    if(WordRules.won(state)){endRound(true,'All three target words found in '+(30-state.moves)+' swaps.');return;}
+    setFeedback(message,'good');
+    if(state.moves===0&&!WordRules.matches(state).length)endRound(false,'No swaps remain and there are no words left to claim.');
+  }
+  function setPaused(value){
+    if(!running)return;
+    paused=value;byId('pausePanel').hidden=!paused;byId('pause').textContent=paused?'Resume':'Pause';
+    byId('undo').disabled=!lastSwap||paused;
+    if(paused){setFeedback('Puzzle paused. Your swaps and score are safe.');byId('resume').focus();}
+    else{render();byId('pause').focus();}
+  }
+  function requestRevive(){
+    if(!pendingGameOver||revivesRemaining<=0)return;
+    byId('reviveButton').disabled=true;
+    byId('reviveButton').textContent='Waiting for ad...';
+    if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function'){
+      byId('reviveStatus').textContent='Complete the rewarded ad to continue this board.';
+      postNative({type:'requestRevive',gameId:GAME_ID,score:pendingScore});
+    }else{
+      byId('adDemo').hidden=false;
+      byId('completeAdDemo').focus();
+    }
+  }
+  function dispatchRevive(granted){
+    if(!pendingGameOver)return;
+    byId('adDemo').hidden=true;
+    if(granted&&revivesRemaining>0){
+      revivesRemaining--;pendingGameOver=false;state.moves+=REVIVE_BONUS_MOVES;consecutiveMisses=0;lastSwap=null;selected=null;hintCells=[];
+      byId('reviveBox').hidden=true;byId('resultScreen').hidden=true;byId('playScreen').hidden=false;
+      running=true;paused=false;render();setFeedback('Welcome back. Five swaps added; find a target word to reset the miss streak.','good');
+      boardElement.querySelector('button')?.focus({preventScroll:true});
+      return;
+    }
+    byId('reviveButton').hidden=true;
+    byId('reviveStatus').textContent='Ad unavailable. Your final score will be submitted.';
+    finalizePendingGameOver();
+  }
+  window.dispatchRevive=dispatchRevive;
+  function nativeAction(action){
+    if(action==='back'){
+      finalizePendingGameOver();
+      running=false;paused=false;
+      postNative({type:'goBack',score:state.score});
+      return;
+    }
+    if(action==='trophy'){
+      finalizePendingGameOver();
+      if(running)setPaused(true);
+      postNative({type:'viewLeaderboard',score:state.score});
+    }
+  }
+
+  byId('start').addEventListener('click',startRound);
+  byId('again').addEventListener('click',startRound);
+  byId('next').addEventListener('click',()=>{
+    level++;revivesRemaining=MAX_REVIVES;
+    startRound();
+  });
+  byId('hint').addEventListener('click',()=>{
+    if(!running||paused)return;
+    const hint=WordRules.hint(state);
+    if(hint){hintCells=[hint.firstIndex,hint.secondIndex];render();setFeedback('Swap the outlined letters to build '+hint.word+'. Hints do not use a move.');}
+    else setFeedback('No target is one swap away. Undo a swap or keep searching.');
+  });
+  byId('undo').addEventListener('click',()=>{
+    if(!running||paused||!lastSwap)return;
+    state.board=lastSwap.board;state.moves=lastSwap.moves;consecutiveMisses=lastSwap.consecutiveMisses;
+    lastSwap=null;selected=null;hintCells=[];render();setFeedback('Last swap undone. Your move and miss streak are restored.');
+  });
+  byId('reset').addEventListener('click',()=>{if(running&&!paused)startRound();});
+  byId('pause').addEventListener('click',()=>running&&setPaused(!paused));
+  byId('resume').addEventListener('click',()=>setPaused(false));
+  byId('reviveButton').addEventListener('click',requestRevive);
+  byId('completeAdDemo').addEventListener('click',()=>dispatchRevive(true));
+  byId('skipAdDemo').addEventListener('click',()=>dispatchRevive(false));
+  byId('closeHelp').addEventListener('click',()=>byId('helpDialog').close());
+  document.querySelectorAll('[data-native-action]').forEach(button=>button.addEventListener('click',()=>nativeAction(button.dataset.nativeAction)));
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&!paused)setPaused(true);});
+  window.addEventListener('pagehide',finalizePendingGameOver);
+  boardElement.addEventListener('keydown',event=>{
+    const current=event.target.closest('button');
+    if(!current)return;
+    const currentIndex=Array.prototype.indexOf.call(boardElement.children,current);
+    const offsets={ArrowUp:-5,ArrowDown:5,ArrowLeft:-1,ArrowRight:1};
+    const offset=offsets[event.key];
+    if(offset===undefined)return;
+    const nextIndex=currentIndex+offset;
+    if(nextIndex<0||nextIndex>=25)return;
+    if((event.key==='ArrowLeft'||event.key==='ArrowRight')&&Math.floor(currentIndex/5)!==Math.floor(nextIndex/5))return;
+    event.preventDefault();boardElement.children[nextIndex]?.focus();
+  });
+  byId('sound').addEventListener('click',()=>{
+    soundEnabled=!soundEnabled;
+    byId('sound').setAttribute('aria-pressed',String(soundEnabled));
+    byId('sound').setAttribute('aria-label',soundEnabled?'Turn sound off':'Turn sound on');
+    try{localStorage.setItem('game:words:muted',String(!soundEnabled));}catch(error){}
+    if(soundEnabled)playTone(true);
+  });
+  byId('helpDialog').addEventListener('close',()=>byId('helpButton').focus());
+  byId('helpButton').addEventListener('click',()=>byId('helpDialog').showModal());
+  byId('dictionaryList').textContent=Array.from(dictionary).sort().join(' · ');
+  try{soundEnabled=localStorage.getItem('game:words:muted')==='false';}catch(error){}
+  byId('sound').setAttribute('aria-pressed',String(soundEnabled));
+  byId('sound').setAttribute('aria-label',soundEnabled?'Turn sound off':'Turn sound on');
+  updateProgressNote();updateHud();
+  postNative({type:'orientation',orientation:'portrait'});
+})();
+</script>
+</body>
+</html>
