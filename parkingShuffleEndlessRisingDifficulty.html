@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173c38">
+<meta name="description" content="Clear a path for the red car to leave the parking lot.">
+<title>Parking Shuffle</title>
+<style>
+:root{color-scheme:light;--ink:#172e30;--forest:#173c38;--forest-2:#24554d;--mint:#d9eee1;--paper:#f5f4e9;--line:#abc5b6;--muted:#526b66;--lime:#e0f36e;--gold:#ffd66e;--coral:#ff8574;--road:#53636a;--road-dark:#394b51;--panel:#fffef7;--blue:#69c9eb}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{min-height:100%;background:var(--mint)}
+body{min-height:100dvh;margin:0;color:var(--ink);font-family:"Avenir Next",Avenir,"Trebuchet MS",sans-serif;background:radial-gradient(ellipse at 15% 0%,#ffffffb0 0,transparent 40%),linear-gradient(150deg,#e4f1df,#c9dfd0 65%,#e4e8d5);overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible,summary:focus-visible{outline:3px solid #f2ba43;outline-offset:3px}
+[hidden]{display:none!important}
+.app-header{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(9px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 9px max(12px,env(safe-area-inset-left,0px));background:var(--forest);color:#f6f8ed;border-bottom:3px solid #92b771;box-shadow:0 4px 12px #123a3030}
+.brand{min-width:0;display:flex;flex-direction:column;gap:1px;line-height:1}
+.header-logo{display:block;width:104px;height:38px;object-fit:contain}
+.brand strong{font-size:18px;font-weight:950;letter-spacing:.04em}
+.brand small{color:#bdd6c6;font-size:9px;font-weight:800;letter-spacing:.13em}
+.header-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.icon-button{display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid #a9c6b4;border-radius:8px;background:#29564d;color:#fff}
+.icon-button svg{width:20px;height:20px;fill:currentColor}
+.icon-button[aria-pressed="true"]{color:var(--lime);border-color:var(--lime)}
+.header-help{height:40px;padding:0 10px;border:1px solid #a9c6b4;border-radius:8px;background:#29564d;color:#fff;font-size:12px;font-weight:800}
+main{width:min(100%,1000px);margin:0 auto;padding:16px 14px calc(22px + env(safe-area-inset-bottom,0px))}
+.panel{border:1px solid #799d89;border-radius:9px;background:linear-gradient(145deg,#fffef8,#eff5e9);box-shadow:0 12px 30px #153e3622}
+.welcome{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,.72fr);align-items:center;gap:18px;min-height:360px;padding:clamp(18px,4vw,34px);overflow:hidden}
+.welcome-copy{position:relative;z-index:1;max-width:510px}
+.eyebrow{margin:0 0 9px;color:#41785a;font-size:11px;font-weight:950;letter-spacing:.13em;text-transform:uppercase}
+h1,h2,p{margin-top:0}
+.welcome h1{margin:0;font-size:clamp(32px,7vw,54px);line-height:1.02;font-weight:950}
+.welcome h1 span{color:#df4d43}
+.intro{max-width:440px;margin:14px 0;color:#3d5a52;font-size:15px;line-height:1.55}
+.rules-list{max-width:490px;margin:0 0 20px;padding-left:20px;color:#516a62;font-size:13px;line-height:1.55}
+.rules-list li+li{margin-top:5px}
+.welcome-art{position:relative;display:grid;place-items:center;min-width:0;min-height:215px;border:1px dashed #88aa8e;border-radius:9px;background:repeating-linear-gradient(135deg,#e1efd9 0 10px,#eaf3e4 10px 20px)}
+.welcome-art:before,.welcome-art:after{content:"";position:absolute;width:8px;height:72%;border-radius:8px;background:repeating-linear-gradient(180deg,#fdfce9 0 18px,transparent 18px 34px)}
+.welcome-art:before{left:20px}.welcome-art:after{right:20px}
+.welcome-art img{position:relative;z-index:1;width:min(92%,330px);height:auto;filter:drop-shadow(0 10px 6px #192b2b3d)}
+.button-row{display:flex;flex-wrap:wrap;gap:8px}
+.primary,.secondary,.quiet{min-height:44px;padding:10px 15px;border:1px solid transparent;border-radius:8px;font-weight:850}
+.primary{background:var(--lime);border-color:#96ae4d;color:#24382f;box-shadow:0 3px 0 #a3b753}
+.primary:active{transform:translateY(2px);box-shadow:0 1px 0 #a3b753}
+.secondary{background:var(--forest-2);color:#fff;border-color:#1d493f}
+.quiet{background:#f7f8ec;color:#2c4a40;border-color:#9bb8a2}
+.note{margin:12px 0 0;color:#647a70;font-size:12px;line-height:1.5}
+.start-actions .primary{min-width:190px}
+.game-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:11px}
+.stat{min-width:0;padding:9px 6px;border:1px solid #86a993;border-radius:8px;background:#f9faef;text-align:center;box-shadow:0 3px 0 #b9cfb8}
+.stat small{display:block;color:#536b61;font-size:9px;font-weight:900;letter-spacing:.08em}
+.stat strong{display:block;margin-top:2px;color:#22483f;font-size:16px;font-variant-numeric:tabular-nums}
+.stat .remaining{font-size:10px;color:#936729}
+.game-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(240px,.68fr);gap:12px;align-items:start}
+.stage,.control-panel{min-width:0;padding:13px;border:1px solid #78988a;border-radius:9px;background:#fbfcf2;box-shadow:0 8px 22px #153e3617}
+.lot-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
+.lot-heading strong{font-size:14px;letter-spacing:.03em}
+.lot-heading span{color:#6b7766;font-size:11px;font-weight:750}
+.parking-wrap{position:relative;width:min(100%,500px);margin:0 auto;padding-right:31px}
+.parking-board{position:relative;width:100%;aspect-ratio:1;border:5px solid #e9f0dc;border-radius:8px;background-color:var(--road);background-image:linear-gradient(90deg,transparent calc(100% - 2px),#f3f4dba6 calc(100% - 2px)),linear-gradient(transparent calc(100% - 2px),#f3f4dba6 calc(100% - 2px)),repeating-linear-gradient(145deg,#ffffff0b 0 2px,transparent 2px 9px);background-size:16.6667% 16.6667%,16.6667% 16.6667%,100% 100%;box-shadow:inset 0 9px 18px #17272b70,0 7px 14px #183b3540;overflow:visible}
+.parking-board.auto-exit{overflow:hidden}
+.parking-board:after{content:"";position:absolute;z-index:0;right:-25px;top:var(--exit-center,41.6667%);transform:translateY(-50%);width:24px;height:15%;background:repeating-linear-gradient(135deg,#f8d76b 0 7px,#36494c 7px 14px);clip-path:polygon(0 0,74% 0,100% 50%,74% 100%,0 100%)}
+.exit-label{position:absolute;right:-3px;top:var(--exit-center,41.6667%);transform:translateY(-50%);z-index:2;padding:7px 4px;border:1px solid #93773c;border-radius:5px;background:#ffdf80;color:#443816;font-size:10px;font-weight:950;writing-mode:vertical-rl;box-shadow:0 2px 0 #987946}
+.vehicle{position:absolute;z-index:1;display:grid;place-items:center;min-height:0;margin:0;padding:0;border:0;border-radius:5px;background:transparent;overflow:visible;box-shadow:none;color:#fff;cursor:grab;touch-action:none;user-select:none}
+.vehicle:active{cursor:grabbing}
+.vehicle.selected{z-index:3;outline:3px solid #ffe568;outline-offset:-2px;background:#fff1a52b;filter:drop-shadow(0 0 7px #fff08c)}
+.vehicle-art{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:fill;pointer-events:none;user-select:none;filter:drop-shadow(0 3px 2px #071a208f)}
+.vehicle.vertical .vehicle-art{left:50%;top:50%;width:calc(var(--length) * 100%);height:calc(100% / var(--length));transform:translate(-50%,-50%) rotate(90deg);transform-origin:center}
+.car-badge,.car-arrow{position:absolute;z-index:2;display:grid;place-items:center;min-width:19px;min-height:19px;padding:1px 3px;border:1px solid #fff9;border-radius:5px;background:#163438d9;color:#fff;font-size:clamp(10px,2.4vw,14px);font-weight:950;line-height:1;text-shadow:0 1px 2px #000;pointer-events:none}
+.car-badge{left:50%;top:50%;transform:translate(-50%,-50%)}
+.car-arrow{right:2px;bottom:2px;font-size:11px}
+.vehicle.red .car-badge{background:#bd302b}
+.vehicle.departing{z-index:4}
+.attendants{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+.attendant{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 10px;border:1px solid #91b2a0;border-radius:8px;background:#e6f1df}
+.attendant-face{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid #99b88d;border-radius:50%;background:#d2e7b8;color:#315646;font-size:18px;font-weight:950}
+.attendant p{margin:0;color:#436157;font-size:11px;line-height:1.35}
+.attendant strong{display:block;color:#2d5142;font-size:11px}
+.attendant .speech{display:block}
+.crew-caution .attendant-face{animation:crew-shake .45s ease-in-out 2}.crew-move .attendant-face,.crew-win .attendant-face{animation:crew-hop .5s ease-out 2}.crew-reverse .attendant-face{animation:crew-look .5s ease-in-out 2}
+.control-panel h2{margin:0 0 5px;font-size:18px}
+.selected-note{min-height:40px;margin:0 0 12px;color:#61766b;font-size:12px;line-height:1.5}
+.arrow-pad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;max-width:230px;margin:0 auto 12px}
+.arrow-pad button{min-height:48px;padding:7px 4px;border:1px solid #7b9a86;border-radius:8px;background:#e2efda;color:#23483e;font-size:17px;font-weight:950;box-shadow:0 3px 0 #b3c9ad}
+.arrow-pad button:active{transform:translateY(2px);box-shadow:0 1px 0 #b3c9ad}
+.arrow-pad button:disabled,.tool-row button:disabled{opacity:.42;cursor:not-allowed}
+.arrow-pad .up{grid-column:2}.arrow-pad .left{grid-column:1;grid-row:2}.arrow-pad .right{grid-column:3;grid-row:2}.arrow-pad .down{grid-column:2;grid-row:2}
+.control-divider{height:1px;margin:12px 0;background:#ccd9c9}
+.tool-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tool-row button{min-height:43px;padding:8px;border:1px solid #78988a;border-radius:8px;background:#f4f6e8;color:#304f45;font-size:12px;font-weight:850}
+.game-feedback{min-height:40px;margin:10px 0 0;color:#47645a;font-size:12px;line-height:1.5}
+.game-feedback.good{color:#277347;font-weight:800}.game-feedback.warn{color:#a44732;font-weight:800}
+.result{max-width:670px;margin:18px auto;padding:clamp(20px,5vw,34px);text-align:center}
+.result-mark{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 12px;border:2px solid #8db365;border-radius:50%;background:#e9f5da;color:#315e3e;font-size:28px;font-weight:950}
+.result h2{margin:0;font-size:clamp(27px,7vw,40px)}
+.result-score{margin:8px 0;color:#9b6a22;font-size:21px;font-weight:950}
+.result-copy{max-width:490px;margin:0 auto 16px;color:#536d61;font-size:14px;line-height:1.55}
+.revive-box{max-width:440px;margin:0 auto 15px;padding:14px;border:1px solid #c9a145;border-radius:8px;background:#fff4ca;text-align:left}
+.revive-box p{margin:0 0 9px;color:#64501e;font-size:13px;line-height:1.5}
+.revive-box button{width:100%}
+.revive-status{min-height:18px;margin:8px 0 0;color:#706332;font-size:11px}
+.result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.result-actions button{min-width:132px}
+.pause-layer{position:fixed;z-index:8;inset:0;display:grid;place-items:center;padding:20px;background:#102a25c9;backdrop-filter:blur(4px)}
+.pause-card{width:min(100%,350px);padding:22px;border:1px solid #a3bd92;border-radius:9px;background:#f8f8e9;text-align:center;box-shadow:0 18px 60px #101d1b70}
+.pause-card h2{margin:0 0 8px}.pause-card p{color:#536b60;font-size:13px;line-height:1.5}
+dialog{width:min(calc(100% - 28px),520px);max-height:min(82dvh,720px);padding:22px;border:1px solid #829e84;border-radius:9px;background:#f8f8eb;color:var(--ink);box-shadow:0 20px 70px #0008}
+dialog::backdrop{background:#102a25b8;backdrop-filter:blur(3px)}
+dialog h2{margin:0 0 10px;color:#24594b}dialog p,dialog li{color:#536b60;line-height:1.55}dialog ol{padding-left:21px}dialog li+li{margin-top:7px}
+.dialog-actions{display:flex;justify-content:flex-end;margin-top:14px}
+.ad-demo{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:18px;background:#102a25c9}
+.ad-demo-card{width:min(100%,370px);padding:20px;border:1px solid #c5a34f;border-radius:9px;background:#fff7d8;box-shadow:0 20px 70px #0008}
+.ad-demo-card h2{margin:0 0 8px;color:#705519;font-size:21px}.ad-demo-card p{color:#645b3c;font-size:13px;line-height:1.5}
+.ad-demo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ad-demo-actions button{min-height:44px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@keyframes crew-shake{30%{transform:rotate(-14deg)}65%{transform:rotate(14deg)}}
+@keyframes crew-hop{45%{transform:translateY(-6px) rotate(6deg)}}
+@keyframes crew-look{50%{transform:rotate(10deg) scale(1.06)}}
+@media(max-width:720px){.game-layout{grid-template-columns:1fr}.stage{order:1}.control-panel{order:2}.parking-wrap{width:min(100%,500px)}}
+@media(max-width:500px){main{padding:12px 10px calc(18px + env(safe-area-inset-bottom,0px))}.app-header{padding-left:max(9px,env(safe-area-inset-left,0px));padding-right:max(9px,env(safe-area-inset-right,0px))}.brand strong{font-size:16px}.header-actions{gap:5px}.icon-button{width:37px;height:37px}.header-help{height:37px;padding:0 8px;font-size:11px}.welcome{grid-template-columns:1fr;gap:13px;min-height:0;padding:19px}.welcome h1{font-size:clamp(31px,9vw,42px)}.intro{margin:10px 0;font-size:14px}.rules-list{margin-bottom:14px;font-size:12px}.welcome-art{min-height:135px;grid-row:1}.welcome-art:before,.welcome-art:after{height:80%}.welcome-art img{width:min(86%,290px)}.game-stats{gap:5px}.stat{padding:8px 3px}.stat small{font-size:8px}.stat strong{font-size:14px}.stat .remaining{font-size:9px}.stage,.control-panel{padding:9px}.parking-wrap{padding-right:24px}.parking-board{border-width:3px}.parking-board:after{right:-20px;width:19px}.exit-label{right:-3px;padding:6px 3px;font-size:9px}.car-badge{min-width:16px;min-height:16px;padding:0 2px;font-size:10px}.car-arrow{min-width:15px;min-height:15px;font-size:9px}.attendants{gap:5px;margin-top:8px}.attendant{gap:5px;padding:6px}.attendant-face{flex-basis:28px;width:28px;height:28px;font-size:15px}.attendant p,.attendant strong{font-size:10px}.arrow-pad{max-width:260px}.tool-row button{min-height:45px;font-size:11px}}
+@media(max-width:500px){
+.parking-wrap{width:min(100%,280px)}
+.attendants{margin-top:6px}
+.attendant{padding:4px 6px}
+.attendant-face{flex-basis:24px;width:24px;height:24px;font-size:13px}
+.attendant .speech{display:none}
+.control-panel h2{margin-bottom:2px;font-size:16px}
+.selected-note{min-height:0;margin-bottom:6px;font-size:11px;line-height:1.3}
+.arrow-pad{max-width:210px;gap:5px;margin-bottom:6px}
+.arrow-pad button{min-height:44px;padding:5px 4px}
+.control-divider{margin:5px 0}
+.tool-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.tool-row button{min-width:0;min-height:40px;padding:6px 2px;font-size:10px;white-space:nowrap}
+.game-feedback{min-height:0;margin-top:5px;font-size:11px;line-height:1.3}
+.control-panel>.note{display:none}
+}
+@media(max-width:350px){.brand small{font-size:8px}.header-help{font-size:10px;padding:0 6px}.icon-button{width:35px;height:35px}.parking-wrap{padding-right:22px}.parking-board:after{right:-19px;width:18px}.car-badge{min-width:14px;min-height:14px;font-size:9px}.car-arrow{min-width:13px;min-height:13px;font-size:8px}.attendant{padding:5px}.attendant-face{flex-basis:24px;width:24px;height:24px;font-size:13px}}
+@media(max-height:650px) and (orientation:landscape){main{width:min(100%,1020px);padding-top:8px}.game-layout{grid-template-columns:minmax(0,1fr) minmax(240px,.7fr)}.parking-wrap{width:min(100%,400px)}.game-stats{margin-bottom:6px}.attendants{margin-top:6px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand"><img class="header-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38"></div>
+  <nav class="header-actions" aria-label="Game actions">
+    <button class="icon-button" type="button" data-native-action="back" title="Back to Fandom" aria-label="Back to Fandom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m0 0 7-7m-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <button class="icon-button" type="button" data-native-action="trophy" title="Trophies" aria-label="Open leaderboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 3H6v3H3v2c0 3.2 2.2 5.8 5.2 6.5A5 5 0 0 0 11 16.8V19H7v2h10v-2h-4v-2.2a5 5 0 0 0 2.8-2.3C18.8 13.8 21 11.2 21 8V6h-3V3zm-2 2v7a3 3 0 0 1-6 0V5h6zM5 8h1v3.7C5.4 11 5 10 5 8zm13 3.7V8h1c0 2-.4 3-1 3.7z"/></svg></button>
+    <button class="header-help" id="helpButton" type="button">How to play</button>
+  </nav>
+</header>
+<main>
+  <section class="panel welcome" id="welcome" aria-labelledby="welcomeTitle">
+    <div class="welcome-copy">
+      <p class="eyebrow">Endless parking lots · rising challenge</p>
+      <h1 id="welcomeTitle">Clear the lane.<br><span>Let red go.</span></h1>
+      <p class="intro">Unsnarl the lot one bay at a time. Get the red car to the exit with the fewest moves you can.</p>
+      <ol class="rules-list">
+        <li>Tap a vehicle, then slide it or use its direction arrows. Vehicles only move along their long side.</li>
+        <li>Every bay moved costs one move. Blocked moves cost nothing; Undo and Hint are free.</li>
+        <li>Clear every car to the right of red. Its exit drive is automatic and free.</li>
+      </ol>
+      <div class="button-row start-actions">
+        <button class="primary" id="start" type="button">Open the lot</button>
+        <button class="quiet" id="restartCampaign" type="button">Start from level 1</button>
+      </div>
+      <p class="note" id="progressNote"></p>
+    </div>
+    <div class="welcome-art" aria-label="Red car ready to leave the parking lot">
+      <img id="welcomeCar" alt="Red hatchback viewed from above">
+    </div>
+  </section>
+
+  <section id="playScreen" hidden aria-label="Parking Shuffle game">
+    <div class="game-stats" aria-label="Game status">
+      <div class="stat"><small>LEVEL</small><strong id="level">1 / ∞</strong></div>
+      <div class="stat"><small>MOVES / LIMIT</small><strong id="moves">0 / --</strong><small id="remaining" class="remaining">-- remaining</small></div>
+      <div class="stat"><small>POINTS</small><strong id="points">1000</strong></div>
+      <div class="stat"><small>CONTINUES</small><strong id="continues">2 left</strong></div>
+    </div>
+    <div class="game-layout">
+      <section class="stage" aria-label="Parking lot">
+        <div class="lot-heading"><strong id="lotLevel">PARKING LOT 1</strong><span>Slow near pedestrians</span></div>
+        <div class="parking-wrap">
+          <div class="parking-board" id="board" role="group" aria-label="Six by six parking puzzle"></div>
+          <span class="exit-label" id="exitLabel">EXIT &rarr;</span>
+        </div>
+        <div class="attendants" id="attendants" aria-label="Parking attendants">
+          <div class="attendant" id="guard"><span class="attendant-face" aria-hidden="true">P</span><p><strong>Attendant</strong><span class="speech" id="guardSpeech">Follow the bay markings to the exit.</span></p></div>
+          <div class="attendant" id="bystander"><span class="attendant-face" aria-hidden="true">!</span><p><strong>Neighbor</strong><span class="speech" id="bystanderSpeech">I will cheer from a safe distance.</span></p></div>
+        </div>
+      </section>
+      <aside class="control-panel" aria-label="Vehicle controls">
+        <h2>Move a vehicle</h2>
+        <p class="selected-note" id="selectedNote" role="status">Red car selected. Use left or right.</p>
+        <div class="arrow-pad" aria-label="Move selected vehicle one bay">
+          <button class="up" id="up" type="button" aria-label="Move up">&#8593;</button>
+          <button class="left" id="left" type="button" aria-label="Move left">&#8592;</button>
+          <button class="right" id="right" type="button" aria-label="Move right">&#8594;</button>
+          <button class="down" id="down" type="button" aria-label="Move down">&#8595;</button>
+        </div>
+        <div class="control-divider"></div>
+        <div class="tool-row">
+          <button id="undo" type="button">Undo</button>
+          <button id="hint" type="button">Hint</button>
+          <button id="reset" type="button">Reset lot</button>
+          <button id="pause" type="button">Pause</button>
+        </div>
+        <p class="game-feedback" id="feedback" role="status" aria-live="polite">Select a car, then move it one bay at a time.</p>
+        <p class="note">The move budget equals the shortest route to clear the red car's lane. A perfect clear leaves 0 remaining.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="panel result" id="resultScreen" hidden aria-labelledby="resultTitle">
+    <div class="result-mark" id="resultMark" aria-hidden="true">!</div>
+    <p class="eyebrow" id="resultEyebrow">LOT CLOSED</p>
+    <h2 id="resultTitle">Out of moves</h2>
+    <p class="result-score" id="resultScore">0 points</p>
+    <p class="result-copy" id="resultCopy"></p>
+    <div class="revive-box" id="reviveBox" hidden>
+      <p>A completed rewarded ad adds one move to this same lot. You can continue up to twice this session.</p>
+      <button class="primary" id="reviveButton" type="button">Watch rewarded ad · +1 move</button>
+      <p class="revive-status" id="reviveStatus" role="status" aria-live="polite"></p>
+    </div>
+    <div class="result-actions">
+      <button class="secondary" id="retry" type="button">Retry this lot</button>
+      <button class="primary" id="next" type="button" hidden>Next lot</button>
+      <button class="quiet" id="replay" type="button" hidden>Play another layout</button>
+      <button class="quiet" id="startFresh" type="button" hidden>Start a fresh campaign</button>
+      <button class="quiet" type="button" data-native-action="trophy">Trophies</button>
+      <button class="quiet" type="button" data-native-action="back">Back to Fandom</button>
+    </div>
+  </section>
+</main>
+
+<div class="pause-layer" id="pauseLayer" hidden>
+  <section class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+    <h2 id="pauseTitle">Take a breather</h2>
+    <p>The lot and its cars are paused.</p>
+    <button class="primary" id="resume" type="button">Resume parking</button>
+  </section>
+</div>
+
+<dialog id="helpDialog" aria-labelledby="helpTitle">
+  <p class="eyebrow">HOW TO PLAY</p>
+  <h2 id="helpTitle">Make room for red.</h2>
+  <ol>
+    <li>Tap a car to select it. Use the large arrows, keyboard arrows, or drag it along its long side.</li>
+    <li>Each bay moved costs one move. You cannot drive through another car or outside the lot.</li>
+    <li>Move every car out of red's path to the right. Red then drives out automatically, without spending a move.</li>
+    <li>Undo refunds the exact number of bays moved. Hint and Reset are free. Levels 1 and 2 are fixed practice; later levels grow harder and layouts keep cycling endlessly.</li>
+    <li>Three failed lots in a row end the session. A completed rewarded ad can add one move to the same lot, up to twice per session.</li>
+  </ol>
+  <div class="dialog-actions"><button class="primary" id="closeHelp" type="button">Back to the lot</button></div>
+</dialog>
+
+<div class="ad-demo" id="adDemo" hidden>
+  <section class="ad-demo-card" role="dialog" aria-modal="true" aria-labelledby="adDemoTitle">
+    <p class="eyebrow">REWARDED AD PREVIEW</p>
+    <h2 id="adDemoTitle">Demo placement</h2>
+    <p>This is a placeholder preview. Complete it to earn one move, or skip to finish this run. No live ad is shown.</p>
+    <div class="ad-demo-actions"><button class="primary" id="adFinish" type="button" disabled>Complete preview · 3</button><button class="secondary" id="adCancel" type="button">Skip</button></div>
+  </section>
+</div>
+
+<script>
+'use strict';
+(function(){
+  const GAME_ID='parking-shuffle';
+  const MAX_REVIVES=2;
+  const MAX_CONSECUTIVE_FAILURES=3;
+  const rawAssetRoot='https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/parking/assets/';
+  const assetRoot=rawAssetRoot;
+  const compactPools=`
+1Rh202Av122~1Rh202Av222~1Rh302Av322~1Rh302Av222
+2Rh102Av122Bv142~2Rh102Av222Bv042~2Rh102Av322Bv042~2Rh102Av422Bv042~2Rh402Av322Bv342~2Rh402Av222Bv442~2Rh402Av122Bv442~2Rh402Av022Bv442
+3Rh302Av222Bv242Ch113~3Rh302Av222Bv342Ch113~3Rh302Av222Bv342Ch123~3Rh302Av322Bv242Ch123~3Rh202Av222Bv242Ch413~3Rh202Av222Bv142Ch413~3Rh202Av222Bv142Ch423~3Rh202Av122Bv242Ch423
+5Rh312Av422Bv143Cv202Dv232Ev353Fv112Gh002Hv432~5Rh312Av422Bv343Cv402Dv032Ev253Fv412Gh002Hv432~5Rh312Av422Bv243Cv402Dv032Ev253Fv412Gh002Hv332~5Rh312Av422Bv143Cv402Dv032Ev353Fv412Gh002Hv332~5Rh212Av022Bv243Cv202Dv232Ev053Fv312Gh502Hv032~5Rh212Av022Bv043Cv002Dv432Ev153Fv012Gh502Hv032~5Rh212Av022Bv143Cv002Dv432Ev153Fv012Gh502Hv132~5Rh212Av022Bv243Cv002Dv432Ev053Fv012Gh502Hv132
+5Rh202Av152Bh342Ch413Dv122Eh512Fh132Gh013~5Rh202Av152Bh342Ch413Dv122Eh512Fh132Gh023~5Rh202Av152Bh332Ch403Dv222Eh512Fh112Gh003~5Rh202Av152Bh332Ch403Dv222Eh522Fh112Gh003~5Rh302Av352Bh242Ch113Dv322Eh012Fh432Gh513~5Rh302Av352Bh242Ch113Dv322Eh012Fh432Gh523~5Rh302Av352Bh232Ch103Dv222Eh012Fh412Gh503~5Rh302Av352Bh232Ch103Dv222Eh022Fh412Gh503
+7Rh112Av242Bv042Ch302Dv222Ev332Fh012Gv032Hh512~7Rh112Av242Bv042Ch302Dv222Ev332Fh012Gv032Hh502~6Rh102Av342Bv042Ch302Dv122Ev432Fh012Gv032Hh502~6Rh102Av442Bv142Ch302Dv222Ev232Fh012Gv032Hh522~7Rh412Av242Bv442Ch202Dv222Ev132Fh512Gv432Hh012~7Rh412Av242Bv442Ch202Dv222Ev132Fh512Gv432Hh002~6Rh402Av142Bv442Ch202Dv322Ev032Fh512Gv432Hh002~6Rh402Av042Bv342Ch202Dv222Ev232Fh512Gv432Hh022
+7Rh302Av143Bv352Ch523Dh103Ev322Fv233Gh212~7Rh302Av243Bv352Ch533Dh103Ev322Fv233Gh212~7Rh302Av243Bv352Ch533Dh103Ev322Fv233Gh202~7Rh302Av243Bv352Ch533Dh103Ev222Fv133Gh202~7Rh202Av243Bv152Ch023Dh403Ev122Fv133Gh312~7Rh202Av143Bv152Ch033Dh403Ev122Fv133Gh312~7Rh202Av143Bv152Ch033Dh403Ev122Fv133Gh302~7Rh202Av143Bv152Ch033Dh403Ev222Fv233Gh302
+9Rh212Av352Bv342Ch533Dv012Ev402Fv033Gh322Hv152~9Rh212Av452Bv242Ch523Dv012Ev402Fv033Gh322Hv152~8Rh202Av352Bv242Ch523Dv012Ev402Fv033Gh322Hv052~8Rh202Av352Bv142Ch523Dv012Ev402Fv033Gh322Hv052~9Rh312Av152Bv142Ch033Dv412Ev002Fv333Gh222Hv352~9Rh312Av052Bv242Ch023Dv412Ev002Fv333Gh222Hv352~8Rh302Av152Bv242Ch023Dv412Ev002Fv333Gh222Hv452~8Rh302Av152Bv342Ch023Dv412Ev002Fv333Gh222Hv452
+  `.trim();
+  const levels=compactPools.split('\n').map(pool=>pool.split('~').map(entry=>{
+    const budget=Number(entry[0]);
+    const cars=[];
+    for(let offset=1;offset<entry.length;offset+=5){
+      cars.push({id:entry[offset],axis:entry[offset+1],row:Number(entry[offset+2]),col:Number(entry[offset+3]),len:Number(entry[offset+4])});
+    }
+    return{cars,budget};
+  }));
+  const N=6;
+  const ParkingRules={
+    occupied(cars,skip=null){
+      const cells=new Set();
+      for(const car of cars){
+        if(car.id===skip)continue;
+        for(let offset=0;offset<car.len;offset++)cells.add((car.row+(car.axis==='v'?offset:0))*N+car.col+(car.axis==='h'?offset:0));
+      }
+      return cells;
+    },
+    move(cars,id,delta){
+      const car=cars.find(candidate=>candidate.id===id);
+      if(!car||!Number.isInteger(delta)||delta===0)return null;
+      const used=this.occupied(cars,id),step=Math.sign(delta);
+      for(let offset=step;Math.abs(offset)<=Math.abs(delta);offset+=step){
+        const row=car.row+(car.axis==='v'?offset:0),col=car.col+(car.axis==='h'?offset:0);
+        if(row<0||col<0||row+(car.axis==='v'?car.len:1)>N||col+(car.axis==='h'?car.len:1)>N)return null;
+        for(let part=0;part<car.len;part++)if(used.has((row+(car.axis==='v'?part:0))*N+col+(car.axis==='h'?part:0)))return null;
+      }
+      return cars.map(candidate=>candidate.id===id?{...candidate,row:car.row+(car.axis==='v'?delta:0),col:car.col+(car.axis==='h'?delta:0)}:{...candidate});
+    },
+    won(cars){
+      const red=cars.find(car=>car.id==='R');
+      if(!red||red.axis!=='h')return false;
+      const used=this.occupied(cars,'R');
+      for(let col=red.col+red.len;col<N;col++)if(used.has(red.row*N+col))return false;
+      return true;
+    },
+    valid(cars){
+      const all=[];
+      for(const car of cars){
+        if(!['h','v'].includes(car.axis)||![2,3].includes(car.len)||car.row<0||car.col<0||car.row+(car.axis==='v'?car.len:1)>N||car.col+(car.axis==='h'?car.len:1)>N)return false;
+        for(let offset=0;offset<car.len;offset++)all.push((car.row+(car.axis==='v'?offset:0))*N+car.col+(car.axis==='h'?offset:0));
+      }
+      return new Set(all).size===all.length;
+    },
+    key(cars){return cars.map(car=>car.axis==='h'?car.col:car.row).join(',');},
+    solve(cars,limit=50000,maxStep=5){
+      const queue=[{cars,path:[]}],seen=new Set([this.key(cars)]);
+      for(let head=0;head<queue.length&&head<limit;head++){
+        const current=queue[head];
+        if(this.won(current.cars))return current.path;
+        for(const car of current.cars)for(const sign of [-1,1])for(let distance=1;distance<=maxStep;distance++){
+          const next=this.move(current.cars,car.id,distance*sign);
+          if(!next)break;
+          const key=this.key(next);
+          if(seen.has(key))continue;
+          seen.add(key);queue.push({cars:next,path:[...current.path,{id:car.id,delta:distance*sign}]});
+        }
+      }
+      return null;
+    },
+    solveSteps(cars){return this.solve(cars,50000,1);},
+    score(moves){return Math.max(100,1000-moves*20);}
+  };
+  window.ParkingShuffleRules=ParkingRules;
+  if(levels.length!==8||!levels.every(pool=>pool.length>=2&&pool.every(layout=>ParkingRules.valid(layout.cars)&&!ParkingRules.won(layout.cars)&&Number.isInteger(layout.budget)&&layout.budget>0)))throw Error('Parking layouts failed validation.');
+
+  const byId=id=>document.getElementById(id);
+  const postNative=message=>{
+    try{if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function')window.ReactNativeWebView.postMessage(JSON.stringify(message));}catch(error){}
+  };
+  const readSave=()=>{try{return JSON.parse(localStorage.getItem('game:parking:v1'))||{};}catch(error){return{};}};
+  const writeSave=value=>{try{localStorage.setItem('game:parking:v1',JSON.stringify(value));}catch(error){}};
+  const save=readSave();
+  let level=Number.isInteger(save.level)&&save.level>=1?save.level:1;
+  let best=Number.isFinite(save.best)?save.best:0;
+  let lastVariants=Array.isArray(save.lastVariants)?save.lastVariants:[];
+  let initialPuzzle=null,roundWon=false,cars=[],selected='R',history=[],moves=0,moveLimit=0;
+  let running=false,paused=false,exiting=false,pendingGameOver=false,revivesUsed=0,consecutiveLosses=0;
+  let exitAnimation=null,adInterval=null,audioContext=null,muted=true,crewCount={select:0,move:0,reverse:0,caution:0,hint:0,win:0};
+  const reducedMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const crewLines={
+    select:[['Easy does it. Use the arrows for this vehicle.','That car has places to be!'],['Check the white bays before moving.','Premium valet puzzling!']],
+    move:[['Nice and steady. The exit is on the right.','Smooth move, neighbor!'],['Keep that lane clear.','The parking gods approve.']],
+    reverse:[['Reversing! Mind the bumper.','Beep beep. I am very alert now.'],['Reverse slowly into the open bay.','Rear camera would be proud.']],
+    caution:[['Hold it! Another vehicle is in the way.','My snack is safer over here.'],['Caution: that bay is occupied.','No bumper kisses, please!']],
+    hint:[['Follow the arrow on the selected car.','A little nudge never hurt a puzzle.']],
+    win:[['Exit clear! Great parking work.','That deserves a tiny victory honk!']]
+  };
+
+  function persist(nextLevel=level){writeSave({level:nextLevel,best,lastVariants});updateProgress();}
+  function updateProgress(){byId('progressNote').textContent='Level '+level+' · Endless mode · Best puzzle: '+best+' points. Progress saves on this device.';}
+  function poolIndexForLevel(value){return value<=8?value-1:Math.min(7,3+(value-8));}
+  function currentScore(){return ParkingRules.score(moves);}
+  function message(text,kind=''){byId('feedback').textContent=text;byId('feedback').className='game-feedback'+(kind?' '+kind:'');}
+  function speech(type){
+    const choices=crewLines[type]||crewLines.move,pair=choices[crewCount[type]++%choices.length];
+    byId('guardSpeech').textContent=pair[0];byId('bystanderSpeech').textContent=pair[1];
+    byId('attendants').className='attendants crew-'+type;
+    void byId('attendants').offsetWidth;
+  }
+  function playSound(kind='move'){
+    if(muted)return;
+    try{
+      audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();
+      const now=audioContext.currentTime;
+      const notes=kind==='win'?[660,880,1100]:kind==='reverse'?[520,420,520]:kind==='blocked'?[180]:kind==='exit'?[150,220,330]:[240,360];
+      notes.forEach((frequency,index)=>{
+        const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),start=now+index*.08;
+        oscillator.type=kind==='blocked'?'triangle':'sawtooth';
+        oscillator.frequency.setValueAtTime(frequency,start);
+        if(kind==='move'||kind==='exit')oscillator.frequency.linearRampToValueAtTime(frequency*1.35,start+.13);
+        gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(kind==='blocked'?.06:.035,start+.018);gain.gain.exponentialRampToValueAtTime(.0001,start+.16);
+        oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(start);oscillator.stop(start+.17);
+      });
+    }catch(error){}
+  }
+  function selectPuzzle(newLayout=false){
+    const poolIndex=poolIndexForLevel(level),pool=levels[poolIndex];
+    let index=0;
+    if(level>=3){
+      const choices=pool.map((item,itemIndex)=>itemIndex).filter(itemIndex=>itemIndex!==lastVariants[poolIndex]);
+      index=choices[Math.floor(Math.random()*choices.length)];
+    }
+    if(newLayout&&level<3)index=0;
+    initialPuzzle=pool[index];lastVariants[poolIndex]=index;roundWon=false;persist();
+  }
+  function syncControls(){
+    const car=cars.find(candidate=>candidate.id===selected),active=running&&!paused&&!exiting;
+    for(const button of byId('board').querySelectorAll('.vehicle'))button.disabled=!active;
+    byId('up').disabled=!active||car?.axis!=='v';byId('down').disabled=!active||car?.axis!=='v';
+    byId('left').disabled=!active||car?.axis!=='h';byId('right').disabled=!active||car?.axis!=='h';
+    byId('undo').disabled=!active||history.length===0;
+    byId('hint').disabled=!active;byId('reset').disabled=!active;
+    byId('pause').disabled=!running;
+    byId('pause').textContent=paused?'Resume':'Pause';
+    byId('continues').textContent=Math.max(0,MAX_REVIVES-revivesUsed)+' left';
+  }
+  function render(){
+    const red=cars.find(car=>car.id==='R');
+    byId('level').textContent=level+' / ∞';byId('moves').textContent=moves+' / '+(moveLimit||'--');
+    byId('remaining').textContent=Math.max(0,moveLimit-moves)+' remaining';byId('points').textContent=ParkingRules.score(moves);
+    byId('lotLevel').textContent='PARKING LOT '+level;
+    byId('board').style.setProperty('--exit-center',(((red?.row??2)+.5)/N*100)+'%');
+    byId('exitLabel').style.top=(((red?.row??2)+.5)/N*100)+'%';
+    byId('board').replaceChildren(...cars.map((car,index)=>{
+      const button=document.createElement('button');
+      button.type='button';button.className='vehicle '+(car.axis==='v'?'vertical ':'')+(car.id==='R'?'red ':'')+(selected===car.id?'selected':'');
+      button.style.left=(car.col/N*100)+'%';button.style.top=(car.row/N*100)+'%';
+      button.style.width=((car.axis==='h'?car.len:1)/N*100)+'%';button.style.height=((car.axis==='v'?car.len:1)/N*100)+'%';button.style.setProperty('--length',car.len);
+      const art=document.createElement('img');art.className='vehicle-art';art.src=assetRoot+(car.id==='R'?'hatchback-red.png':car.len===3?'van-blue.png':'hatchback-red.png');art.alt='';art.draggable=false;
+      if(car.id!=='R')art.style.filter='drop-shadow(0 3px 2px #071a208f) hue-rotate('+([0,164,275,37,105,235,52,192,305][index%9])+'deg)';
+      art.onerror=()=>{art.hidden=true;};
+      const badge=document.createElement('span');badge.className='car-badge';badge.textContent=car.id;
+      const arrow=document.createElement('span');arrow.className='car-arrow';arrow.textContent=car.axis==='h'?'LR':'UD';
+      button.append(art,badge,arrow);
+      button.setAttribute('aria-label','Car '+car.id+', '+(car.axis==='h'?'horizontal':'vertical')+', row '+(car.row+1)+', column '+(car.col+1));
+      button.setAttribute('aria-pressed',String(selected===car.id));
+      button.addEventListener('click',()=>{
+        if(!running||exiting||paused)return;
+        selected=car.id;render();speech('select');
+        byId('selectedNote').textContent=(car.id==='R'?'Red car':('Car '+car.id))+' selected. Use '+(car.axis==='h'?'left or right.':'up or down.');
+      });
+      let pointerStart=null;
+      button.addEventListener('pointerdown',event=>{
+        if(!running||exiting||paused)return;
+        selected=car.id;pointerStart={x:event.clientX,y:event.clientY};
+        try{button.setPointerCapture(event.pointerId);}catch(error){}
+      });
+      button.addEventListener('pointerup',event=>{
+        if(!pointerStart||!running||exiting||paused){pointerStart=null;return;}
+        const distance=car.axis==='h'?event.clientX-pointerStart.x:event.clientY-pointerStart.y;
+        pointerStart=null;
+        const cell=byId('board').getBoundingClientRect().width/N;
+        if(Math.abs(distance)>cell*.4){selected=car.id;move(Math.round(distance/cell)||Math.sign(distance));}
+        else{selected=car.id;render();speech('select');}
+      });
+      button.addEventListener('pointercancel',()=>pointerStart=null);
+      return button;
+    }));
+    const selectedCar=cars.find(car=>car.id===selected);
+    byId('selectedNote').textContent=selectedCar?(selectedCar.id==='R'?'Red car':('Car '+selectedCar.id))+' selected. Use '+(selectedCar.axis==='h'?'left or right.':'up or down.'):'Select a vehicle to see its direction.';
+    syncControls();
+  }
+  function animateDrive(car,delta){
+    const vehicle=byId('board').children[cars.findIndex(candidate=>candidate.id===car.id)];
+    if(!vehicle?.animate||reducedMotion)return;
+    const cell=byId('board').getBoundingClientRect().width/N;
+    const offsetX=car.axis==='h'?-delta*cell:0,offsetY=car.axis==='v'?-delta*cell:0;
+    vehicle.animate([
+      {transform:'translate('+offsetX+'px,'+offsetY+'px) scale(.98)'},
+      {transform:'translate(0,0) scale(1)'}
+    ],{duration:Math.min(650,240+Math.abs(delta)*90),easing:'cubic-bezier(.2,.8,.25,1)'});
+  }
+  function cancelDrive(){
+    if(exitAnimation){exitAnimation.onfinish=null;exitAnimation.cancel();exitAnimation=null;}
+    byId('board').classList.remove('auto-exit');
+  }
+  function saveNextLevel(nextLevel){writeSave({level:nextLevel,best,lastVariants});updateProgress();}
+  function showWin(){
+    running=false;paused=false;exiting=false;roundWon=true;consecutiveLosses=0;
+    const score=ParkingRules.score(moves);best=Math.max(best,score);
+    saveNextLevel(level+1);
+    byId('resultScreen').hidden=false;byId('playScreen').hidden=true;byId('resultMark').textContent='\u2713';
+    byId('resultEyebrow').textContent='EXIT CLEAR';byId('resultTitle').textContent='Beautifully parked.';
+    byId('resultScore').textContent=score+' points';
+    byId('resultCopy').textContent='The red car cleared the lane in '+moves+' moves. '+Math.max(0,moveLimit-moves)+' remaining. Its automatic drive out was free.'+' The next lot is ready.';
+    byId('reviveBox').hidden=true;byId('retry').hidden=true;byId('next').hidden=false;byId('replay').hidden=false;byId('startFresh').hidden=true;
+    window.joinNowLevelCompleted(GAME_ID+'-level-'+level,score,0);
+    playSound('win');speech('win');postNative({type:'gameOver',gameId:GAME_ID,score,final:true});
+  }
+  function completeExit(){if(!exiting||!running)return;cancelDrive();showWin();}
+  function autoExit(){
+    if(exiting)return;
+    exiting=true;selected='R';message('Exit lane clear! Red is driving out automatically. No move charged.','good');
+    byId('board').classList.add('auto-exit');syncControls();playSound('exit');
+    const red=cars.find(car=>car.id==='R'),vehicle=byId('board').querySelector('.vehicle.red');
+    if(!vehicle?.animate||reducedMotion){completeExit();return;}
+    const distance=(N-red.col)*byId('board').getBoundingClientRect().width/N;
+    exitAnimation=vehicle.animate([{transform:'translateX(0)',opacity:1},{transform:'translateX('+distance+'px)',opacity:0}],{duration:1100,easing:'cubic-bezier(.35,0,.75,1)',fill:'forwards'});
+    exitAnimation.onfinish=completeExit;
+  }
+  function startRound({newLayout=false}={}){
+    if(pendingGameOver)finalizeLoss();
+    if(!initialPuzzle||newLayout||roundWon)selectPuzzle(newLayout);
+    window.joinNowLevelStarted(GAME_ID+'-level-'+level,'not_applicable','not_applicable');
+    cars=initialPuzzle.cars.map(car=>({...car}));selected='R';history=[];moves=0;moveLimit=initialPuzzle.budget;
+    running=true;paused=false;exiting=false;roundWon=false;
+    byId('welcome').hidden=true;byId('resultScreen').hidden=true;byId('playScreen').hidden=false;byId('pauseLayer').hidden=true;
+    byId('board').classList.remove('auto-exit');render();
+    byId('guardSpeech').textContent='Welcome! Follow the bay markings and clear the red car\'s exit.';
+    byId('bystanderSpeech').textContent='I will cheer from a safe distance.';
+    byId('feedback').textContent='Tap a vehicle, then slide it or use the arrow controls.';
+    byId('board').querySelector('.vehicle.red')?.focus({preventScroll:true});
+  }
+  function move(delta){
+    if(!running||exiting||paused)return;
+    delta=Math.sign(delta)*Math.min(Math.abs(delta),moveLimit-moves);
+    if(!delta)return;
+    const car=cars.find(candidate=>candidate.id===selected),next=ParkingRules.move(cars,selected,delta);
+    if(!next){message('Caution: that bay is occupied or the lot edge is too close.','warn');speech('caution');playSound('blocked');byId('board').classList.remove('board-caution');void byId('board').offsetWidth;byId('board').classList.add('board-caution');return;}
+    history.push({cars:cars.map(candidate=>({...candidate})),cost:Math.abs(delta)});
+    cars=next;moves+=Math.abs(delta);render();animateDrive(car,delta);
+    const moved=byId('board').children[cars.findIndex(candidate=>candidate.id===selected)];
+    if(moved)moved.classList.add(delta<0?'reversing':'driving');
+    speech(delta<0?'reverse':'move');playSound(delta<0?'reverse':'move');
+    message('Car '+selected+' moved '+(delta<0?'in reverse. Watch the rear.':'forward. Clear the red car\'s path.'),'good');
+    if(ParkingRules.won(cars)){autoExit();return;}
+    if(moves>=moveLimit)showFailure('Move limit reached: '+moves+' / '+moveLimit+'. Continue with a rewarded move or retry this same lot.');
+  }
+  function showFailure(reason){
+    running=false;paused=false;exiting=false;pendingGameOver=true;
+    const score=ParkingRules.score(moves);
+    byId('playScreen').hidden=true;byId('resultScreen').hidden=false;byId('resultMark').textContent='!';
+    byId('resultEyebrow').textContent='PARKING LOT FAILED';byId('resultTitle').textContent='Out of moves';
+    byId('resultScore').textContent=score+' points';byId('resultCopy').textContent=reason;
+    byId('reviveStatus').textContent='';byId('reviveButton').disabled=false;byId('reviveButton').textContent='Watch rewarded ad · +1 move';
+    byId('reviveBox').hidden=revivesUsed>=MAX_REVIVES;byId('retry').hidden=false;byId('retry').textContent='Retry this lot';
+    byId('next').hidden=true;byId('replay').hidden=true;byId('startFresh').hidden=true;
+    speech('caution');playSound('blocked');
+    if(revivesUsed>=MAX_REVIVES)finalizeLoss();
+    else postNative({type:'gameOver',gameId:GAME_ID,score,final:false});
+  }
+  function finalizeLoss(){
+    if(!pendingGameOver)return;
+    pendingGameOver=false;consecutiveLosses++;
+    const sessionOver=consecutiveLosses>=MAX_CONSECUTIVE_FAILURES,score=ParkingRules.score(moves);
+    byId('reviveBox').hidden=true;byId('resultTitle').textContent=sessionOver?'Session over':'Round over';
+    byId('resultCopy').textContent=sessionOver?'Three lots in a row ended without a clear. Start a fresh campaign or return to Fandom.':'The red car is still blocked. Retry the same layout; the move budget stays the same.';
+    byId('retry').hidden=sessionOver;byId('startFresh').hidden=!sessionOver;
+    window.joinNowLevelFailed(GAME_ID+'-level-'+level, 'move limit reached');
+    postNative({type:'gameOver',gameId:GAME_ID,score,final:true});
+  }
+  function requestRevive(){
+    if(!pendingGameOver||revivesUsed>=MAX_REVIVES)return;
+    byId('reviveButton').disabled=true;byId('reviveButton').textContent='Waiting for ad...';
+    if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function'){
+      byId('reviveStatus').textContent='Complete the rewarded ad to add one move to this lot.';
+      postNative({type:'requestRevive',gameId:GAME_ID,score:ParkingRules.score(moves)});
+      return;
+    }
+    byId('adDemo').hidden=false;byId('adFinish').disabled=true;byId('adCancel').disabled=false;
+    let seconds=3;byId('adFinish').textContent='Complete preview · '+seconds;
+    adInterval=setInterval(()=>{
+      seconds--;
+      if(seconds<=0){clearInterval(adInterval);adInterval=null;byId('adFinish').disabled=false;byId('adFinish').textContent='Complete preview';}
+      else byId('adFinish').textContent='Complete preview · '+seconds;
+    },1000);
+    byId('adFinish').focus();
+  }
+  function dispatchRevive(granted){
+    if(!pendingGameOver)return;
+    byId('adDemo').hidden=true;byId('reviveButton').disabled=false;byId('reviveButton').textContent='Watch rewarded ad · +1 move';
+    if(adInterval){clearInterval(adInterval);adInterval=null;}
+    if(granted&&revivesUsed<MAX_REVIVES){
+      pendingGameOver=false;revivesUsed++;moveLimit++;running=true;paused=false;
+      byId('resultScreen').hidden=true;byId('playScreen').hidden=false;render();
+      message('Bonus move unlocked. '+(moveLimit-moves)+' move'+(moveLimit-moves===1?'':'s')+' left in this lot.','good');speech('hint');
+      byId(cars.find(car=>car.id===selected)?.axis==='h'?'left':'up').focus();return;
+    }
+    byId('reviveStatus').textContent='Ad unavailable. This run will be recorded as a loss.';
+    finalizeLoss();
+  }
+  window.dispatchRevive=dispatchRevive;
+  function startCampaign(){
+    if(pendingGameOver)finalizeLoss();
+    level=1;initialPuzzle=null;roundWon=false;consecutiveLosses=0;revivesUsed=0;
+    writeSave({level,best,lastVariants});selectPuzzle();startRound();
+  }
+  function setPaused(value){
+    if(!running)return;
+    paused=value;byId('pauseLayer').hidden=!paused;syncControls();
+    if(exitAnimation){try{paused?exitAnimation.pause():exitAnimation.play();}catch(error){}}
+    if(paused){byId('resume').focus();}else{byId('pause').focus();}
+  }
+  function nativeAction(action){
+    if(action==='back'){
+      if(pendingGameOver)finalizeLoss();
+      running=false;paused=false;exiting=false;cancelDrive();byId('pauseLayer').hidden=true;
+      try{audioContext?.suspend();}catch(error){}
+      postNative({type:'goBack',score:ParkingRules.score(moves)});return;
+    }
+    if(action==='trophy'){
+      if(running&&!paused)setPaused(true);
+      postNative({type:'viewLeaderboard',score:ParkingRules.score(moves)});
+    }
+  }
+
+  byId('welcomeCar').src=assetRoot+'hatchback-red.png';
+  byId('welcomeCar').onerror=()=>{byId('welcomeCar').hidden=true;};
+  byId('start').addEventListener('click',()=>startRound());
+  byId('restartCampaign').addEventListener('click',startCampaign);
+  byId('startFresh').addEventListener('click',startCampaign);
+  byId('up').addEventListener('click',()=>move(-1));byId('left').addEventListener('click',()=>move(-1));
+  byId('right').addEventListener('click',()=>move(1));byId('down').addEventListener('click',()=>move(1));
+  byId('undo').addEventListener('click',()=>{
+    if(!running||paused||exiting||!history.length)return;
+    const previous=history.pop();cars=previous.cars;moves-=previous.cost;render();speech('hint');message('Move undone. All '+previous.cost+' bay'+(previous.cost===1?'':'s')+' refunded.');
+  });
+  byId('hint').addEventListener('click',()=>{
+    if(!running||paused||exiting)return;
+    const solution=ParkingRules.solveSteps(cars);
+    if(!solution?.length){message('No route found for this layout. Undo or reset to the verified starting lot.','warn');return;}
+    const hint=solution[0],car=cars.find(candidate=>candidate.id===hint.id);selected=hint.id;render();speech('hint');
+    message('Hint: move car '+hint.id+' '+Math.abs(hint.delta)+' bay'+(Math.abs(hint.delta)===1?'':'s')+' '+(car.axis==='h'?(hint.delta>0?'right':'left'):(hint.delta>0?'down':'up'))+'.');
+  });
+  byId('reset').addEventListener('click',()=>{if(running&&!paused&&!exiting)startRound();});
+  byId('pause').addEventListener('click',()=>running&&setPaused(!paused));
+  byId('resume').addEventListener('click',()=>setPaused(false));
+  byId('reviveButton').addEventListener('click',requestRevive);
+  byId('retry').addEventListener('click',()=>{
+    if(pendingGameOver)finalizeLoss();
+    if(consecutiveLosses<MAX_CONSECUTIVE_FAILURES)startRound();
+  });
+  byId('next').addEventListener('click',()=>{
+    level++;revivesUsed=0;consecutiveLosses=0;
+    initialPuzzle=null;roundWon=false;persist(level);startRound({newLayout:true});
+  });
+  byId('replay').addEventListener('click',()=>startRound({newLayout:true}));
+  byId('adFinish').addEventListener('click',()=>dispatchRevive(true));
+  byId('adCancel').addEventListener('click',()=>dispatchRevive(false));
+  byId('helpButton').addEventListener('click',()=>byId('helpDialog').showModal());
+  byId('closeHelp').addEventListener('click',()=>byId('helpDialog').close());
+  byId('helpDialog').addEventListener('close',()=>byId('helpButton').focus());
+  document.querySelectorAll('[data-native-action]').forEach(button=>button.addEventListener('click',()=>nativeAction(button.dataset.nativeAction)));
+  document.addEventListener('keydown',event=>{
+    if(!running||paused||exiting||byId('helpDialog').open)return;
+    const car=cars.find(candidate=>candidate.id===selected),keyMap={ArrowLeft:-1,ArrowRight:1,ArrowUp:-1,ArrowDown:1};
+    if(!car||!Object.hasOwn(keyMap,event.key))return;
+    const horizontal=car.axis==='h'&&(event.key==='ArrowLeft'||event.key==='ArrowRight');
+    const vertical=car.axis==='v'&&(event.key==='ArrowUp'||event.key==='ArrowDown');
+    if(!horizontal&&!vertical)return;
+    event.preventDefault();move(keyMap[event.key]);
+  });
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&!paused)setPaused(true);});
+  window.addEventListener('pagehide',()=>{
+    if(adInterval){clearInterval(adInterval);adInterval=null;}
+    running=false;exiting=false;cancelDrive();
+    try{audioContext?.close();}catch(error){}
+  });
+  try{muted=localStorage.getItem('game:parking:muted')!=='false';}catch(error){}
+  updateProgress();render();
+  postNative({type:'orientation',orientation:'portrait'});
+})();
+</script>
+</body>
+</html>
