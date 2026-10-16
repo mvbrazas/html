@@ -27,12 +27,13 @@
             left: 12px;
             right: 12px;
             display: grid;
-            grid-template-columns: auto 1fr auto 1fr auto;
+            grid-template-columns: auto auto 1fr auto 1fr auto;
             align-items: start;
             gap: 12px;
             pointer-events: auto;
             text-shadow: 2px 2px 0 #071014;
         }
+        .header-logo { width: 78px; height: 28px; object-fit: contain; }
         .hud-block { min-width: 0; }
         .hud-block:last-child { text-align: right; }
         .hud-label { display: block; color: var(--signal); font-size: 11px; font-family: "Arial Narrow", sans-serif; font-weight: 900; }
@@ -107,11 +108,13 @@
             .briefing { margin-bottom: 14px; }
         }
     </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
     <canvas id="game" aria-label="Sigabo Breakpoint run and gun game"></canvas>
     <div id="hud">
         <button class="native-action" data-native-action="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
+        <img class="header-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38">
         <div class="hud-block"><span class="hud-label">SCORE</span><span class="hud-value" id="score">000000</span></div>
         <div id="mission">MISSION 01 · THE YARD</div>
         <div class="hud-block"><span class="hud-label">GABO</span><span class="hud-value" id="lives">● ● ●</span><div id="healthTrack"><div id="healthBar"></div></div></div>
@@ -470,10 +473,12 @@
         }
 
         function advanceSector() {
+            window.joinNowLevelCompleted('sigabo-breakpoint-sector-' + sector, score, 0);
             sector++;
             bossesDefeated++;
             boss = null;
             missionEl.textContent = sectorLabel();
+            window.joinNowLevelStarted('sigabo-breakpoint-sector-' + sector, 'not_applicable', 'Gabo');
             ensureWorld();
             beep(660, .22, 'square', .05);
         }
@@ -499,6 +504,7 @@
 
         function startGame() {
             resetGame();
+            window.joinNowLevelStarted('sigabo-breakpoint-sector-' + sector, 'not_applicable', 'Gabo');
             state = 'playing';
             screen.hidden = true;
             lastTime = performance.now();
@@ -515,6 +521,7 @@
         function finalizeScore() {
             if (scoreFinalized) return;
             scoreFinalized = true;
+            window.joinNowLevelFailed('sigabo-breakpoint-sector-' + sector, 'Gabo was defeated');
             post({ type: 'gameOver', score: score, final: true });
         }
 

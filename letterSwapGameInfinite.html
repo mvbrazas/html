@@ -16,6 +16,7 @@ button:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline
 [hidden]{display:none!important}
 .app-header{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(10px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));border-bottom:1px solid #b7e4d52b;background:#102a32cc;backdrop-filter:blur(12px)}
 .brand{display:flex;align-items:baseline;gap:7px;min-width:0;color:var(--ink);text-decoration:none;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+.header-logo{display:block;width:104px;height:38px;object-fit:contain}
 .brand strong{color:var(--lime);font-size:19px}
 .brand small{color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.16em}
 .header-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
@@ -120,15 +121,15 @@ main{padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 @media(max-height:680px) and (orientation:landscape){main{width:min(100%,850px);padding-top:10px}.game-layout{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(330px,1.2fr);gap:10px;align-items:start}.game-topline{grid-column:1/-1;margin-bottom:0}.arena{grid-column:2;grid-row:2}.game-help{grid-column:1;grid-row:2}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
 <header class="app-header">
-  <div class="brand" aria-label="Letter Swap"><strong>LETTER SWAP</strong><small>WORD PUZZLE</small></div>
+  <div class="brand" aria-label="JoinNow"><img class="header-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38"></div>
   <nav class="header-actions" aria-label="Game actions">
     <button class="icon-button" type="button" data-native-action="back" title="Back to Fandom" aria-label="Back to Fandom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
     <button class="icon-button" type="button" data-native-action="trophy" title="Trophies" aria-label="Open leaderboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 3H6v3H3v2c0 3.2 2.2 5.8 5.2 6.5A5 5 0 0 0 11 16.8V19H7v2h10v-2h-4v-2.2a5 5 0 0 0 2.8-2.3C18.8 13.8 21 11.2 21 8V6h-3V3zm-2 2v7a3 3 0 0 1-6 0V5h6zM5 8h1v3.7C5.4 11 5 10 5 8zm13 3.7V8h1c0 2-.4 3-1 3.7z"/></svg></button>
     <button class="icon-button" id="helpButton" type="button" title="How to play" aria-label="How to play">?</button>
-    <button class="icon-button" id="sound" type="button" aria-pressed="false" title="Toggle sound" aria-label="Turn sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg></button>
   </nav>
 </header>
 <main>
@@ -414,6 +415,7 @@ ABOUT ABOVE ACTOR ACUTE ADAPT ADDED ADMIT ADOPT ADULT AFTER AGAIN AGENT AGREE AH
     pendingGameOver=false;
     byId('reviveBox').hidden=true;
     byId('reviveButton').disabled=false;
+    window.joinNowLevelFailed(GAME_ID+'-'+level,'round loss finalized');
     postNative({type:'gameOver',gameId:GAME_ID,score:pendingScore,final:true});
     pendingScore=0;
   }
@@ -439,6 +441,8 @@ ABOUT ABOVE ACTOR ACUTE ADAPT ADDED ADMIT ADOPT ADULT AFTER AGAIN AGENT AGREE AH
     byId('reviveBox').hidden=won||revivesRemaining<=0;
     playTone(won);
     if(won||revivesRemaining<=0){
+      if(won)window.joinNowLevelCompleted(GAME_ID+'-'+level,state.score,0);
+      else window.joinNowLevelFailed(GAME_ID+'-'+level,reason||'round lost');
       postNative({type:'gameOver',gameId:GAME_ID,score:state.score,final:true});
       pendingGameOver=false;
     }else{
@@ -448,6 +452,7 @@ ABOUT ABOVE ACTOR ACUTE ADAPT ADDED ADMIT ADOPT ADULT AFTER AGAIN AGENT AGREE AH
   }
   function startRound(){
     finalizePendingGameOver();
+    window.joinNowLevelStarted(GAME_ID+'-'+level,'not_applicable','not_applicable');
     state=WordRules.create(level);
     selected=null;lastSwap=null;hintCells=[];consecutiveMisses=0;running=true;paused=false;
     byId('welcome').hidden=true;byId('resultScreen').hidden=true;byId('playScreen').hidden=false;
@@ -589,19 +594,10 @@ ABOUT ABOVE ACTOR ACUTE ADAPT ADDED ADMIT ADOPT ADULT AFTER AGAIN AGENT AGREE AH
     if((event.key==='ArrowLeft'||event.key==='ArrowRight')&&Math.floor(currentIndex/5)!==Math.floor(nextIndex/5))return;
     event.preventDefault();boardElement.children[nextIndex]?.focus();
   });
-  byId('sound').addEventListener('click',()=>{
-    soundEnabled=!soundEnabled;
-    byId('sound').setAttribute('aria-pressed',String(soundEnabled));
-    byId('sound').setAttribute('aria-label',soundEnabled?'Turn sound off':'Turn sound on');
-    try{localStorage.setItem('game:words:muted',String(!soundEnabled));}catch(error){}
-    if(soundEnabled)playTone(true);
-  });
   byId('helpDialog').addEventListener('close',()=>byId('helpButton').focus());
   byId('helpButton').addEventListener('click',()=>byId('helpDialog').showModal());
   byId('dictionaryList').textContent=Array.from(dictionary).sort().join(' · ');
   try{soundEnabled=localStorage.getItem('game:words:muted')==='false';}catch(error){}
-  byId('sound').setAttribute('aria-pressed',String(soundEnabled));
-  byId('sound').setAttribute('aria-label',soundEnabled?'Turn sound off':'Turn sound on');
   updateProgressNote();updateHud();
   postNative({type:'orientation',orientation:'portrait'});
 })();

@@ -150,6 +150,7 @@
         }
         @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; animation:none!important; } }
     </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
 <div id="app">
@@ -245,6 +246,7 @@
         $('#reviveButton').hidden = true;
         $('#reviveButton').disabled = false;
         post({ type: 'gameOver', gameId: 'someone-someday-lovelist', score: pendingScore, final: true });
+        window.joinNowLevelFailed('someone-someday-lovelist', 'three consecutive wrong choices');
         pendingScore = 0;
     }
     $('#joinnowLogo').src = 'https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp';
@@ -377,6 +379,10 @@
         var canRevive = !!(failed && !state.practice && revivesLeft > 0);
         pendingScore = scoreForJoinNow(summary.score);
         pendingGameOver = canRevive;
+        if (!canRevive) {
+            if (failed) window.joinNowLevelFailed('someone-someday-lovelist', 'three consecutive wrong choices');
+            else window.joinNowLevelCompleted('someone-someday-lovelist', summary.score, 0);
+        }
         resetRevivePrompt();
         $('#resultVibe').textContent = failed ? 'Round over' : summary.vibe;
         $('#resultLine').textContent = failed ? 'Three consecutive wrong choices ended this round.' : summary.line;
@@ -414,6 +420,7 @@
     function startRound(practice, fromRevive) {
         if (state.busy) return;
         if (fromRevive !== true) { finalizePendingGameOver(); revivesLeft = MAX_REVIVES; }
+        if (fromRevive !== true) window.joinNowLevelStarted('someone-someday-lovelist', 'not_applicable', 'not_applicable');
         resetRevivePrompt();
         if (state.timer) clearInterval(state.timer);
         state.practice = !!practice;

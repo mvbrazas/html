@@ -16,6 +16,7 @@ button:focus-visible,summary:focus-visible{outline:3px solid #f2ba43;outline-off
 [hidden]{display:none!important}
 .app-header{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(9px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 9px max(12px,env(safe-area-inset-left,0px));background:var(--forest);color:#f6f8ed;border-bottom:3px solid #92b771;box-shadow:0 4px 12px #123a3030}
 .brand{min-width:0;display:flex;flex-direction:column;gap:1px;line-height:1}
+.header-logo{display:block;width:104px;height:38px;object-fit:contain}
 .brand strong{font-size:18px;font-weight:950;letter-spacing:.04em}
 .brand small{color:#bdd6c6;font-size:9px;font-weight:800;letter-spacing:.13em}
 .header-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
@@ -138,14 +139,14 @@ dialog h2{margin:0 0 10px;color:#24594b}dialog p,dialog li{color:#536b60;line-he
 @media(max-height:650px) and (orientation:landscape){main{width:min(100%,1020px);padding-top:8px}.game-layout{grid-template-columns:minmax(0,1fr) minmax(240px,.7fr)}.parking-wrap{width:min(100%,400px)}.game-stats{margin-bottom:6px}.attendants{margin-top:6px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
 <header class="app-header">
-  <div class="brand"><strong>PARKING SHUFFLE</strong><small>6 x 6 LOT PUZZLE</small></div>
+  <div class="brand"><img class="header-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38"></div>
   <nav class="header-actions" aria-label="Game actions">
     <button class="icon-button" type="button" data-native-action="back" title="Back to Fandom" aria-label="Back to Fandom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m0 0 7-7m-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <button class="icon-button" type="button" data-native-action="trophy" title="Trophies" aria-label="Open leaderboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 3H6v3H3v2c0 3.2 2.2 5.8 5.2 6.5A5 5 0 0 0 11 16.8V19H7v2h10v-2h-4v-2.2a5 5 0 0 0 2.8-2.3C18.8 13.8 21 11.2 21 8V6h-3V3zm-2 2v7a3 3 0 0 1-6 0V5h6zM5 8h1v3.7C5.4 11 5 10 5 8zm13 3.7V8h1c0 2-.4 3-1 3.7z"/></svg></button>
-    <button class="icon-button" id="sound" type="button" aria-pressed="false" title="Toggle vehicle sounds" aria-label="Turn sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg></button>
     <button class="header-help" id="helpButton" type="button">How to play</button>
   </nav>
 </header>
@@ -488,6 +489,7 @@ dialog h2{margin:0 0 10px;color:#24594b}dialog p,dialog li{color:#536b60;line-he
     byId('resultScore').textContent=score+' points';
     byId('resultCopy').textContent='The red car cleared the lane in '+moves+' moves. '+Math.max(0,moveLimit-moves)+' remaining. Its automatic drive out was free.'+(level===8?' All eight lots complete.':' The next lot is ready.');
     byId('reviveBox').hidden=true;byId('retry').hidden=true;byId('next').hidden=false;byId('replay').hidden=false;byId('startFresh').hidden=true;
+    window.joinNowLevelCompleted(GAME_ID+'-level-'+level,score,0);
     playSound('win');speech('win');postNative({type:'gameOver',gameId:GAME_ID,score,final:true});
   }
   function completeExit(){if(!exiting||!running)return;cancelDrive();showWin();}
@@ -504,6 +506,7 @@ dialog h2{margin:0 0 10px;color:#24594b}dialog p,dialog li{color:#536b60;line-he
   function startRound({newLayout=false}={}){
     if(pendingGameOver)finalizeLoss();
     if(!initialPuzzle||newLayout||roundWon)selectPuzzle(newLayout);
+    window.joinNowLevelStarted(GAME_ID+'-level-'+level,'not_applicable','not_applicable');
     cars=initialPuzzle.cars.map(car=>({...car}));selected='R';history=[];moves=0;moveLimit=initialPuzzle.budget;
     running=true;paused=false;exiting=false;roundWon=false;
     byId('welcome').hidden=true;byId('resultScreen').hidden=true;byId('playScreen').hidden=false;byId('pauseLayer').hidden=true;
@@ -548,6 +551,7 @@ dialog h2{margin:0 0 10px;color:#24594b}dialog p,dialog li{color:#536b60;line-he
     byId('reviveBox').hidden=true;byId('resultTitle').textContent=sessionOver?'Session over':'Round over';
     byId('resultCopy').textContent=sessionOver?'Three lots in a row ended without a clear. Start a fresh campaign or return to Fandom.':'The red car is still blocked. Retry the same layout; the move budget stays the same.';
     byId('retry').hidden=sessionOver;byId('startFresh').hidden=!sessionOver;
+    window.joinNowLevelFailed(GAME_ID+'-level-'+level, 'move limit reached');
     postNative({type:'gameOver',gameId:GAME_ID,score,final:true});
   }
   function requestRevive(){
@@ -641,11 +645,6 @@ dialog h2{margin:0 0 10px;color:#24594b}dialog p,dialog li{color:#536b60;line-he
   byId('helpButton').addEventListener('click',()=>byId('helpDialog').showModal());
   byId('closeHelp').addEventListener('click',()=>byId('helpDialog').close());
   byId('helpDialog').addEventListener('close',()=>byId('helpButton').focus());
-  byId('sound').addEventListener('click',()=>{
-    muted=!muted;byId('sound').setAttribute('aria-pressed',String(!muted));byId('sound').setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
-    try{localStorage.setItem('game:parking:muted',String(muted));}catch(error){}
-    if(!muted)playSound('move');
-  });
   document.querySelectorAll('[data-native-action]').forEach(button=>button.addEventListener('click',()=>nativeAction(button.dataset.nativeAction)));
   document.addEventListener('keydown',event=>{
     if(!running||paused||exiting||byId('helpDialog').open)return;
@@ -663,7 +662,6 @@ dialog h2{margin:0 0 10px;color:#24594b}dialog p,dialog li{color:#536b60;line-he
     try{audioContext?.close();}catch(error){}
   });
   try{muted=localStorage.getItem('game:parking:muted')!=='false';}catch(error){}
-  byId('sound').setAttribute('aria-pressed',String(!muted));byId('sound').setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   updateProgress();render();
   postNative({type:'orientation',orientation:'portrait'});
 })();

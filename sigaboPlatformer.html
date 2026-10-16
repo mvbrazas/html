@@ -24,6 +24,7 @@
             pointer-events: auto;
             text-shadow: 0 1px 3px rgba(0,0,0,0.6);
         }
+        .header-logo { width: 78px; height: 28px; object-fit: contain; }
         #overlay {
             position: fixed;
             inset: 0;
@@ -97,11 +98,13 @@
             #jumpBtn { width: 84px; height: 56px; border-radius: 14px; }
         }
     </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
     <canvas id="game"></canvas>
     <div id="hud">
         <button class="native-action" data-native-action="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
+        <img class="header-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38">
         <span id="scoreLabel">Score: 0</span>
         <span id="livesLabel">Revives left: 2</span>
         <button class="native-action" data-native-action="trophy" aria-label="Trophy"><svg viewBox="0 0 24 24"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
@@ -604,6 +607,7 @@
             function finalizeScore() {
                 if (scoreFinalized) return;
                 scoreFinalized = true;
+                window.joinNowLevelFailed('sigabo-platformer', 'player fell or ran out of lives');
                 post({ type: 'gameOver', score: score, final: true });
             }
 
@@ -615,6 +619,7 @@
                     resetGame();
                     hideOverlay();
                     state = 'playing';
+                    window.joinNowLevelStarted('sigabo-platformer', 'not_applicable', 'not_applicable');
                     post({ type: 'ready' });
                 } else if (action === 'revive') {
                     post({ type: 'requestRevive', score: score });
@@ -626,6 +631,7 @@
                     resetGame();
                     hideOverlay();
                     state = 'playing';
+                    window.joinNowLevelStarted('sigabo-platformer', 'not_applicable', 'not_applicable');
                 } else if (action === 'leaderboard') {
                     if (state === 'gameover') finalizeScore();
                     post({ type: 'viewLeaderboard', score: score });
@@ -638,6 +644,7 @@
                 resetGame();
                 hideOverlay();
                 state = 'playing';
+                window.joinNowLevelStarted('sigabo-platformer', 'not_applicable', 'not_applicable');
                 post({ type: 'ready' });
             });
 

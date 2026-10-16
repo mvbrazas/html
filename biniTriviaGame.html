@@ -25,6 +25,7 @@
             padding: max(14px, calc(var(--game-header-clearance) + env(safe-area-inset-top, 0px))) 14px max(14px, env(safe-area-inset-bottom, 0px));
             gap: 12px;
         }
+        .joinnow-logo { position: fixed; z-index: 21; top: max(8px, env(safe-area-inset-top, 0px)); left: 12px; width: 104px; height: 38px; object-fit: contain; pointer-events: none; }
         #hud {
             display: flex;
             justify-content: space-between;
@@ -151,8 +152,10 @@
             .choiceBtn { font-size: 15px; }
         }
     </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
+    <img class="joinnow-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38">
     <div id="app">
         <div id="hud">
             <button class="native-action" data-native-action="back" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15.5 4 7.5 12l8 8 1.5-1.5-6.5-6.5L17 5.5z"/></svg></button>
@@ -441,6 +444,8 @@
             function finalizeScore() {
                 if (scoreFinalized) return;
                 scoreFinalized = true;
+                if (state === 'complete') window.joinNowLevelCompleted('bini-trivia-rush', score, 0);
+                else window.joinNowLevelFailed('bini-trivia-rush', 'hearts exhausted');
                 post({ type: 'gameOver', score: score, final: true });
             }
 
@@ -476,6 +481,7 @@
             }
 
             function startGame() {
+                window.joinNowLevelStarted('bini-trivia-rush', 'not_applicable', 'not_applicable');
                 state = 'playing';
                 score = 0;
                 scoreFinalized = false;

@@ -159,6 +159,7 @@
         }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
     </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
 <div id="app">
@@ -309,6 +310,7 @@
         query('#reviveButton').hidden = true;
         query('#reviveButton').disabled = false;
         post({ type: 'gameOver', gameId: 'bini-tic-tac-beat', mode: state.mode, score: pendingScore, final: true });
+        window.joinNowLevelFailed('bini-tic-tac-beat-'+state.mode, 'opponent won the run');
         pendingScore = 0;
     }
     function emptyBoard() { return [null,null,null,null,null,null,null,null,null]; }
@@ -712,6 +714,7 @@
         state.run = { id: String(Date.now()), seed: seed || 1, started: performance.now(), rounds: [{ moves: [] }], timing: false, duration: 0 };
         state.run.timing = hasMusic;
         state.run.duration = hasMusic ? Math.round(state.player.duration * 1000) : 180000;
+        window.joinNowLevelStarted('bini-tic-tac-beat-'+state.mode, state.difficulty || 'not_applicable', 'not_applicable');
         if (hasMusic) {
             state.mediaState = audioAlreadyPlaying ? 'playing' : 'ready';
             if (!audioAlreadyPlaying) {
@@ -767,6 +770,10 @@
         query('#resultTitle').textContent = failed ? 'BINI WINS THIS RUN' : state.mode === 'bini-eight' && state.stats.rounds === 8 ? 'BLOOM MASTER' : state.outcome || 'Nice play, Bloom!';
         query('#resultDetails').textContent = 'Best streak ' + state.stats.bestStreak + ' · Perfect ' + state.stats.perfect + ' · Great ' + state.stats.great + ' · Good ' + state.stats.good;
         var submitsScore = state.mode !== 'local-two-player';
+        if (!canRevive) {
+            if (failed) window.joinNowLevelFailed('bini-tic-tac-beat-'+state.mode, 'opponent won the run');
+            else window.joinNowLevelCompleted('bini-tic-tac-beat-'+state.mode, scoreNow(), 0);
+        }
         if (canRevive) {
             query('#reviveButton').hidden = false;
             query('#resultNotice').textContent = 'Watch an ad to retry this board. The BINI track will resume where it paused.';

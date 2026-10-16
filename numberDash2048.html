@@ -16,6 +16,7 @@ button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outli
 [hidden]{display:none!important}
 .app-header{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(9px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 9px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid #a6d9e842;background:#102733ed;backdrop-filter:blur(12px)}
 .brand{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1}
+.header-logo{display:block;width:104px;height:38px;object-fit:contain}
 .brand strong{color:#fff;font-size:17px;font-weight:950;letter-spacing:.03em}
 .brand small{color:#a9d8df;font-size:9px;font-weight:850;letter-spacing:.14em}
 .header-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
@@ -104,15 +105,15 @@ dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#c5dce0;lin
 @media(max-width:680px){main{padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}.result{margin:8px auto;padding:12px 14px}.result-mark{width:42px;height:42px;margin-bottom:6px;font-size:22px}.result .eyebrow{margin-bottom:5px;font-size:9px}.result h2{font-size:clamp(23px,7vw,30px);line-height:1.05}.result-score{margin:4px 0;font-size:18px}.result-copy{margin:0 auto 9px;font-size:12px;line-height:1.35}.revive-box{margin:0 auto 9px;padding:9px}.revive-box p{margin-bottom:7px;font-size:11px;line-height:1.35}.revive-box button{min-height:42px;padding:8px 10px;font-size:13px}.revive-status{min-height:0;margin:4px 0 0}.result-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.result-actions button{min-width:0;min-height:40px;padding:8px 5px;font-size:12px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
 <header class="app-header">
-  <div class="brand"><strong>NUMBER DASH 2048</strong><small>JOINNOW ARCADE</small></div>
+  <div class="brand"><img class="header-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38"></div>
   <nav class="header-actions" aria-label="Game actions">
     <button class="icon-button" type="button" data-native-action="back" title="Back to Fandom" aria-label="Back to Fandom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
     <button class="icon-button" type="button" data-native-action="trophy" title="Trophies" aria-label="Open leaderboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 3H6v3H3v2c0 3.2 2.2 5.8 5.2 6.5A5 5 0 0 0 11 16.8V19H7v2h10v-2h-4v-2.2a5 5 0 0 0 2.8-2.3C18.8 13.8 21 11.2 21 8V6h-3V3zm-2 2v7a3 3 0 0 1-6 0V5h6zM5 8h1v3.7C5.4 11 5 10 5 8zm13 3.7V8h1c0 2-.4 3-1 3.7z"/></svg></button>
     <button class="icon-button overlay-pause" id="pauseOverlay" type="button" title="Pause run" aria-label="Pause run"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="pauseOverlayGlyph" d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg></button>
-    <button class="icon-button" id="sound" type="button" aria-pressed="false" title="Toggle sound" aria-label="Turn sound on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg></button>
     <button class="header-help" id="helpButton" type="button">How to play</button>
   </nav>
 </header>
@@ -395,6 +396,7 @@ dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#c5dce0;lin
     byId('reviveBox').hidden=true;byId('resultTitle').textContent=sessionOver?'Session over':'Run over';
     byId('resultCopy').textContent=sessionOver?'Three runs in a row ended before the target. Start a new session or return to Fandom.':revivesUsed>=MAX_REVIVES?'Three crate hits ended the run. No rewarded continues remain this session; replay the level or return to Fandom.':pendingFailureMessage;
     byId('replay').hidden=sessionOver;byId('newSession').hidden=!sessionOver;
+    window.joinNowLevelFailed('number-dash-2048-level-'+level, 'three crate hits');
     postNative({type:'gameOver',gameId:GAME_ID,score,final:true});
   }
   function finish(){
@@ -406,7 +408,7 @@ dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#c5dce0;lin
     byId('resultCopy').textContent=state.message+' Final number: '+state.value+'. '+(won&&level===5?'All five targets completed. Replay to improve your score.':'');
     byId('next').hidden=!won||level===5;byId('next').textContent=level===5?'Campaign complete':'Next level';byId('replay').hidden=false;byId('newSession').hidden=true;
     byId('reviveStatus').textContent='';byId('reviveButton').disabled=false;byId('reviveButton').textContent='Watch rewarded ad · Continue';
-    if(won){consecutiveLosses=0;byId('reviveBox').hidden=true;postNative({type:'gameOver',gameId:GAME_ID,score:state.score,final:true});playSound('win');}
+    if(won){consecutiveLosses=0;byId('reviveBox').hidden=true;window.joinNowLevelCompleted('number-dash-2048-level-'+level,state.score,0);postNative({type:'gameOver',gameId:GAME_ID,score:state.score,final:true});playSound('win');}
     else{
       pendingFailureMessage='Three crate hits ended the run. Replay the level, or use a rewarded continue to restore one life and keep this run.';
       byId('resultCopy').textContent=pendingFailureMessage+' Final number: '+state.value+'.';
@@ -417,6 +419,7 @@ dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#c5dce0;lin
   }
   function startRun(){
     if(pendingRevive)finalizePendingLoss();
+    window.joinNowLevelStarted('number-dash-2048-level-'+level,'not_applicable','not_applicable');
     stop();state=RunnerRules.create(level);running=true;paused=false;countdown=3;visualLane=state.lane;footstepClock=0;lastTime=performance.now();document.body.classList.add('runner-active');
     byId('welcome').hidden=true;byId('resultScreen').hidden=true;byId('playScreen').hidden=false;byId('pausePanel').hidden=true;
     setFeedback(window.matchMedia?.('(max-width: 680px)').matches?'Swipe ←/→ lanes · ↑ jump':'Get ready! The track starts after the countdown.');updateHud();draw();drawPreview();
@@ -506,11 +509,6 @@ dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#c5dce0;lin
   byId('pause').addEventListener('click',()=>setPaused(!paused));byId('pauseMobile').addEventListener('click',()=>setPaused(!paused));byId('pauseOverlay').addEventListener('click',()=>setPaused(!paused));byId('resume').addEventListener('click',()=>setPaused(false));
   byId('reviveButton').addEventListener('click',requestRevive);byId('adFinish').addEventListener('click',()=>dispatchRevive(true));byId('adCancel').addEventListener('click',()=>dispatchRevive(false));
   byId('helpButton').addEventListener('click',()=>byId('helpDialog').showModal());byId('closeHelp').addEventListener('click',()=>byId('helpDialog').close());byId('helpDialog').addEventListener('close',()=>byId('helpButton').focus());
-  byId('sound').addEventListener('click',()=>{
-    muted=!muted;byId('sound').setAttribute('aria-pressed',String(!muted));byId('sound').setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
-    try{localStorage.setItem('game:runner:muted',String(muted));}catch(error){}
-    if(!muted)playSound('lane');
-  });
   document.querySelectorAll('[data-native-action]').forEach(button=>button.addEventListener('click',()=>nativeAction(button.dataset.nativeAction)));
   document.addEventListener('keydown',event=>{
     if(!running||paused||byId('helpDialog').open||byId('adDemo').hidden===false)return;
@@ -525,7 +523,6 @@ dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#c5dce0;lin
   window.addEventListener('resize',()=>{draw();drawPreview();});
   window.addEventListener('pagehide',()=>{stop();document.body.classList.remove('runner-active');if(adTimer){clearInterval(adTimer);adTimer=null;}try{audioContext?.close();}catch(error){}});
   try{muted=localStorage.getItem('game:runner:muted')!=='false';}catch(error){}
-  byId('sound').setAttribute('aria-pressed',String(!muted));byId('sound').setAttribute('aria-label',muted?'Turn sound on':'Turn sound off');
   updateProgress();drawPreview();draw();postNative({type:'orientation',orientation:'portrait'});
 })();
 </script>

@@ -14,6 +14,7 @@
     .bg { position:absolute; inset:-2%; background-position:center; background-size:cover; filter:saturate(1.15) contrast(1.05); transform:scale(1.03); transition:opacity .45s ease, background-image .5s ease; }
     .shade { position:absolute; inset:0; background:linear-gradient(180deg, rgba(8,2,8,.43), rgba(25,0,12,.06) 42%, rgba(8,2,8,.7)); backdrop-filter:blur(.5px); }
     .hud { position:absolute; z-index:6; top:calc(var(--safe-top) + 10px); left:12px; right:12px; display:grid; grid-template-columns:1fr auto 1fr; align-items:start; gap:10px; text-shadow:0 2px 8px #000; pointer-events:none; }
+    .joinnow-logo { position:absolute; z-index:7; top:calc(var(--safe-top) + 8px); left:12px; width:92px; height:34px; object-fit:contain; pointer-events:none; }
     .label { font-size:10px; letter-spacing:.18em; opacity:.68; }
     .score,.combo { font-size:clamp(21px,5vw,34px); font-weight:900; letter-spacing:.04em; }
     .comboBox { text-align:right; }
@@ -38,20 +39,26 @@
     .resultScore { font-size:46px; font-weight:1000; color:#fff; margin:12px 0 18px; }.stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }.stats div { display:flex; justify-content:space-between; gap:12px; padding:11px 13px; border-radius:13px; background:rgba(255,255,255,.06); }.stats span{opacity:.7}.stats b{font-size:18px}
     .musicPicker { display:grid; grid-template-columns:1fr 92px; gap:8px; margin:10px 0 14px; text-align:left; }.musicPicker label { display:block; min-width:0; font-size:10px; letter-spacing:.12em; font-weight:800; }.musicPicker select,.musicPicker input { width:100%; margin-top:6px; padding:9px 8px; border:1px solid rgba(255,255,255,.18); border-radius:10px; background:#24101b; color:#fff; font-size:13px; }.musicPicker input[type=file] { padding:7px 5px; font-size:11px; }
     .playerStatus{margin:14px 0 10px;padding:10px 12px;border-radius:14px;background:rgba(98,236,255,.10);border:1px solid rgba(98,236,255,.2);font-size:12px;line-height:1.3}.playerStatus.warn{background:rgba(255,101,120,.10);border-color:rgba(255,101,120,.25)}.difficultyLabel{display:block;text-align:left;font-size:11px;letter-spacing:.16em;font-weight:800;margin:10px 0 14px;opacity:.92}.difficultyLabel select{width:100%;margin-top:8px;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:#24101b;color:white;font-size:16px;font-weight:800;outline:none}.resultDifficulty{margin-top:-12px;margin-bottom:14px;font-size:12px;letter-spacing:.12em;opacity:.75}
-    @media (max-height:650px){ .lanes{top:10%;height:68%}.tapRow{bottom:8px}.tap{max-height:70px}.hud{top:6px} }
+    @media (max-height:650px){ .lanes{top:10%;height:68%}.tapRow{bottom:8px}.tap{max-height:70px}.hud{top:48px}.joinnow-logo{top:6px} }
   </style>
   <style>
-    .hud { grid-template-columns:40px 1fr auto 1fr 40px; align-items:center; }
+    .hud { top:48px; grid-template-columns:40px 1fr auto 1fr auto; align-items:center; }
     .hud .native-action { pointer-events:auto; }
+    .hud-actions { display:flex; gap:6px; justify-self:end; pointer-events:auto; }
+    #musicToggle .music-muted { display:none; }
+    #musicToggle[aria-pressed="true"] .music-waves { display:none; }
+    #musicToggle[aria-pressed="true"] .music-muted { display:block; }
     .native-action { position:relative; width:38px; height:38px; display:grid; place-items:center; border:1px solid rgba(98,236,255,.58); border-radius:12px; color:#fff; background:linear-gradient(145deg,rgba(98,236,255,.2),rgba(255,61,143,.2)); box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 0 12px rgba(255,61,143,.2),0 5px 14px rgba(0,0,0,.28); backdrop-filter:blur(10px); cursor:pointer; transition:transform .14s ease,filter .14s ease,box-shadow .14s ease; }
     .native-action::before { content:""; position:absolute; inset:3px; border:1px solid rgba(255,255,255,.12); border-radius:9px; pointer-events:none; }
     .native-action svg { position:relative; z-index:1; width:19px; height:19px; fill:currentColor; filter:drop-shadow(0 1px 3px rgba(0,0,0,.65)); }
     .native-action:hover,.native-action:focus-visible { filter:brightness(1.2); box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 0 18px rgba(98,236,255,.35),0 5px 14px rgba(0,0,0,.28); outline:none; }
     .native-action:active { transform:translateY(2px) scale(.94); box-shadow:inset 0 2px 5px rgba(0,0,0,.25),0 0 8px rgba(255,61,143,.2); }
   </style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
 </head>
 <body>
   <div id="app">
+    <img class="joinnow-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38">
     <div id="bg" class="bg"></div>
     <div class="shade"></div>
 
@@ -66,7 +73,10 @@
         <div class="label">COMBO</div>
         <div id="combo" class="combo">0</div>
       </div>
-      <button class="native-action" data-native-action="trophy" aria-label="Trophy"><svg viewBox="0 0 24 24"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
+      <div class="hud-actions">
+        <button class="native-action" data-native-action="trophy" aria-label="Trophy"><svg viewBox="0 0 24 24"><path d="M7 3h10v3h3v2c0 3.1-1.9 5.6-4.6 6.5A5 5 0 0 1 13 16.9V19h4v2H7v-2h4v-2.1a5 5 0 0 1-2.4-2.4C5.9 13.6 4 11.1 4 8V6h3V3Zm10 5v3.9A4.5 4.5 0 0 0 18 8h-1ZM6 8c0 1.6.8 3 2 3.9V8H6Zm3-3v7a3 3 0 0 0 6 0V5H9Z"/></svg></button>
+        <button class="native-action" id="musicToggle" type="button" aria-pressed="false" aria-label="Mute music" title="Mute music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path class="music-waves" d="M14 8.5a5 5 0 0 1 0 7l1.4 1.4a7 7 0 0 0 0-9.8L14 8.5zm3-3.2v2a7 7 0 0 1 0 9.4v2a9 9 0 0 0 0-13.4z"/><path class="music-muted" d="m16.6 9.2-1.4 1.4 1.8 1.8-1.8 1.8 1.4 1.4 1.8-1.8 1.8 1.8 1.4-1.4-1.8-1.8 1.8-1.8-1.4-1.4-1.8 1.8z"/></svg></button>
+      </div>
     </header>
 
     <main id="stage" class="stage" aria-label="Rhythm game">
@@ -227,23 +237,13 @@
       var startScreen = getElement('startScreen');
       var resultScreen = getElement('resultScreen');
       var musicAudio = new Audio(cfg.audioSource);
+      var musicMuted = false;
       musicAudio.loop = false;
       musicAudio.autoplay = false;
       musicAudio.preload = 'auto';
       musicAudio.playsInline = true;
       musicAudio.volume = 1;
       var audioContext = null;
-
-      function populateSongSelector() {
-        var selector = getElement('songSelect');
-        songs.forEach(function (song) {
-          var option = document.createElement('option');
-          option.value = song.id;
-          option.textContent = song.title;
-          selector.appendChild(option);
-        });
-        selector.value = cfg.songId;
-      }
 
       function selectSong(songId) {
         var selectedSong = songs.find(function (song) { return song.id === songId; }) || songs[0];
@@ -267,6 +267,7 @@
       function playBackgroundMusic() {
         musicAudio.loop = false;
         musicAudio.volume = 1;
+        musicAudio.muted = musicMuted;
         var playPromise = musicAudio.play();
         if (playPromise && playPromise.catch) {
           playPromise.catch(function () {
@@ -459,6 +460,7 @@
       function start() {
         state.difficulty = getElement('difficulty').value;
         localStorage.setItem('biniTapDifficulty', state.difficulty);
+        window.joinNowLevelStarted(cfg.songId || 'bini-tap-beat', state.difficulty, 'not_applicable');
         reset();
         startScreen.classList.remove('visible');
         resultScreen.classList.remove('visible');
@@ -526,7 +528,14 @@
       });
       getElement('startBtn').addEventListener('click', start);
       getElement('retryBtn').addEventListener('click', start);
-      getElement('songSelect').addEventListener('change', function (event) { selectSong(event.target.value); });
+      getElement('musicToggle').addEventListener('click', function () {
+        musicMuted = !musicMuted;
+        musicAudio.muted = musicMuted;
+        var button = getElement('musicToggle');
+        button.setAttribute('aria-pressed', String(musicMuted));
+        button.setAttribute('aria-label', musicMuted ? 'Unmute music' : 'Mute music');
+        button.title = musicMuted ? 'Unmute music' : 'Mute music';
+      });
       getElement('bpmInput').addEventListener('change', function (event) {
         cfg.bpm = Math.max(40, Math.min(240, Number(event.target.value) || 111));
         event.target.value = cfg.bpm;
@@ -536,16 +545,7 @@
         event.target.value = cfg.offsetSeconds.toFixed(2);
       });
       getElement('difficulty').value = state.difficulty;
-      getElement('calibrationLabel').textContent = state.calibrationMs + ' ms';
-      getElement('calibrateBtn').addEventListener('click', function () {
-        var raw = prompt('Audio calibration in milliseconds. Positive values judge taps later; negative values judge earlier.', String(state.calibrationMs));
-        if (raw === null) return;
-        state.calibrationMs = Math.max(-300, Math.min(300, Number(raw) || 0));
-        localStorage.setItem('biniTapCalibration', String(state.calibrationMs));
-        getElement('calibrationLabel').textContent = state.calibrationMs + ' ms';
-      });
       background.style.backgroundImage = "url('" + backgroundImages[0] + "')";
-      populateSongSelector();
       selectSong(cfg.songId);
     }());
   </script>
@@ -574,6 +574,8 @@
       function finalizeGameOver() {
         if (!pendingGameOver) return;
         pendingGameOver = false;
+        if (getElement('resultTitle').textContent === 'FAILED') window.joinNowLevelFailed(cfg.songId || 'bini-tap-beat', 'three consecutive missed notes');
+        else window.joinNowLevelCompleted(cfg.songId || 'bini-tap-beat', pendingScore, 0);
         post({ type: 'gameOver', gameId: 'biniTapGame', final: true, score: pendingScore });
       }
 
