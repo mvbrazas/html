@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#122d3c">
+<meta name="description" content="Run through glowing double-number gates, dodge crates, and keep growing in endless mode.">
+<title>Number Dash 2048</title>
+<style>
+:root{color-scheme:dark;--ink:#f5fbff;--muted:#b7d0da;--night:#122d3c;--night-2:#1a4050;--panel:#183b4a;--line:#517487;--cyan:#69e3f5;--lime:#bdff75;--orange:#ffb35b;--pink:#fa82bb;--red:#ff7474}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{min-height:100%;background:var(--night)}
+body{min-height:100dvh;margin:0;color:var(--ink);font-family:"Avenir Next",Avenir,"Trebuchet MS",sans-serif;background:radial-gradient(ellipse at 12% -8%,#3b9db7 0,transparent 35%),radial-gradient(ellipse at 90% 30%,#563b91 0,transparent 33%),linear-gradient(155deg,#102c48,#102a3b 52%,#201d42);overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+[hidden]{display:none!important}
+.app-header{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(9px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 9px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid #a6d9e842;background:#102733ed;backdrop-filter:blur(12px)}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1}
+.header-logo{display:block;width:104px;height:38px;object-fit:contain}
+.brand strong{color:#fff;font-size:17px;font-weight:950;letter-spacing:.03em}
+.brand small{color:#a9d8df;font-size:9px;font-weight:850;letter-spacing:.14em}
+.header-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.icon-button{display:grid;place-items:center;width:39px;height:39px;padding:0;border:1px solid #79a5b4;border-radius:8px;background:#1e4656;color:#f7ffff}
+.icon-button svg{width:20px;height:20px;fill:currentColor}
+.icon-button[aria-pressed="true"]{color:var(--lime);border-color:var(--lime)}
+.header-help{height:39px;padding:0 10px;border:1px solid #79a5b4;border-radius:8px;background:#1e4656;color:#f7ffff;font-size:11px;font-weight:850}
+.overlay-pause{display:none}
+main{width:min(100%,930px);margin:0 auto;padding:16px 14px calc(20px + env(safe-area-inset-bottom,0px))}
+.panel{border:1px solid #6dd8ed;border-radius:18px;background:linear-gradient(145deg,#1e5268f5,#182d4df5);box-shadow:0 18px 48px #06172080, inset 0 1px 0 #ffffff24}
+.welcome{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,.64fr);align-items:center;gap:16px;min-height:390px;padding:clamp(18px,4vw,34px);overflow:hidden}
+.welcome-copy{position:relative;z-index:1}
+.eyebrow{margin:0 0 9px;color:var(--lime);font-size:10px;font-weight:950;letter-spacing:.16em;text-transform:uppercase}
+h1,h2,p{margin-top:0}
+.welcome h1{max-width:500px;margin:0;font-size:clamp(34px,8vw,60px);line-height:.98;font-weight:950}
+.welcome h1 span{color:var(--cyan)}
+.intro{max-width:430px;margin:15px 0;color:#d5e8ea;font-size:15px;line-height:1.55}
+.instructions{max-width:440px;margin:0 0 20px;padding-left:20px;color:var(--muted);font-size:13px;line-height:1.55}
+.instructions li+li{margin-top:5px}
+.welcome-art{position:relative;display:grid;place-items:center;min-width:0;min-height:270px;border:1px solid #75c6d35e;border-radius:8px;background:linear-gradient(155deg,#52ddf153,#12304099);overflow:hidden}
+.welcome-art:before{content:"RUNNER PREVIEW";position:absolute;z-index:1;top:10px;left:12px;color:#cbf8ff;font-size:9px;font-weight:900;letter-spacing:.15em}
+#preview{display:block;width:min(100%,190px);height:auto;aspect-ratio:3/5;filter:drop-shadow(0 10px 24px #06192265)}
+.primary,.secondary,.quiet{min-height:45px;padding:10px 16px;border:1px solid transparent;border-radius:8px;font-weight:900}
+.primary{background:linear-gradient(135deg,#d7ff7a,#83f2b1);border-color:#e1ffb2;color:#183c39;box-shadow:0 4px 0 #4b9972,0 0 24px #bdff7550}
+.primary:active{transform:translateY(2px);box-shadow:0 2px 0 #789d4f}
+.secondary{background:#244c5c;border-color:#8ac5ce;color:#f5ffff}
+.quiet{background:#193d4a;border-color:#759ba3;color:#e9f8f8}
+.start-actions{display:flex;flex-wrap:wrap;gap:8px}
+.start-actions .primary{min-width:min(100%,230px)}
+.note{margin:12px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+.game-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+/* Keep the internal level counter for game logic, but hide its HUD card. */
+.game-stats .stat:first-child{display:none}
+.stat{min-width:0;padding:8px 6px;border:1px solid #5b8999;border-radius:12px;background:linear-gradient(145deg,#214e65,#132f49);text-align:center;box-shadow:0 4px 0 #0b2632, inset 0 1px 0 #ffffff18}
+.stat small{display:block;color:#b8d5dd;font-size:9px;font-weight:900;letter-spacing:.08em}
+.stat strong{display:block;margin-top:2px;color:var(--lime);font-size:16px;font-variant-numeric:tabular-nums}
+.stat:nth-child(2) strong,.stat:nth-child(3) strong{color:var(--cyan)}
+.stat:nth-child(4) strong,.stat:nth-child(3) strong{color:var(--pink);font-size:13px;white-space:nowrap}
+.play-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,.5fr);gap:10px;align-items:start}
+.run-info{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:0 2px;color:#d0e9eb;font-size:12px}
+.run-info span:last-child{color:var(--orange);font-weight:850;text-align:right}
+.arena{grid-column:1;grid-row:2;min-width:0;max-width:500px;margin:0 auto;padding:9px;border:1px solid #5f98a5;border-radius:16px;background:linear-gradient(155deg,#1c5a75,#142846);box-shadow:0 12px 30px #06192388, inset 0 1px 0 #ffffff22}
+#canvas{display:block;width:min(100%,420px);height:auto;max-width:100%;margin:auto;border-radius:10px;background:#79e4f4;touch-action:none;box-shadow:0 0 30px #55e5ff28;scroll-margin-block:90px}
+.side-controls{grid-column:2;grid-row:2;display:flex;flex-direction:column;gap:9px;min-width:0;padding:12px;border:1px solid #527b88;border-radius:9px;background:#173a49}
+.side-controls h2{margin:0;color:#f1fcf5;font-size:16px}
+.side-controls p{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+.run-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#mobileControls{display:none}
+.run-controls button{min-width:0;min-height:48px;padding:6px 4px;border:1px solid #78a6b3;border-radius:8px;background:#244d5b;color:#f4ffff;font-size:12px;font-weight:900}
+.run-controls button:active{transform:translateY(2px)}
+.run-controls #jump{background:var(--orange);border-color:#ffd08d;color:#392c1b}
+.run-controls button:disabled{opacity:.45;cursor:not-allowed}
+.run-controls .control-symbol{display:block;font-size:18px;line-height:1}
+.run-controls .control-label{display:block;margin-top:2px;font-size:9px}
+.lives{color:#ffb1c1!important;font-size:15px!important;letter-spacing:.1em}
+.feedback{min-height:40px;padding:9px 10px;border-left:3px solid var(--cyan);border-radius:0 6px 6px 0;background:#10313d;color:#e2f4f3;font-size:11px;line-height:1.4}
+.feedback.good{border-color:var(--lime);color:#e9ffca}.feedback.mistake{border-color:var(--pink);color:#ffd6e9}
+.progress-track{height:7px;overflow:hidden;border-radius:10px;background:#0c2733}
+.progress-fill{height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--cyan),var(--lime));transition:width .12s linear}
+.pause-panel{position:fixed;z-index:8;inset:0;display:grid;place-items:center;padding:20px;background:#071c27c9;backdrop-filter:blur(5px)}
+.pause-card{width:min(100%,360px);padding:22px;border:1px solid #76a6aa;border-radius:9px;background:#173b48;text-align:center;box-shadow:0 20px 60px #0008}
+.pause-card h2{margin:0 0 8px;color:var(--lime);font-size:25px}.pause-card p{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.5}
+.result{max-width:620px;margin:18px auto;padding:clamp(20px,5vw,34px);text-align:center}
+.result-mark{display:grid;place-items:center;width:60px;height:60px;margin:0 auto 13px;border:2px solid var(--lime);border-radius:50%;background:#194739;color:var(--lime);font-size:29px;font-weight:950}
+.result[data-outcome="loss"] .result-mark{border-color:var(--orange);background:#4b3928;color:var(--orange)}
+.result h2{margin:0;font-size:clamp(27px,7vw,42px)}
+.result-score{margin:8px 0;color:var(--cyan);font-size:22px;font-weight:950}
+.result-copy{max-width:460px;margin:0 auto 17px;color:#c3dce0;font-size:13px;line-height:1.55}
+.revive-box{max-width:440px;margin:0 auto 16px;padding:14px;border:1px solid #d9ad61;border-radius:8px;background:#453a2a;text-align:left}
+.revive-box p{margin:0 0 10px;color:#fff0cd;font-size:12px;line-height:1.5}
+.revive-box button{width:100%}
+.revive-status{min-height:18px;margin:8px 0 0;color:#e4d7b5;font-size:11px}
+.result-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.result-actions button{min-width:130px}
+dialog{width:min(calc(100% - 28px),520px);max-height:min(82dvh,720px);padding:22px;border:1px solid #78a6aa;border-radius:9px;background:#173b48;color:var(--ink);box-shadow:0 20px 70px #0009}
+dialog::backdrop{background:#061721cf;backdrop-filter:blur(3px)}
+dialog h2{margin:0 0 10px;color:var(--lime)}dialog p,dialog li{color:#c5dce0;line-height:1.55}dialog ol{padding-left:21px}dialog li+li{margin-top:7px}
+.dialog-actions{display:flex;justify-content:flex-end;margin-top:15px}
+.ad-demo{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:18px;background:#061721cf}
+.ad-demo-card{width:min(100%,370px);padding:20px;border:1px solid #d9ad61;border-radius:9px;background:#243b43;box-shadow:0 20px 70px #0009}
+.ad-demo-card h2{margin:0 0 8px;color:var(--orange);font-size:21px}.ad-demo-card p{color:#c9dce0;font-size:13px;line-height:1.5}
+.ad-demo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ad-demo-actions button{min-height:44px}
+@media(max-width:680px){main{padding:12px 10px calc(100px + env(safe-area-inset-bottom,0px))}.app-header{padding-left:max(9px,env(safe-area-inset-left,0px));padding-right:max(9px,env(safe-area-inset-right,0px))}.brand strong{font-size:15px}.brand small{font-size:8px}.header-actions{gap:5px}.icon-button{width:36px;height:36px}.header-help{height:36px;padding:0 7px;font-size:10px}.welcome{grid-template-columns:1fr;gap:12px;min-height:0;padding:19px}.welcome h1{font-size:clamp(34px,9vw,46px)}.welcome-art{grid-row:1;min-height:180px}.welcome-art:before{top:8px}.welcome-art #preview{width:108px}.intro{margin:10px 0;font-size:14px}.instructions{margin-bottom:15px;font-size:12px}.game-stats{gap:5px}.stat{padding:8px 3px}.stat small{font-size:8px}.stat strong{font-size:14px}.play-layout{display:block}.run-info{margin-bottom:5px}.arena{padding:5px;margin:0 auto 9px}#canvas{border-radius:6px}.side-controls{display:none}#mobileControls{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:5;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:9px max(12px,env(safe-area-inset-right,0px)) calc(9px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));background:#102733f5;box-shadow:0 -7px 24px #061c27a8;backdrop-filter:blur(10px)}.run-controls button{min-height:58px;font-size:11px}.run-controls .control-symbol{font-size:20px}.run-controls .control-label{font-size:9px}.feedback{margin-top:8px}}
+@media(max-width:350px){.brand strong{font-size:13px}.header-help{font-size:9px;padding:0 5px}.icon-button{width:33px;height:33px}.welcome{padding:16px}.welcome-art{min-height:155px}.welcome-art #preview{width:94px}.run-controls{gap:6px;padding-left:9px;padding-right:9px}.run-controls button{min-height:54px;padding:5px 2px}}
+@media(max-height:580px) and (orientation:landscape){main{width:min(100%,980px);padding-top:8px;padding-bottom:12px}.welcome{min-height:0}.welcome-art{min-height:200px}.welcome-art #preview{width:112px}.play-layout{display:grid;grid-template-columns:minmax(0,350px) minmax(200px,1fr);align-items:center;gap:12px}.run-info{grid-column:1/-1}.arena{grid-column:1;grid-row:2;width:min(100%,360px)}#canvas{width:min(100%,216px)}.side-controls{display:flex;grid-column:2;grid-row:2}.run-controls{position:static;grid-column:2;grid-row:3;padding:0;background:transparent;box-shadow:none;backdrop-filter:none}.run-controls button{min-height:48px}}
+@media(max-width:680px) and (orientation:portrait){#canvas{width:auto;height:min(700px,calc(100dvh - 266px));max-width:100%;aspect-ratio:3/5}}
+@media(max-width:680px){body.runner-active{height:100dvh;overflow:hidden}body.runner-active main{width:100vw;height:100dvh;margin:0;padding:0}body.runner-active .app-header{position:fixed;top:0;left:0;right:0;z-index:8;justify-content:flex-end;min-height:calc(48px + env(safe-area-inset-top,0px));padding:calc(6px + env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) 4px max(8px,env(safe-area-inset-left,0px));border:0;background:linear-gradient(180deg,#102733ed,#102733a8 78%,#10273300);backdrop-filter:none}body.runner-active .brand{display:none}body.runner-active .header-actions{width:100%;justify-content:flex-end}body.runner-active #pauseOverlay{display:grid}body.runner-active #playScreen{position:fixed;inset:0;z-index:3;display:block!important;width:100vw;height:100dvh;margin:0;padding:0;overflow:hidden;background:#54d7ee}body.runner-active #playScreen .game-stats{position:absolute;top:calc(53px + env(safe-area-inset-top,0px));left:9px;right:9px;z-index:6;gap:5px;margin:0}body.runner-active #playScreen .stat{padding:6px 3px;background:#173b49e8;box-shadow:0 2px 0 #0b2632;backdrop-filter:blur(5px)}body.runner-active #playScreen .stat small{font-size:8px}body.runner-active #playScreen .stat strong{font-size:13px}body.runner-active #playScreen .play-layout{position:absolute;inset:0;display:block;width:100%;height:100%}body.runner-active #playScreen .run-info{position:absolute;top:calc(112px + env(safe-area-inset-top,0px));left:10px;right:10px;z-index:6;min-height:30px;margin:0;padding:5px 8px;border:1px solid #b3e6eb55;border-radius:8px;background:#102733a8;backdrop-filter:blur(5px);font-size:10px}body.runner-active #playScreen .run-info span:last-child{max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}body.runner-active #playScreen .arena{position:absolute;inset:0;width:100%;height:100%;max-width:none;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}body.runner-active #playScreen #canvas{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;aspect-ratio:auto;object-fit:cover;object-position:center;border-radius:0}body.runner-active #playScreen .side-controls,body.runner-active #playScreen #mobileControls{display:none!important}}
+@media(max-width:680px){main{padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}.result{margin:8px auto;padding:12px 14px}.result-mark{width:42px;height:42px;margin-bottom:6px;font-size:22px}.result .eyebrow{margin-bottom:5px;font-size:9px}.result h2{font-size:clamp(23px,7vw,30px);line-height:1.05}.result-score{margin:4px 0;font-size:18px}.result-copy{margin:0 auto 9px;font-size:12px;line-height:1.35}.revive-box{margin:0 auto 9px;padding:9px}.revive-box p{margin-bottom:7px;font-size:11px;line-height:1.35}.revive-box button{min-height:42px;padding:8px 10px;font-size:13px}.revive-status{min-height:0;margin:4px 0 0}.result-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.result-actions button{min-width:0;min-height:40px;padding:8px 5px;font-size:12px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
+</head>
+<body>
+<header class="app-header">
+  <div class="brand"><img class="header-logo" src="https://raw.githubusercontent.com/mvbrazas/images/refs/heads/main/joinnow-app/bini/sugar-rush/joinnowlogo.webp" alt="JoinNow" width="104" height="38"></div>
+  <nav class="header-actions" aria-label="Game actions">
+    <button class="icon-button" type="button" data-native-action="back" title="Back to Fandom" aria-label="Back to Fandom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <button class="icon-button" type="button" data-native-action="trophy" title="Trophies" aria-label="Open leaderboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 3H6v3H3v2c0 3.2 2.2 5.8 5.2 6.5A5 5 0 0 0 11 16.8V19H7v2h10v-2h-4v-2.2a5 5 0 0 0 2.8-2.3C18.8 13.8 21 11.2 21 8V6h-3V3zm-2 2v7a3 3 0 0 1-6 0V5h6zM5 8h1v3.7C5.4 11 5 10 5 8zm13 3.7V8h1c0 2-.4 3-1 3.7z"/></svg></button>
+    <button class="icon-button overlay-pause" id="pauseOverlay" type="button" title="Pause run" aria-label="Pause run"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="pauseOverlayGlyph" d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg></button>
+    <button class="header-help" id="helpButton" type="button">How to play</button>
+  </nav>
+</header>
+<main>
+  <section class="panel welcome" id="welcome" aria-labelledby="welcomeTitle">
+    <div class="welcome-copy">
+      <p class="eyebrow">ENDLESS RUN · GROW WITHOUT LIMIT</p>
+      <h1 id="welcomeTitle">Pick a lane.<br><span>Build bigger.</span></h1>
+      <p class="intro">Run the floating track, take the bright double gates, and leap over the crates. Bring the right number to the finish.</p>
+      <ol class="instructions">
+        <li>Swipe left or right to change lanes, and swipe up to jump. Arrow keys and buttons are available on larger screens.</li>
+        <li>Collect green number gates: ×2, +2, +10, and +15. Dodge different hazards or jump over low obstacles; three hits end a run.</li>
+        <li>Every track segment raises the target and difficulty. Keep going for as long as you can.</li>
+      </ol>
+      <div class="start-actions"><button class="primary" id="start" type="button">Start level</button></div>
+      <p class="note" id="progressNote"></p>
+    </div>
+    <div class="welcome-art" aria-label="Preview of the running track"><canvas id="preview" width="420" height="700" aria-hidden="true"></canvas></div>
+  </section>
+
+  <section id="playScreen" hidden aria-label="Number Dash game">
+    <div class="game-stats" aria-label="Game status">
+      <div class="stat"><small>LEVEL</small><strong id="level">1 ∞</strong></div>
+      <div class="stat"><small>NUMBER / TARGET</small><strong id="number">2 / 128</strong></div>
+      <div class="stat"><small>POINTS</small><strong id="points">0</strong></div>
+      <div class="stat"><small>LIVES</small><strong id="livesOverlay">♥ ♥ ♥</strong></div>
+    </div>
+    <div class="play-layout">
+      <div class="run-info"><span id="runStats">Get ready</span><span id="runStatus">Swipe to change lanes</span></div>
+      <section class="arena" aria-label="Three-lane number running track">
+        <canvas id="canvas" width="420" height="700" aria-label="Run between lanes, pass green doubling gates and jump over crates"></canvas>
+      </section>
+      <aside class="side-controls" aria-label="Run controls">
+        <h2>Track controls</h2>
+        <p>Steer between three lanes. Jump clears a crate and briefly recharges.</p>
+        <div class="run-controls">
+          <button id="left" type="button" aria-label="Move left one lane"><span class="control-symbol" aria-hidden="true">&#8592;</span><span class="control-label">LEFT</span></button>
+          <button id="jump" class="primary" type="button" aria-label="Jump over a crate"><span class="control-symbol" aria-hidden="true">&#8593;</span><span class="control-label">JUMP</span></button>
+          <button id="right" type="button" aria-label="Move right one lane"><span class="control-symbol" aria-hidden="true">&#8594;</span><span class="control-label">RIGHT</span></button>
+        </div>
+        <div class="progress-track" aria-label="Track progress"><div class="progress-fill" id="progressFill"></div></div>
+        <p class="lives" id="lives" aria-label="Lives remaining">&#9829; &#9829; &#9829;</p>
+        <p class="feedback" id="feedback" role="status" aria-live="polite">Get ready for the next gate.</p>
+        <button class="secondary" id="pause" type="button">Pause run</button>
+      </aside>
+    </div>
+    <div class="run-controls" id="mobileControls" aria-label="Run controls">
+      <button id="leftMobile" type="button" aria-label="Move left one lane"><span class="control-symbol" aria-hidden="true">&#8592;</span><span class="control-label">LEFT</span></button>
+      <button id="jumpMobile" class="primary" type="button" aria-label="Jump over a crate"><span class="control-symbol" aria-hidden="true">&#8593;</span><span class="control-label">JUMP</span></button>
+      <button id="rightMobile" type="button" aria-label="Move right one lane"><span class="control-symbol" aria-hidden="true">&#8594;</span><span class="control-label">RIGHT</span></button>
+      <button id="pauseMobile" type="button" aria-label="Pause run"><span class="control-symbol" aria-hidden="true">&#9208;</span><span class="control-label">PAUSE</span></button>
+    </div>
+  </section>
+
+  <section class="panel result" id="resultScreen" hidden aria-labelledby="resultTitle" data-outcome="loss">
+    <div class="result-mark" id="resultMark" aria-hidden="true">!</div>
+    <p class="eyebrow" id="resultEyebrow">RUN OVER</p>
+    <h2 id="resultTitle">One more run?</h2>
+    <p class="result-score" id="resultScore">0 points</p>
+    <p class="result-copy" id="resultCopy"></p>
+    <div class="revive-box" id="reviveBox" hidden>
+      <p>A completed rewarded ad restores one life and continues this run. You can revive twice per session.</p>
+      <button class="primary" id="reviveButton" type="button">Watch rewarded ad · Continue</button>
+      <p class="revive-status" id="reviveStatus" role="status" aria-live="polite"></p>
+    </div>
+    <div class="result-actions">
+      <button class="secondary" id="replay" type="button">Replay level</button>
+      <button class="primary" id="next" type="button" hidden>Next level</button>
+      <button class="quiet" id="newSession" type="button" hidden>Start a new session</button>
+      <button class="quiet" type="button" data-native-action="trophy">Trophies</button>
+      <button class="quiet" type="button" data-native-action="back">Back to Fandom</button>
+    </div>
+  </section>
+</main>
+
+<div class="pause-panel" id="pausePanel" hidden>
+  <section class="pause-card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+    <h2 id="pauseTitle">Take a breather</h2>
+    <p>Your number and track position are paused.</p>
+    <button class="primary" id="resume" type="button">Resume run</button>
+  </section>
+</div>
+
+<dialog id="helpDialog" aria-labelledby="helpTitle">
+  <p class="eyebrow">HOW TO PLAY</p>
+  <h2 id="helpTitle">Run smart. Jump clean.</h2>
+  <ol>
+    <li>Use Left and Right, the arrow keys, or horizontal swipes to move across three lanes.</li>
+    <li>Green gates have different effects: ×2 doubles your number, while +2, +10, and +15 add to it. Choose the lane with the best boost.</li>
+    <li>Jump with the Jump button, Space, Up Arrow, or an upward swipe to clear low hurdles and crate stacks. Hitting a hazard halves your number and costs one life.</li>
+    <li>Three crate hits end the run. Reach the finish with at least the level target to win and earn 500 finish points.</li>
+    <li>A completed rewarded ad can restore one life and continue the same run, up to twice per session.</li>
+  </ol>
+  <div class="dialog-actions"><button class="primary" id="closeHelp" type="button">Back to the track</button></div>
+</dialog>
+
+<div class="ad-demo" id="adDemo" hidden>
+  <section class="ad-demo-card" role="dialog" aria-modal="true" aria-labelledby="adDemoTitle">
+    <p class="eyebrow">REWARDED AD PREVIEW</p>
+    <h2 id="adDemoTitle">Demo placement</h2>
+    <p>This is a placeholder preview. Complete it to restore one life, or skip to end the run. No live ad is shown.</p>
+    <div class="ad-demo-actions"><button class="primary" id="adFinish" type="button" disabled>Complete preview · 3</button><button class="secondary" id="adCancel" type="button">Skip</button></div>
+  </section>
+</div>
+
+<script>
+'use strict';
+(function(){
+  const targetFor=level=>Math.min(65536,128*Math.pow(2,Math.min(9,Math.max(0,level-1))));
+  // Stable pseudo-random lane per row: rows redraw consistently, while gates
+  // can appear in the left, center, or right lane instead of following a fixed path.
+  const laneFor=index=>Math.abs(Math.floor(Math.sin((index+1)*127.1+311.7)*43758.5453))%3;
+  const row=index=>{
+      const cycle=((index%12)+12)%12;
+      if([0,3,6,9].includes(cycle)){
+        const effects={0:{type:'multiply',amount:2,label:'×2'},3:{type:'add',amount:2,label:'+2'},6:{type:'add',amount:10,label:'+10'},9:{type:'add',amount:15,label:'+15'}};
+        return{...effects[cycle],lane:laneFor(index)};
+      }
+      const hazards={1:'crates',2:'hurdle',4:'spikes',5:'wall',7:'crates',8:'hurdle',10:'doubleCrates',11:'spikes'};
+      return{type:'barrier',hazard:hazards[cycle],lane:laneFor(index)};
+    };
+  const RunnerRules={
+    create(level=1){return{level,value:2,target:targetFor(level),lane:1,distance:0,nextRow:1,jump:0,cooldown:0,hits:0,score:0,done:false,won:false,message:'Endless run: collect number boosts and dodge varied hazards.',segment:0};},
+    row,
+    jump(state){if(state.done||state.cooldown>0)return false;state.jump=.7;state.cooldown=1.1;return true;},
+    advance(state,deltaTime){
+      if(state.done)return;
+      state.jump=Math.max(0,state.jump-deltaTime);state.cooldown=Math.max(0,state.cooldown-deltaTime);
+      state.distance+=deltaTime*(.8+Math.min(state.level-1,30)*.032);
+      // Resolve a row when it reaches the runner visually, not when it reaches the far edge of the track.
+      // The rendered obstacle reaches the runner around 0.45 track units before its row index.
+      while(state.nextRow-0.45<=state.distance){
+        const obstacle=row(state.nextRow-1);
+        if(obstacle.type==='multiply'||obstacle.type==='add'){
+          if(state.lane===obstacle.lane){
+            const previous=state.value;
+            state.value=Math.min(65536,obstacle.type==='multiply'?state.value*obstacle.amount:state.value+obstacle.amount);
+            state.score+=obstacle.type==='multiply'?(previous>=2048?50:100):50;
+            state.message=previous+' '+(obstacle.type==='multiply'?'× '+obstacle.amount:' + '+obstacle.amount)+' = '+state.value+' · boost collected!';
+          }else state.message='Missed the '+obstacle.label+' boost. Aim for a different gate next time.';
+        }else if(state.lane===obstacle.lane&&(obstacle.hazard==='hurdle'?state.jump<.18:state.jump<=0)){
+          state.hits++;state.value=Math.max(2,Math.floor(state.value/2));state.message=obstacle.hazard+' hit! Number halved. '+(3-state.hits)+' lives left.';
+          if(state.hits>=3){state.done=true;state.won=false;}
+        }else{state.score+=25;state.message='Nice dodge! +25 points.';}
+        state.nextRow++;
+        if(state.done)break;
+      }
+      const segment=Math.floor(state.distance/24.5);
+      if(!state.done&&segment>state.segment){
+        state.segment=segment;
+        if(state.value>=state.target){state.score+=500;state.message='Segment cleared! +500 bonus points — the endless track gets tougher!';}
+        else state.message='New segment! Keep collecting number boosts; target is '+state.target+'.';
+        state.level++;state.target=targetFor(state.level);
+      }
+    }
+  };
+  const RunnerScene=(()=>{
+    const W=420,H=700,CX=W/2,HORIZON=245,NEAR=675;
+    const palettes=[['#ffb900','#ffcf40','#b86b00'],['#1a9efa','#68d4ff','#0557b7'],['#ed52bb','#ff9be1','#a4167f'],['#8a4cff','#c298ff','#5227b0'],['#27c98d','#84f1b8','#087c58']];
+    const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+    function solid(context,color,x,y,width,height){context.fillStyle=color;context.fillRect(x,y,width,height);}
+    function line(context,color,width,points){context.beginPath();context.moveTo(points[0],points[1]);for(let index=2;index<points.length;index+=2)context.lineTo(points[index],points[index+1]);context.strokeStyle=color;context.lineWidth=width;context.stroke();}
+    function poly(context,color,points){context.beginPath();context.moveTo(points[0],points[1]);for(let index=2;index<points.length;index+=2)context.lineTo(points[index],points[index+1]);context.closePath();context.fillStyle=color;context.fill();}
+    function ellipse(context,color,x,y,radiusX,radiusY){context.beginPath();context.ellipse(x,y,Math.max(.1,radiusX),Math.max(.1,radiusY),0,0,Math.PI*2);context.fillStyle=color;context.fill();}
+    function depth(distance){return clamp(distance/6,0,1);}
+    function geometry(distance){const amount=depth(distance),scale=Math.pow(1-amount,1.52);return{y:NEAR-(NEAR-HORIZON)*Math.pow(amount,.7),half:29+350*scale,scale:.15+1.22*scale};}
+    function laneX(lane,shape){return CX+(lane-1)*shape.half*.62;}
+    function ballColors(value){return palettes[Math.min(4,Math.max(0,Math.floor(Math.log2(Math.max(2,value))/2)))];}
+    function shade(context,colors,x,y,radius){const glow=context.createRadialGradient?.(x-radius*.35,y-radius*.55,1,x,y,radius);if(glow&&typeof glow.addColorStop==='function'){glow.addColorStop(0,colors[1]);glow.addColorStop(.72,colors[0]);glow.addColorStop(1,colors[2]);return glow;}return colors[0];}
+    function character(context,x,y,scale,value,phase=0,groundY=y){
+      const colors=ballColors(value),radius=24*scale,bob=Math.sin(phase*2)*2.5*scale,heel=y+bob,stride=Math.sin(phase);
+      ellipse(context,'#5c8e9430',x,groundY+6*scale,radius*.96,radius*.29);
+      context.lineCap='round';
+      line(context,colors[2],Math.max(1,7*scale),[x-7*scale,heel-30*scale,x-12*scale-10*scale*stride,heel-4*scale-7*scale*Math.max(0,stride)]);
+      line(context,colors[2],Math.max(1,7*scale),[x+7*scale,heel-30*scale,x+11*scale+10*scale*stride,heel-7*scale-7*scale*Math.max(0,-stride)]);
+      line(context,colors[0],Math.max(1,10*scale),[x-13*scale,heel-43*scale,x-22*scale+7*scale*stride,heel-25*scale]);
+      line(context,colors[0],Math.max(1,10*scale),[x+13*scale,heel-43*scale,x+22*scale-7*scale*stride,heel-28*scale]);
+      ellipse(context,colors[2],x,heel-34*scale,radius*.66,radius*.83);ellipse(context,colors[0],x,heel-38*scale,radius*.64,radius*.81);
+      ellipse(context,shade(context,colors,x,heel-70*scale,radius),x,heel-70*scale,radius,radius*.98);
+      ellipse(context,'#ffffffd9',x-radius*.31,heel-79*scale,radius*.20,radius*.13);ellipse(context,'#ffffff40',x+radius*.34,heel-62*scale,radius*.16,radius*.30);
+      context.textAlign='center';context.textBaseline='middle';context.lineJoin='round';context.font='900 '+Math.max(8,17*scale)+'px system-ui';
+      context.lineWidth=Math.max(1,2*scale);context.strokeStyle='#12325d';context.strokeText(String(value),x,heel-68*scale);context.fillStyle='#fff';context.fillText(String(value),x,heel-68*scale);
+    }
+    function water(context,progress){
+      const sky=context.createLinearGradient(0,0,0,HORIZON);sky.addColorStop(0,'#2587d9');sky.addColorStop(.62,'#8beaff');sky.addColorStop(1,'#e7ffff');solid(context,sky,0,0,W,HORIZON);const sea=context.createLinearGradient(0,HORIZON,0,H);sea.addColorStop(0,'#35cfe7');sea.addColorStop(.48,'#258fc5');sea.addColorStop(1,'#183f79');solid(context,sea,0,HORIZON,W,H-HORIZON);solid(context,'#e6ffff',0,HORIZON,W,2);
+      poly(context,'#d7eef0',[18,245,41,242,59,245]);poly(context,'#ddecee',[350,245,365,234,382,240,395,245]);
+      for(let rowIndex=0;rowIndex<12;rowIndex++){
+        const y=HORIZON+Math.pow(rowIndex/11,1.55)*(H-HORIZON),stride=26+rowIndex*5;
+        for(let column=-1;column<Math.ceil(W/stride)+1;column++){
+          const shift=(rowIndex%2)*stride*.5+(progress*7*(rowIndex+1))%stride;
+          line(context,'#d4ffff53',Math.max(.5,rowIndex*.11),[column*stride+shift,y,column*stride+shift+stride*.45,y+Math.max(1,rowIndex*.22)]);
+        }
+      }
+    }
+    function track(context,progress){
+      const far=29,near=379;
+      poly(context,'#8cecff',[CX-far-7,HORIZON,CX+far+7,HORIZON,CX+near+18,H,CX-near-18,H]);
+      poly(context,'#f8fdff',[CX-far,HORIZON,CX+far,HORIZON,CX+near,H,CX-near,H]);
+      poly(context,'#e6eef1',[CX-far,HORIZON,CX-far+5,HORIZON,CX-near+22,H,CX-near,H]);
+      poly(context,'#dae4e7',[CX+far-5,HORIZON,CX+far,HORIZON,CX+near,H,CX+near-22,H]);
+      const offset=progress%1;
+      for(let index=0;index<9;index++){
+        const distance=index+1-offset,shape=geometry(distance);if(shape.y<HORIZON||shape.y>H)continue;
+        for(const side of [-1,1]){const first=CX+side*shape.half/3,second=CX+side*(shape.half+5)/3;line(context,'#aebfc556',Math.max(1,3*shape.scale),[first,shape.y,second,shape.y+12*shape.scale]);}
+        if(index%2===0)line(context,'#d9e9ed70',Math.max(1,2*shape.scale),[CX-shape.half,shape.y,CX+shape.half,shape.y]);
+      }
+    }
+    function gate(context,shape,lane,value,obstacle){
+      const x=laneX(lane,shape),width=Math.max(13,shape.half*.59),height=70*shape.scale,top=shape.y-height;
+      poly(context,'#60ff8755',[x-width*.47,shape.y,x+width*.47,shape.y,x+width*.36,top+15*shape.scale,x-width*.36,top+15*shape.scale]);line(context,'#aaffc6',Math.max(1,2*shape.scale),[x-width*.47,shape.y,x-width*.36,top+15*shape.scale,x+width*.36,top+15*shape.scale,x+width*.47,shape.y]);
+      line(context,'#24c854',Math.max(2,7*shape.scale),[x-width*.50,shape.y,x-width*.50,top+11*shape.scale]);
+      line(context,'#24c854',Math.max(2,7*shape.scale),[x+width*.50,shape.y,x+width*.50,top+11*shape.scale]);
+      poly(context,'#64f77e',[x-width*.55,top,x+width*.55,top,x+width*.55,top+24*shape.scale,x-width*.55,top+24*shape.scale]);
+      context.font='900 '+Math.max(8,19*shape.scale)+'px system-ui';context.textAlign='center';context.textBaseline='middle';context.lineWidth=Math.max(1,2*shape.scale);context.strokeStyle='#11613e';const label=obstacle?.label||'×2';context.strokeText(label,x,top+12*shape.scale);context.fillStyle='#fff';context.fillText(label,x,top+12*shape.scale);
+      if(shape.scale>.3)character(context,x,shape.y-4*shape.scale,Math.min(.64,shape.scale*.38),value,0);
+    }
+    function crates(context,shape,lane,hazard='crates'){
+      const x=laneX(lane,shape),width=36*shape.scale,height=23*shape.scale,y=shape.y;
+      if(hazard==='hurdle'){
+        solid(context,'#e6a33b',x-width*.9,y-height*.55,width*1.8,height*.55);
+        line(context,'#fff0a8',Math.max(1,3*shape.scale),[x-width*.8,y-height*.55,x-width*.45,y-height*1.15,x+width*.45,y-height*1.15,x+width*.8,y-height*.55]);
+        context.fillStyle='#fff';context.font='900 '+Math.max(7,10*shape.scale)+'px system-ui';context.textAlign='center';context.fillText('JUMP',x,y-height*.82);return;
+      }
+      if(hazard==='spikes'){
+        for(let i=-1;i<=1;i++){const sx=x+i*width*.65;poly(context,'#ff5b76',[sx-width*.38,y,sx,y-height*1.55,sx+width*.38,y]);poly(context,'#ffd3db',[sx-width*.08,y-height*.25,sx,y-height*1.32,sx+width*.08,y-height*.25]);}return;
+      }
+      if(hazard==='wall'){
+        solid(context,'#697f9b',x-width*1.2,y-height*2.1,width*2.4,height*2.1);
+        solid(context,'#a9c3d8',x-width*1.05,y-height*1.9,width*.16,height*1.7);
+        line(context,'#d9f4ff',Math.max(1,2*shape.scale),[x-width,y-height*1.4,x+width,y-height*1.4]);return;
+      }
+      const count=hazard==='doubleCrates'?4:3;
+      for(let index=0;index<count;index++){const offset=index-(count-1)/2,center=x+offset*width*.77;solid(context,'#7d5034',center-width*.48,y-height,width*.86,height);poly(context,'#b8814a',[center-width*.48,y-height,center-width*.33,y-height-height*.28,center+width*.53,y-height-height*.28,center+width*.38,y-height]);line(context,'#dcb27d',Math.max(1,2*shape.scale),[center,y-height,center,y]);}
+    }
+    function finish(context,shape){
+      const y=shape.y,top=y-85*shape.scale;
+      poly(context,'#64e7ff91',[CX-shape.half*.95,y,CX+shape.half*.95,y,CX+shape.half*.7,top,CX-shape.half*.7,top]);solid(context,'#3aa9ce',CX-shape.half*.72,top,shape.half*1.44,23*shape.scale);
+      context.textAlign='center';context.textBaseline='middle';context.fillStyle='#fff';context.font='900 '+Math.max(9,16*shape.scale)+'px system-ui';context.fillText('FINISH',CX,top+11*shape.scale);
+    }
+    function draw(context,state,countdown,rules,visualLane=state.lane){
+      context.clearRect(0,0,W,H);water(context,state.distance);track(context,state.distance);
+      
+      for(let rowNumber=Math.floor(state.distance)+6;rowNumber>=state.nextRow;rowNumber--){
+        const ahead=rowNumber-state.distance;if(ahead<0||ahead>6)continue;
+        const shape=geometry(ahead),obstacle=rules.row(rowNumber-1);
+        if(obstacle.type==='multiply'||obstacle.type==='add')gate(context,shape,obstacle.lane,state.value,obstacle);else crates(context,shape,obstacle.lane,obstacle.hazard);
+      }
+      const phase=state.distance*18,centerX=CX+(visualLane-1)*130,air=state.jump>0?35*Math.sin(Math.PI*clamp(state.jump/.7,0,1)):0;
+      character(context,centerX,635-air,1.25,state.value,phase,635);
+      const mobileFullscreen=document.body.classList.contains('runner-active')&&window.matchMedia?.('(max-width: 680px)').matches;
+      if(!mobileFullscreen){poly(context,'#12375cdb',[13,14,166,14,166,59,13,59]);context.fillStyle='#fff';context.textAlign='left';context.textBaseline='middle';context.font='700 15px system-ui';context.fillText('TRACK '+Math.min(100,Math.floor(state.distance/24.5*100))+'%',25,36);context.textAlign='right';context.fillText('♥'.repeat(Math.max(0,3-state.hits)),W-20,36);}
+      if(countdown>0){poly(context,'#12375ce8',[53,252,367,252,367,426,53,426]);context.textAlign='center';context.font='900 78px system-ui';context.fillStyle='#fff';context.fillText(Math.ceil(countdown),CX,316);context.font='700 20px system-ui';context.fillText('REACH '+state.target,CX,382);}
+    }
+    return{draw,geometry,laneX};
+  })();
+  window.RunnerRules=RunnerRules;window.RunnerScene=RunnerScene;
+
+  const GAME_ID='number-dash-2048',MAX_REVIVES=2,byId=id=>document.getElementById(id);
+  const readSave=()=>{try{return JSON.parse(localStorage.getItem('game:runner:v1'))||{};}catch(error){return{};}};
+  const writeSave=value=>{try{localStorage.setItem('game:runner:v1',JSON.stringify(value));}catch(error){}};
+  const postNative=message=>{try{if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function')window.ReactNativeWebView.postMessage(JSON.stringify(message));}catch(error){}};
+  const saved=readSave();
+  let level=Number.isInteger(saved.level)&&saved.level>=1&&saved.level<=5?saved.level:1,best=Number.isFinite(saved.best)?saved.best:0;
+  let state=RunnerRules.create(level),running=false,paused=false,countdown=0,lastTime=0,frameId=0,visualLane=1,footstepClock=0;
+  let revivesUsed=0,consecutiveLosses=0,pendingRevive=false,adTimer=null,audioContext=null,muted=true,pendingFailureMessage='';
+  const canvas=byId('canvas'),context=canvas.getContext('2d'),preview=byId('preview'),previewContext=preview.getContext('2d');
+  const reducedMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function sizeCanvas(element,canvasContext){
+    const pixelRatio=Math.min(window.devicePixelRatio||1,2);
+    if(element.width!==420*pixelRatio||element.height!==700*pixelRatio){element.width=Math.round(420*pixelRatio);element.height=Math.round(700*pixelRatio);}
+    canvasContext.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+  }
+  function draw(){sizeCanvas(canvas,context);RunnerScene.draw(context,state,countdown,RunnerRules,visualLane);}
+  function drawPreview(){const previewState=RunnerRules.create(level);previewState.distance=3.4;previewState.nextRow=4;sizeCanvas(preview,previewContext);RunnerScene.draw(previewContext,previewState,0,RunnerRules,1);}
+  function setFeedback(text,kind=''){byId('feedback').textContent=text;byId('feedback').className='feedback'+(kind?' '+kind:'');byId('runStatus').textContent=text;}
+  function updateProgress(){byId('progressNote').textContent='Endless level '+level+' · Best run: '+best+' points. Progress saves on this device.';}
+  function updateHud(){
+    byId('level').textContent=''+state.level+' ∞';byId('number').textContent=state.value+' / '+state.target;byId('points').textContent=state.score;
+    byId('runStats').textContent=countdown>0?'Starts in '+Math.ceil(countdown)+' · Reach '+state.target:'Segment '+(Math.floor(state.distance/24.5)+1)+' · '+Math.floor((state.distance%24.5)/24.5*100)+'%';
+    const remainingLives=Array.from({length:Math.max(0,3-state.hits)},()=>String.fromCodePoint(0x2665)).join(' ');
+    byId('lives').textContent=remainingLives;byId('livesOverlay').textContent=remainingLives||'0';
+    byId('progressFill').style.width=(state.distance%24.5)/24.5*100+'%';
+    const jumpDisabled=!running||paused||countdown>0||state.cooldown>0;
+    for(const button of [byId('jump'),byId('jumpMobile')]){button.disabled=jumpDisabled;button.querySelector('.control-label').textContent=state.cooldown>0?'WAIT':'JUMP';}
+    for(const button of [byId('left'),byId('leftMobile')])button.disabled=!running||paused||countdown>0||state.lane<=0;
+    for(const button of [byId('right'),byId('rightMobile')])button.disabled=!running||paused||countdown>0||state.lane>=2;
+    byId('pause').textContent=paused?'Resume':'Pause run';
+    byId('pauseOverlay').setAttribute('aria-label',paused?'Resume run':'Pause run');
+    byId('pauseOverlay').title=paused?'Resume run':'Pause run';
+    byId('pauseOverlayGlyph').setAttribute('d',paused?'M8 5v14l11-7z':'M6 5h4v14H6zm8 0h4v14h-4z');
+    byId('pauseMobile').setAttribute('aria-label',paused?'Resume run':'Pause run');
+    byId('pauseMobile').querySelector('.control-label').textContent=paused?'RESUME':'PAUSE';
+    updateProgress();
+  }
+  function playSound(kind='step'){
+    if(muted)return;
+    try{
+      audioContext=audioContext||new(window.AudioContext||window.webkitAudioContext)();
+      const now=audioContext.currentTime,config={step:[190,.035],lane:[440,.05],jump:[680,.06],gate:[820,.075],crate:[120,.07],win:[980,.08],loss:[170,.07]},[frequency,volume]=config[kind]||config.step;
+      const oscillator=audioContext.createOscillator(),gain=audioContext.createGain();oscillator.type=kind==='crate'||kind==='loss'?'triangle':'sine';
+      oscillator.frequency.setValueAtTime(frequency,now);if(kind==='gate'||kind==='win')oscillator.frequency.linearRampToValueAtTime(frequency*1.35,now+.13);
+      gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(volume,now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+.18);
+      oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(now);oscillator.stop(now+.19);
+    }catch(error){}
+  }
+  function stop(){running=false;cancelAnimationFrame(frameId);frameId=0;}
+  function finalizePendingLoss(){
+    if(!pendingRevive)return;
+    pendingRevive=false;consecutiveLosses++;
+    const sessionOver=consecutiveLosses>=3,score=state.score;
+    byId('reviveBox').hidden=true;byId('resultTitle').textContent=sessionOver?'Session over':'Run over';
+    byId('resultCopy').textContent=sessionOver?'Three runs in a row ended before the target. Start a new session or return to Fandom.':revivesUsed>=MAX_REVIVES?'Three crate hits ended the run. No rewarded continues remain this session; replay the level or return to Fandom.':pendingFailureMessage;
+    byId('replay').hidden=sessionOver;byId('newSession').hidden=!sessionOver;
+    window.joinNowLevelFailed('number-dash-2048-level-'+level, 'three crate hits');
+    postNative({type:'gameOver',gameId:GAME_ID,score,final:true});
+  }
+  function finish(){
+    stop();paused=false;document.body.classList.remove('runner-active');const won=false;level=state.level;best=Math.max(best,state.score);
+    writeSave({level:state.level,best});updateProgress();
+    byId('playScreen').hidden=true;byId('resultScreen').hidden=false;byId('resultScreen').dataset.outcome='loss';
+    byId('resultMark').textContent='!';byId('resultEyebrow').textContent='RUN OVER';
+    byId('resultTitle').textContent='Three crate hits';byId('resultScore').textContent=state.score+' points';
+    byId('resultCopy').textContent=state.message+' Final number: '+state.value+'. You reached endless level '+state.level+'.';
+    byId('next').hidden=true;byId('replay').hidden=false;byId('newSession').hidden=true;
+    byId('reviveStatus').textContent='';byId('reviveButton').disabled=false;byId('reviveButton').textContent='Watch rewarded ad · Continue';
+    if(won){consecutiveLosses=0;byId('reviveBox').hidden=true;window.joinNowLevelCompleted('number-dash-2048-level-'+level,state.score,0);postNative({type:'gameOver',gameId:GAME_ID,score:state.score,final:true});playSound('win');}
+    else{
+      pendingFailureMessage='Three crate hits ended the run. Replay the level, or use a rewarded continue to restore one life and keep this run.';
+      byId('resultCopy').textContent=pendingFailureMessage+' Final number: '+state.value+'.';
+      pendingRevive=true;byId('reviveBox').hidden=revivesUsed>=MAX_REVIVES;postNative({type:'gameOver',gameId:GAME_ID,score:state.score,final:false});playSound('loss');
+      if(revivesUsed>=MAX_REVIVES)finalizePendingLoss();
+    }
+    byId('replay').focus();
+  }
+  function startRun(){
+    if(pendingRevive)finalizePendingLoss();
+    window.joinNowLevelStarted('number-dash-2048-level-'+level,'not_applicable','not_applicable');
+    stop();state=RunnerRules.create(level);running=true;paused=false;countdown=3;visualLane=state.lane;footstepClock=0;lastTime=performance.now();document.body.classList.add('runner-active');
+    byId('welcome').hidden=true;byId('resultScreen').hidden=true;byId('playScreen').hidden=false;byId('pausePanel').hidden=true;
+    setFeedback(window.matchMedia?.('(max-width: 680px)').matches?'Swipe ←/→ lanes · ↑ jump':'Get ready! The track starts after the countdown.');updateHud();draw();drawPreview();
+    frameId=requestAnimationFrame(tick);
+  }
+  function tick(now){
+    if(!running||paused)return;
+    const deltaTime=Math.min(.05,Math.max(0,(now-lastTime)/1000));lastTime=now;
+    if(countdown>0){countdown=Math.max(0,countdown-deltaTime);if(countdown===0)setFeedback('Go! Run through a number boost gate.','good');updateHud();draw();frameId=requestAnimationFrame(tick);return;}
+    visualLane+=(state.lane-visualLane)*Math.min(1,deltaTime*12);if(Math.abs(state.lane-visualLane)<.002)visualLane=state.lane;
+    footstepClock+=deltaTime;if(footstepClock>=.26){footstepClock-=.26;if(state.jump<=0)playSound('step');}
+    const previousMessage=state.message,previousHits=state.hits,previousScore=state.score;
+    RunnerRules.advance(state,deltaTime);
+    if(state.message!==previousMessage){setFeedback(state.message,state.hits>previousHits||state.score===previousScore?'mistake':'good');if(state.hits>previousHits)playSound('crate');else if(state.score>previousScore)playSound('gate');}
+    updateHud();draw();
+    if(state.done){finish();return;}
+    frameId=requestAnimationFrame(tick);
+  }
+  function move(delta){
+    if(!running||paused||countdown>0)return;
+    const previous=state.lane;state.lane=Math.max(0,Math.min(2,state.lane+delta));
+    if(previous!==state.lane){playSound('lane');setFeedback(state.lane===0?'Left lane. Watch the next gate.':state.lane===2?'Right lane. Watch the next gate.':'Center lane. Watch the next gate.');}
+    updateHud();draw();
+  }
+  function jump(){
+    if(!running||paused||countdown>0)return;
+    if(RunnerRules.jump(state)){playSound('jump');setFeedback('Jump! Clear the crate ahead.','good');updateHud();draw();}
+  }
+  function requestRevive(){
+    if(!pendingRevive||revivesUsed>=MAX_REVIVES)return;
+    byId('reviveButton').disabled=true;byId('reviveButton').textContent='Waiting for ad...';
+    if(window.ReactNativeWebView&&typeof window.ReactNativeWebView.postMessage==='function'){
+      byId('reviveStatus').textContent='Complete the rewarded ad to restore one life.';
+      postNative({type:'requestRevive',gameId:GAME_ID,score:state.score});return;
+    }
+    byId('adDemo').hidden=false;byId('adFinish').disabled=true;byId('adCancel').disabled=false;
+    let seconds=3;byId('adFinish').textContent='Complete preview · '+seconds;byId('adFinish').focus();
+    adTimer=setInterval(()=>{
+      seconds--;
+      if(seconds<=0){clearInterval(adTimer);adTimer=null;byId('adFinish').disabled=false;byId('adFinish').textContent='Complete preview';}
+      else byId('adFinish').textContent='Complete preview · '+seconds;
+    },1000);
+  }
+  function dispatchRevive(granted){
+    if(!pendingRevive)return;
+    byId('adDemo').hidden=true;byId('reviveButton').disabled=false;byId('reviveButton').textContent='Watch rewarded ad · Continue';
+    if(adTimer){clearInterval(adTimer);adTimer=null;}
+    if(granted&&revivesUsed<MAX_REVIVES){
+      pendingRevive=false;revivesUsed++;state.done=false;state.won=false;state.hits=Math.max(0,state.hits-1);state.message='Back in the run! One life restored.';
+      running=true;paused=false;lastTime=performance.now();document.body.classList.add('runner-active');byId('resultScreen').hidden=true;byId('playScreen').hidden=false;
+      setFeedback('Back in the run! One life restored. Keep your number and track progress.','good');updateHud();draw();frameId=requestAnimationFrame(tick);return;
+    }
+    byId('reviveStatus').textContent='Ad unavailable. This run will be recorded as a loss.';finalizePendingLoss();
+  }
+  window.dispatchRevive=dispatchRevive;
+  function setPaused(value){
+    if(!running)return;
+    paused=value;byId('pausePanel').hidden=!paused;
+    if(paused){cancelAnimationFrame(frameId);frameId=0;try{audioContext?.suspend();}catch(error){}byId('resume').focus();}
+    else{lastTime=performance.now();try{audioContext?.resume();}catch(error){}frameId=requestAnimationFrame(tick);byId('pause').focus();}
+    updateHud();
+  }
+  function nativeAction(action){
+    if(action==='back'){
+      if(pendingRevive)finalizePendingLoss();stop();document.body.classList.remove('runner-active');byId('pausePanel').hidden=true;try{audioContext?.close();}catch(error){}
+      postNative({type:'goBack',score:state.score});return;
+    }
+    if(action==='trophy'){
+      if(pendingRevive)finalizePendingLoss();
+      if(running&&!paused)setPaused(true);
+      postNative({type:'viewLeaderboard',score:state.score});
+    }
+  }
+  function newSession(){consecutiveLosses=0;revivesUsed=0;startRun();}
+  function laneSwipe(event){
+    if(!running||paused||countdown>0)return;
+    const dx=event.clientX-pointerStart.x,dy=event.clientY-pointerStart.y;pointerStart=null;
+    if(Math.abs(dx)>25&&Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else if(dy<-25)jump();
+  }
+  let pointerStart=null;
+  byId('start').addEventListener('click',startRun);byId('replay').addEventListener('click',startRun);
+  byId('next').addEventListener('click',()=>{level=Math.min(5,level+1);startRun();});
+  byId('newSession').addEventListener('click',newSession);
+  for(const id of ['left','leftMobile'])byId(id).addEventListener('click',()=>move(-1));
+  for(const id of ['right','rightMobile'])byId(id).addEventListener('click',()=>move(1));
+  for(const id of ['jump','jumpMobile'])byId(id).addEventListener('click',jump);
+  byId('pause').addEventListener('click',()=>setPaused(!paused));byId('pauseMobile').addEventListener('click',()=>setPaused(!paused));byId('pauseOverlay').addEventListener('click',()=>setPaused(!paused));byId('resume').addEventListener('click',()=>setPaused(false));
+  byId('reviveButton').addEventListener('click',requestRevive);byId('adFinish').addEventListener('click',()=>dispatchRevive(true));byId('adCancel').addEventListener('click',()=>dispatchRevive(false));
+  byId('helpButton').addEventListener('click',()=>byId('helpDialog').showModal());byId('closeHelp').addEventListener('click',()=>byId('helpDialog').close());byId('helpDialog').addEventListener('close',()=>byId('helpButton').focus());
+  document.querySelectorAll('[data-native-action]').forEach(button=>button.addEventListener('click',()=>nativeAction(button.dataset.nativeAction)));
+  document.addEventListener('keydown',event=>{
+    if(!running||paused||byId('helpDialog').open||byId('adDemo').hidden===false)return;
+    if(event.key==='ArrowLeft'){event.preventDefault();move(-1);}
+    else if(event.key==='ArrowRight'){event.preventDefault();move(1);}
+    else if(event.key===' '||event.key==='ArrowUp'){event.preventDefault();jump();}
+    else if(event.key==='Escape')setPaused(true);
+  });
+  canvas.addEventListener('pointerdown',event=>{pointerStart={x:event.clientX,y:event.clientY};try{canvas.setPointerCapture(event.pointerId);}catch(error){}});
+  canvas.addEventListener('pointerup',laneSwipe);canvas.addEventListener('pointercancel',()=>pointerStart=null);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&!paused)setPaused(true);});
+  window.addEventListener('resize',()=>{draw();drawPreview();});
+  window.addEventListener('pagehide',()=>{stop();document.body.classList.remove('runner-active');if(adTimer){clearInterval(adTimer);adTimer=null;}try{audioContext?.close();}catch(error){}});
+  try{muted=localStorage.getItem('game:runner:muted')!=='false';}catch(error){}
+  updateProgress();drawPreview();draw();postNative({type:'orientation',orientation:'portrait'});
+})();
+</script>
+</body>
+</html>
