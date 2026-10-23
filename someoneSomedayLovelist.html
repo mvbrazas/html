@@ -150,7 +150,7 @@
         }
         @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; animation:none!important; } }
     </style>
-<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,activeGameId="N/A",activeGameName="N/A",terminal=true;function normalize(value){if(value===undefined||value===null)return'N/A';var text=String(value);if(!text||text==='not_applicable')return'N/A';return text}function numberOrNA(value){var num=Number(value);return Number.isFinite(num)?num:'N/A'}function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character,gameId,gameName){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();activeGameId=normalize(gameId);activeGameName=normalize(gameName);terminal=false;send('Level Started',{level_id:String(level),difficulty:normalize(difficulty),character_selected:normalize(character),game_id:activeGameId,game_name:activeGameName})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;var durationSec=startedAt>0?Math.max(0,(Date.now()-startedAt)/1000):'N/A';send('Level Completed',{level_id:String(level),score:numberOrNA(score),stars:numberOrNA(stars),duration_sec:Number.isFinite(durationSec)?durationSec:'N/A',game_id:normalize(level),game_name:'N/A'})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),attempt_number:attempt,game_id:activeGameId,game_name:activeGameName})}})(window);</script>
 </head>
 <body>
 <div id="app">
@@ -420,7 +420,7 @@
     function startRound(practice, fromRevive) {
         if (state.busy) return;
         if (fromRevive !== true) { finalizePendingGameOver(); revivesLeft = MAX_REVIVES; }
-        if (fromRevive !== true) window.joinNowLevelStarted('someone-someday-lovelist', 'not_applicable', 'not_applicable');
+        if (fromRevive !== true) window.joinNowLevelStarted('someone-someday-lovelist', 'N/A', 'N/A', 'someone-someday-lovelist', 'Someone, Someday: LoveList');
         resetRevivePrompt();
         if (state.timer) clearInterval(state.timer);
         state.practice = !!practice;

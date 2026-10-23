@@ -98,7 +98,7 @@
             #jumpBtn { width: 84px; height: 56px; border-radius: 14px; }
         }
     </style>
-<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,terminal=true;function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();terminal=false;send('Level Started',{level_id:String(level),difficulty:String(difficulty||'not_applicable'),character_selected:String(character||'not_applicable')})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;send('Level Completed',{level_id:String(level),score:Number(score)||0,stars:Number(stars)||0,duration_sec:Math.max(0,(Date.now()-startedAt)/1000)})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),fail_reason:String(reason||'not_applicable'),attempt_number:attempt})}})(window);</script>
+<script>(function(w){var attemptsByLevel=Object.create(null),activeLevel="",attempt=0,startedAt=0,activeGameId="N/A",activeGameName="N/A",terminal=true;function normalize(value){if(value===undefined||value===null)return'N/A';var text=String(value);if(!text||text==='not_applicable')return'N/A';return text}function numberOrNA(value){var num=Number(value);return Number.isFinite(num)?num:'N/A'}function send(name,properties){try{if(w.JoinNowAnalytics&&typeof w.JoinNowAnalytics.trackGameEvent==='function')w.JoinNowAnalytics.trackGameEvent(name,properties)}catch(error){}}w.joinNowLevelStarted=function(level,difficulty,character,gameId,gameName){activeLevel=String(level);attempt=attemptsByLevel[activeLevel]=(attemptsByLevel[activeLevel]||0)+1;startedAt=Date.now();activeGameId=normalize(gameId);activeGameName=normalize(gameName);terminal=false;send('Level Started',{level_id:String(level),difficulty:normalize(difficulty),character_selected:normalize(character),game_id:activeGameId,game_name:activeGameName})};w.joinNowLevelCompleted=function(level,score,stars){if(terminal)return;terminal=true;var durationSec=startedAt>0?Math.max(0,(Date.now()-startedAt)/1000):'N/A';send('Level Completed',{level_id:String(level),score:numberOrNA(score),stars:numberOrNA(stars),duration_sec:Number.isFinite(durationSec)?durationSec:'N/A',game_id:normalize(level),game_name:'N/A'})};w.joinNowLevelFailed=function(level,reason){if(terminal)return;terminal=true;send('Level Failed',{level_id:String(level),attempt_number:attempt,game_id:activeGameId,game_name:activeGameName})}})(window);</script>
 </head>
 <body>
     <canvas id="game"></canvas>
@@ -619,7 +619,7 @@
                     resetGame();
                     hideOverlay();
                     state = 'playing';
-                    window.joinNowLevelStarted('sigabo-platformer', 'not_applicable', 'not_applicable');
+                    window.joinNowLevelStarted('sigabo-platformer', 'N/A', 'N/A', 'sigabo-platformer', 'Sigabo Platformer');
                     post({ type: 'ready' });
                 } else if (action === 'revive') {
                     post({ type: 'requestRevive', score: score });
@@ -631,7 +631,7 @@
                     resetGame();
                     hideOverlay();
                     state = 'playing';
-                    window.joinNowLevelStarted('sigabo-platformer', 'not_applicable', 'not_applicable');
+                    window.joinNowLevelStarted('sigabo-platformer', 'N/A', 'N/A', 'sigabo-platformer', 'Sigabo Platformer');
                 } else if (action === 'leaderboard') {
                     if (state === 'gameover') finalizeScore();
                     post({ type: 'viewLeaderboard', score: score });
@@ -644,7 +644,7 @@
                 resetGame();
                 hideOverlay();
                 state = 'playing';
-                window.joinNowLevelStarted('sigabo-platformer', 'not_applicable', 'not_applicable');
+                window.joinNowLevelStarted('sigabo-platformer', 'N/A', 'N/A', 'sigabo-platformer', 'Sigabo Platformer');
                 post({ type: 'ready' });
             });
 
